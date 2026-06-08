@@ -337,7 +337,7 @@ export default function Home() {
           {userId && (
             <button onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }} className={`px-6 py-4 font-bold text-center text-red-400 transition-colors ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}>
               Sign Out
-            </button>
+            </button> 
           )}
         </div>
       </div>
