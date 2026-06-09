@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { supabase } from '../lib/supabase';
 
 // 🚨 UPGRADED: Added the cover_image_url to the Blueprint
@@ -85,18 +86,12 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned }: { book: Book, is
       {/* 🖼️ NEW: The Dynamic Image Display */}
       <div className={`w-32 h-48 shrink-0 rounded-md mb-4 shadow-lg flex flex-col items-center justify-center z-10 overflow-hidden relative ${!book.cover_image_url ? 'border-2 border-dashed' : 'border border-gray-700'} ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-300'}`}>
         {book.cover_image_url ? (
-           <img 
+           <Image 
              src={book.cover_image_url.replace('http:', 'https:')} 
              alt={`Cover of ${book.title}`}
+             width={128}
+             height={192}
              className="w-full h-full object-cover"
-             onError={(e) => {
-               e.currentTarget.style.display = 'none';
-               const parent = e.currentTarget.parentElement;
-               if(parent) {
-                 parent.classList.add('border-2', 'border-dashed');
-                 parent.innerHTML = '<span class="text-gray-500 text-xs font-mono uppercase tracking-widest z-10">Cover</span>';
-               }
-             }}
            />
         ) : (
           <span className="text-gray-500 text-xs font-mono uppercase tracking-widest mb-2 z-10">Cover</span>

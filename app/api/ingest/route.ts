@@ -56,7 +56,7 @@ export async function GET(request: Request) {
           author: authors, 
           isbn13, 
           category: assignedCategory,
-          image_url: secureImageUrl 
+          cover_image_url: secureImageUrl 
         });
       }
     }
