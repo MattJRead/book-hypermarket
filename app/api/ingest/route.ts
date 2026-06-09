@@ -39,31 +39,37 @@ export async function GET(request: Request) {
       const authors = info.authors ? info.authors.join(', ') : 'Unknown Author';
       const assignedCategory = determineCategory(info.categories); 
       
-      // Extract the image and force HTTPS for Vercel security
+      // 1. Ask Google for the image
       const rawImageUrl = info.imageLinks?.thumbnail || null;
       const secureImageUrl = rawImageUrl ? rawImageUrl.replace('http:', 'https:') : null;
       
-      console.log(`Scanning: ${title} | Found Image: ${secureImageUrl ? 'YES' : 'NO'}`);
-
+      // Extract the ISBN
       let isbn13 = null;
       if (info.industryIdentifiers) {
         const isbnObj = info.industryIdentifiers.find((id: { type: string, identifier: string }) => id.type === 'ISBN_13');
         if (isbnObj) isbn13 = isbnObj.identifier;
       }
 
+      // 🌊 THE WATERFALL: If Google is empty, construct the Open Library fallback
+      const finalImageUrl = secureImageUrl || (isbn13 ? `https://covers.openlibrary.org/b/isbn/${isbn13}-L.jpg` : null);
+
+      // The Wiretap Report
+      console.log(`Scanning: ${title} | Google Image: ${secureImageUrl ? 'YES' : 'NO'} | Final Image Assigned: ${finalImageUrl ? 'YES' : 'NO'}`);
+
       if (title && authors && isbn13) {
-        // Now injecting the secure image URL into the payload
         booksToInsert.push({ 
           title, 
           author: authors, 
           isbn13, 
           category: assignedCategory,
-          cover_image_url: secureImageUrl 
+          cover_image_url: finalImageUrl 
         });
       }
     }
 
-const { error } = await supabase.from('books').upsert(booksToInsert, { onConflict: 'isbn13' });
+    // Upsert the data to prevent database crashes from duplicates
+    const { error } = await supabase.from('books').upsert(booksToInsert, { onConflict: 'isbn13' });
+
     if (error) {
       console.error(error);
       return NextResponse.json({ error: 'Failed to insert into Supabase' }, { status: 500 });
@@ -71,7 +77,7 @@ const { error } = await supabase.from('books').upsert(booksToInsert, { onConflic
 
     return NextResponse.json({ 
       success: true, 
-      message: `Successfully ingested ${booksToInsert.length} books. Categories automatically mapped and cover art secured.` 
+      message: `Successfully ingested ${booksToInsert.length} books with Open Library Waterfall active.` 
     });
 
   } catch (error) {
