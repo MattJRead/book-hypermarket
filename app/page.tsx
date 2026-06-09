@@ -340,7 +340,7 @@ export default function Home() {
 
       <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-50 p-4 rounded-full shadow-[0_0_30px_rgba(14,165,233,0.3)] transition-transform hover:scale-110 active:scale-95 flex items-center justify-center ${isDarkMode ? 'bg-sky-500 text-white' : 'bg-gray-900 text-white'}`}>
         {isMenuOpen ? <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg> : <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 8h16M4 16h16" /></svg>}
-      </button>
+      </button> 
 
       {isMenuOpen && <div className="fixed inset-0 z-30" onClick={() => setIsMenuOpen(false)}></div>}
     <FloatingMenu />
