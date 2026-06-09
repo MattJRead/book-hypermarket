@@ -43,6 +43,8 @@ export async function GET(request: Request) {
       const rawImageUrl = info.imageLinks?.thumbnail || null;
       const secureImageUrl = rawImageUrl ? rawImageUrl.replace('http:', 'https:') : null;
       
+      console.log(`Scanning: ${title} | Found Image: ${secureImageUrl ? 'YES' : 'NO'}`);
+
       let isbn13 = null;
       if (info.industryIdentifiers) {
         const isbnObj = info.industryIdentifiers.find((id: { type: string, identifier: string }) => id.type === 'ISBN_13');
@@ -61,8 +63,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const { error } = await supabase.from('books').insert(booksToInsert);
-
+const { error } = await supabase.from('books').upsert(booksToInsert, { onConflict: 'isbn13' });
     if (error) {
       console.error(error);
       return NextResponse.json({ error: 'Failed to insert into Supabase' }, { status: 500 });
