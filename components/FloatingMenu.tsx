@@ -35,10 +35,10 @@ export default function FloatingMenu({ isDarkMode = true, toggleTheme }: { isDar
               
               <div className={`overflow-hidden transition-all bg-black/10 ${isAccountOpen ? 'max-h-64' : 'max-h-0'}`}>
                 <Link href="/bookshelf" className={`block px-6 py-3 font-bold text-sm text-center border-b transition-colors ${isDarkMode ? 'border-gray-800 text-sky-400 hover:bg-gray-800' : 'border-gray-100 text-sky-600 hover:bg-gray-50'}`}>
-                  📚 My Bookshelf
+                  My Bookshelf
                 </Link>
                 <Link href="/wishlist" className={`block px-6 py-3 font-bold text-sm text-center border-b transition-colors ${isDarkMode ? 'border-gray-800 text-emerald-400 hover:bg-gray-800' : 'border-gray-100 text-emerald-600 hover:bg-gray-50'}`}>
-                  🎯 My Wishlist
+                  My Wishlist
                 </Link>
                 <button onClick={async () => { await supabase.auth.signOut(); window.location.href='/'; }} className={`w-full px-6 py-3 font-bold text-sm text-center text-red-400 transition-colors ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}>
                   Sign Out
