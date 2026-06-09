@@ -13,6 +13,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'jackets.gardners.com',
+      },
+      {
+        protocol: 'https',
         hostname: 'www.waterstones.com',
       },
       {

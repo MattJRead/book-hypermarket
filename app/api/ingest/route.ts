@@ -39,22 +39,42 @@ export async function GET(request: Request) {
       const authors = info.authors ? info.authors.join(', ') : 'Unknown Author';
       const assignedCategory = determineCategory(info.categories); 
       
-      // 1. Ask Google for the image
-      const rawImageUrl = info.imageLinks?.thumbnail || null;
-      const secureImageUrl = rawImageUrl ? rawImageUrl.replace('http:', 'https:') : null;
-      
-      // Extract the ISBN
       let isbn13 = null;
       if (info.industryIdentifiers) {
         const isbnObj = info.industryIdentifiers.find((id: { type: string, identifier: string }) => id.type === 'ISBN_13');
         if (isbnObj) isbn13 = isbnObj.identifier;
       }
 
-      // 🌊 THE WATERFALL: If Google is empty, construct the Open Library fallback
-      const finalImageUrl = secureImageUrl || (isbn13 ? `https://covers.openlibrary.org/b/isbn/${isbn13}-L.jpg` : null);
+      // TIER 1: Ask Google for the image
+      const rawImageUrl = info.imageLinks?.thumbnail || null;
+      let finalImageUrl = rawImageUrl ? rawImageUrl.replace('http:', 'https:') : null;
+      let imageSource = finalImageUrl ? 'GOOGLE' : 'NONE';
+
+      // TIER 2: The Gardners Backdoor
+      if (!finalImageUrl && isbn13) {
+        const gardnersPrefix = isbn13.substring(0, 8);
+        const gardnersUrl = `https://jackets.gardners.com/media/640/${gardnersPrefix}/${isbn13}.jpg`;
+        
+        try {
+          // Send a lightweight HEAD request just to see if the file exists
+          const gardnersCheck = await fetch(gardnersUrl, { method: 'HEAD' });
+          if (gardnersCheck.ok) {
+            finalImageUrl = gardnersUrl;
+            imageSource = 'GARDNERS';
+          }
+        } catch (e) {
+          // Silently ignore if Gardners blocks the request
+        }
+      }
+
+      // TIER 3: The Open Library Fallback
+      if (!finalImageUrl && isbn13) {
+        finalImageUrl = `https://covers.openlibrary.org/b/isbn/${isbn13}-L.jpg`;
+        imageSource = 'OPEN_LIBRARY';
+      }
 
       // The Wiretap Report
-      console.log(`Scanning: ${title} | Google Image: ${secureImageUrl ? 'YES' : 'NO'} | Final Image Assigned: ${finalImageUrl ? 'YES' : 'NO'}`);
+      console.log(`Scanning: ${title} | Source Secured: ${imageSource}`);
 
       if (title && authors && isbn13) {
         booksToInsert.push({ 
@@ -67,7 +87,6 @@ export async function GET(request: Request) {
       }
     }
 
-    // Upsert the data to prevent database crashes from duplicates
     const { error } = await supabase.from('books').upsert(booksToInsert, { onConflict: 'isbn13' });
 
     if (error) {
@@ -77,7 +96,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      message: `Successfully ingested ${booksToInsert.length} books with Open Library Waterfall active.` 
+      message: `Successfully ingested ${booksToInsert.length} books. Gardners backdoor is active.` 
     });
 
   } catch (error) {
