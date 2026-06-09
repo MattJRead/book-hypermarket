@@ -10,7 +10,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'CRITICAL: Google API key missing.' }, { status: 500 });
   }
 
-  // The Smart Mapper: Translates Google's chaotic categories into your pristine taxonomy
   const determineCategory = (googleCategories: string[] | undefined) => {
     if (!googleCategories || googleCategories.length === 0) return 'General';
     
@@ -21,7 +20,7 @@ export async function GET(request: Request) {
     if (catString.includes('fiction') || catString.includes('fantasy') || catString.includes('comics')) return 'Fiction';
     if (catString.includes('history') || catString.includes('biography') || catString.includes('memoir') || catString.includes('business')) return 'Non-Fiction';
     
-    return 'General'; // Fallback if Google provides something bizarre
+    return 'General'; 
   };
 
   try {
@@ -38,7 +37,11 @@ export async function GET(request: Request) {
       const info = item.volumeInfo;
       const title = info.title;
       const authors = info.authors ? info.authors.join(', ') : 'Unknown Author';
-      const assignedCategory = determineCategory(info.categories); // Extract and map
+      const assignedCategory = determineCategory(info.categories); 
+      
+      // Extract the image and force HTTPS for Vercel security
+      const rawImageUrl = info.imageLinks?.thumbnail || null;
+      const secureImageUrl = rawImageUrl ? rawImageUrl.replace('http:', 'https:') : null;
       
       let isbn13 = null;
       if (info.industryIdentifiers) {
@@ -47,8 +50,14 @@ export async function GET(request: Request) {
       }
 
       if (title && authors && isbn13) {
-        // We now inject the category directly into your database
-        booksToInsert.push({ title, author: authors, isbn13, category: assignedCategory });
+        // Now injecting the secure image URL into the payload
+        booksToInsert.push({ 
+          title, 
+          author: authors, 
+          isbn13, 
+          category: assignedCategory,
+          image_url: secureImageUrl 
+        });
       }
     }
 
@@ -61,7 +70,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      message: `Successfully ingested ${booksToInsert.length} books. Categories automatically mapped.` 
+      message: `Successfully ingested ${booksToInsert.length} books. Categories automatically mapped and cover art secured.` 
     });
 
   } catch (error) {
