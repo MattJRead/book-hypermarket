@@ -1,5 +1,6 @@
 'use client';
-import FloatingMenu from '../../components/FloatingMenu';
+
+import FloatingMenu from '../components/FloatingMenu';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -83,7 +84,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned }: { book: Book, is
     <div className={`p-6 rounded-2xl border flex flex-col items-center text-center transition-all hover:scale-[1.02] shadow-sm h-full relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} ${isOwned ? 'ring-2 ring-emerald-500' : ''}`}>
       {isOwned && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none"></div>}
 
-      {/* 🖼️ NEW: The Dynamic Image Display */}
+      {/*  NEW: The Image Display */}
       <div className={`w-32 h-48 shrink-0 rounded-md mb-4 shadow-lg flex flex-col items-center justify-center z-10 overflow-hidden relative ${!book.cover_image_url ? 'border-2 border-dashed' : 'border border-gray-700'} ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-300'}`}>
         {book.cover_image_url ? (
            <Image 
@@ -342,7 +343,7 @@ export default function Home() {
       </button>
 
       {isMenuOpen && <div className="fixed inset-0 z-30" onClick={() => setIsMenuOpen(false)}></div>}
-      <FloatingMenu />
+    <FloatingMenu />
     </main>
   );
 }
