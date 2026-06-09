@@ -1,5 +1,5 @@
 'use client';
-
+import FloatingMenu from '../../components/FloatingMenu';
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
@@ -126,6 +126,7 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+      <FloatingMenu />
     </main>
   );
 }

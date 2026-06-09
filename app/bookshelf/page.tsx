@@ -1,5 +1,5 @@
 'use client';
-
+import FloatingMenu from '../../components/FloatingMenu';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
@@ -102,6 +102,7 @@ export default function PersonalLibrary() {
           </div>
         )}
       </div>
+      <FloatingMenu />
     </main>
   );
 }

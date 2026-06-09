@@ -1,5 +1,5 @@
 'use client';
-
+import FloatingMenu from '../../components/FloatingMenu';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -342,6 +342,7 @@ export default function Home() {
       </button>
 
       {isMenuOpen && <div className="fixed inset-0 z-30" onClick={() => setIsMenuOpen(false)}></div>}
+      <FloatingMenu />
     </main>
   );
 }
