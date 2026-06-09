@@ -1,12 +1,11 @@
 'use client';
 
-import FloatingMenu from '../components/FloatingMenu';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '../lib/supabase';
+import FloatingMenu from '../components/FloatingMenu';
 
-// 🚨 UPGRADED: Added the cover_image_url to the Blueprint
 type Book = {
   id: string;
   title: string;
@@ -19,16 +18,20 @@ type Book = {
 // ==========================================
 // 1. THE BOOK CARD ENGINE
 // ==========================================
-function BookCard({ book, isDarkMode, userId, initiallyOwned }: { book: Book, isDarkMode: boolean, userId: string | null, initiallyOwned: boolean }) {
+function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishlisted }: { book: Book, isDarkMode: boolean, userId: string | null, initiallyOwned: boolean, initiallyWishlisted: boolean }) {
   const [prices, setPrices] = useState<{ waterstones: string, blackwells: string } | null>(null);
   const [isLoadingPrice, setIsLoadingPrice] = useState(true);
   
   const [isOwned, setIsOwned] = useState(initiallyOwned);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  const [isWishlisted, setIsWishlisted] = useState(initiallyWishlisted);
+  const [isWishlistUpdating, setIsWishlistUpdating] = useState(false);
+
   useEffect(() => {
     setIsOwned(initiallyOwned);
-  }, [initiallyOwned]);
+    setIsWishlisted(initiallyWishlisted);
+  }, [initiallyOwned, initiallyWishlisted]);
 
   const cleanPrice = (raw: string) => {
     if (!raw || raw === 'Out of Stock') return 'N/A';
@@ -63,10 +66,8 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned }: { book: Book, is
   const toggleLibrary = async () => {
     if (!userId) return;
     setIsUpdating(true);
-    
     const newStatus = !isOwned;
     setIsOwned(newStatus); 
-
     try {
       if (newStatus) {
         await supabase.from('user_libraries').insert({ user_id: userId, book_id: book.id });
@@ -74,18 +75,51 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned }: { book: Book, is
         await supabase.from('user_libraries').delete().match({ user_id: userId, book_id: book.id });
       }
     } catch (error) {
-      console.error("Failed to update vault", error);
       setIsOwned(!newStatus); 
     }
     setIsUpdating(false);
+  };
+
+  const toggleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!userId) return;
+    setIsWishlistUpdating(true);
+    const newStatus = !isWishlisted;
+    setIsWishlisted(newStatus); 
+
+    try {
+      if (newStatus) {
+        await supabase.from('user_wishlists').insert({ user_id: userId, book_id: book.id });
+      } else {
+        await supabase.from('user_wishlists').delete().match({ user_id: userId, book_id: book.id });
+      }
+    } catch (error) {
+      setIsWishlisted(!newStatus); 
+    }
+    setIsWishlistUpdating(false);
   };
 
   return (
     <div className={`p-6 rounded-2xl border flex flex-col items-center text-center transition-all hover:scale-[1.02] shadow-sm h-full relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} ${isOwned ? 'ring-2 ring-emerald-500' : ''}`}>
       {isOwned && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none"></div>}
 
-      {/*  NEW: The Image Display */}
       <div className={`w-32 h-48 shrink-0 rounded-md mb-4 shadow-lg flex flex-col items-center justify-center z-10 overflow-hidden relative ${!book.cover_image_url ? 'border-2 border-dashed' : 'border border-gray-700'} ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-300'}`}>
+        
+        {/* ⭐ THE WISHLIST STAR */}
+        {userId && (
+          <button 
+            onClick={toggleWishlist}
+            disabled={isWishlistUpdating}
+            className="absolute top-2 right-2 z-30 p-1.5 rounded-full bg-black/40 backdrop-blur-sm shadow-md transition-transform hover:scale-110 border border-white/10"
+            title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
+          >
+            <svg className={`w-5 h-5 ${isWishlisted ? 'text-yellow-400 fill-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]' : 'text-white fill-transparent hover:text-yellow-200'}`} stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+          </button>
+        )}
+
         {book.cover_image_url ? (
            <Image 
              src={book.cover_image_url.replace('http:', 'https:')} 
@@ -157,7 +191,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned }: { book: Book, is
 // ==========================================
 // 2. THE CATEGORY VAULT ENGINE
 // ==========================================
-function CategoryVault({ title, books, isDarkMode, colorClass, onViewAll, userId, userLibrary }: { title: string, books: Book[], isDarkMode: boolean, colorClass: string, onViewAll: () => void, userId: string | null, userLibrary: string[] }) {
+function CategoryVault({ title, books, isDarkMode, colorClass, onViewAll, userId, userLibrary, userWishlist }: { title: string, books: Book[], isDarkMode: boolean, colorClass: string, onViewAll: () => void, userId: string | null, userLibrary: string[], userWishlist: string[] }) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -187,7 +221,7 @@ function CategoryVault({ title, books, isDarkMode, colorClass, onViewAll, userId
         <div ref={scrollContainerRef} className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory px-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {books.map(book => (
             <div key={book.id} className="snap-start shrink-0 w-72">
-              <BookCard book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} />
+              <BookCard book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} />
             </div>
           ))}
         </div>
@@ -204,11 +238,11 @@ export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeCategoryView, setActiveCategoryView] = useState<{name: string, books: Book[]} | null>(null);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [userLibrary, setUserLibrary] = useState<string[]>([]);
+  const [userWishlist, setUserWishlist] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -220,6 +254,7 @@ export default function Home() {
         
         if (session?.user) {
           setUserId(session.user.id);
+          
           const { data: libraryData } = await supabase
             .from('user_libraries')
             .select('book_id')
@@ -227,6 +262,15 @@ export default function Home() {
             
           if (libraryData) {
             setUserLibrary(libraryData.map(row => row.book_id));
+          }
+
+          const { data: wishlistData } = await supabase
+            .from('user_wishlists')
+            .select('book_id')
+            .eq('user_id', session.user.id);
+
+          if (wishlistData) {
+            setUserWishlist(wishlistData.map(row => row.book_id));
           }
         }
       } catch (err) {
@@ -286,7 +330,7 @@ export default function Home() {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {activeCategoryView.books.map(book => <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} />)}
+            {activeCategoryView.books.map(book => <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} />)}
           </div>
         </div>
       ) : (
@@ -300,50 +344,24 @@ export default function Home() {
               <div className="text-center py-12 text-sky-400 animate-pulse font-mono">[ Syncing Database... ]</div>
             ) : searchQuery ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto px-6">
-                {searchResults.length === 0 ? <p className="col-span-full text-center">No results.</p> : searchResults.map(book => <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} />)}
+                {searchResults.length === 0 ? <p className="col-span-full text-center">No results.</p> : searchResults.map(book => <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} />)}
               </div>
             ) : (
               <>
                 {dynamicCategories.map(cat => {
                   const catBooks = getBooksForCategory(cat.name);
-                  return <CategoryVault key={cat.name} title={cat.name} books={catBooks} isDarkMode={isDarkMode} colorClass={cat.color} onViewAll={() => setActiveCategoryView({ name: cat.name, books: catBooks })} userId={userId} userLibrary={userLibrary} />
+                  return <CategoryVault key={cat.name} title={cat.name} books={catBooks} isDarkMode={isDarkMode} colorClass={cat.color} onViewAll={() => setActiveCategoryView({ name: cat.name, books: catBooks })} userId={userId} userLibrary={userLibrary} userWishlist={userWishlist} />
                 })}
-                <CategoryVault title="All Inventory" books={books} isDarkMode={isDarkMode} colorClass="border-gray-500" onViewAll={() => setActiveCategoryView({ name: 'All Inventory', books: books })} userId={userId} userLibrary={userLibrary} />
+                <CategoryVault title="All Inventory" books={books} isDarkMode={isDarkMode} colorClass="border-gray-500" onViewAll={() => setActiveCategoryView({ name: 'All Inventory', books: books })} userId={userId} userLibrary={userLibrary} userWishlist={userWishlist} />
               </>
             )}
           </div>
         </>
       )}
 
-      {/* Floating Menu Hub */}
-      <div className={`fixed bottom-28 left-1/2 -translate-x-1/2 z-40 w-64 rounded-2xl shadow-2xl border overflow-hidden transition-all duration-300 ${isMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'} ${isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'}`}>
-        <div className="flex flex-col">
-          <Link href="/login" className={`px-6 py-4 font-bold text-center border-b text-sky-400 transition-colors ${isDarkMode ? 'border-gray-800 hover:bg-gray-800' : 'border-gray-100 hover:bg-gray-50'}`}>
-            {userId ? 'My Account' : 'Sign in/Sign up'}
-          </Link>
-          <Link href="/retailers" className={`px-6 py-4 font-bold text-center border-b transition-colors ${isDarkMode ? 'border-gray-800 text-white hover:bg-gray-800' : 'border-gray-100 text-gray-900 hover:bg-gray-50'}`}>
-            For Retailers
-          </Link>
-          <Link href="/about" className={`px-6 py-4 font-bold text-center border-b transition-colors ${isDarkMode ? 'border-gray-800 text-white hover:bg-gray-800' : 'border-gray-100 text-gray-900 hover:bg-gray-50'}`}>
-            About Us
-          </Link>
-          <button onClick={() => { setIsDarkMode(!isDarkMode); setIsMenuOpen(false); }} className={`px-6 py-4 font-bold text-center transition-colors ${isDarkMode ? 'text-gray-400 hover:bg-gray-800 hover:text-white' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}>
-            {isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
-          </button>
-          {userId && (
-            <button onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }} className={`px-6 py-4 font-bold text-center text-red-400 transition-colors ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}>
-              Sign Out
-            </button> 
-          )}
-        </div>
-      </div>
-
-      <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-50 p-4 rounded-full shadow-[0_0_30px_rgba(14,165,233,0.3)] transition-transform hover:scale-110 active:scale-95 flex items-center justify-center ${isDarkMode ? 'bg-sky-500 text-white' : 'bg-gray-900 text-white'}`}>
-        {isMenuOpen ? <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg> : <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 8h16M4 16h16" /></svg>}
-      </button> 
-
-      {isMenuOpen && <div className="fixed inset-0 z-30" onClick={() => setIsMenuOpen(false)}></div>}
-    <FloatingMenu />
+      {/* THE GLOBAL MENU INJECTION */}
+      <FloatingMenu isDarkMode={isDarkMode} toggleTheme={() => setIsDarkMode(!isDarkMode)} />
+      
     </main>
   );
 }
