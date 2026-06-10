@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { supabase } from '../lib/supabase';
 import FloatingMenu from '../components/FloatingMenu';
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import NotificationBell from '../components/NotificationBell';
 
 type Book = {
   id: string;
@@ -377,6 +378,7 @@ export default function Home() {
   return (
     <main className={`min-h-screen flex flex-col py-8 pb-32 transition-colors duration-300 overflow-hidden ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
       
+      <NotificationBell userId={userId} isDarkMode={isDarkMode} />
       <header className="flex justify-center items-center mb-12 w-full relative">
         <button onClick={() => { setActiveCategoryView(null); setSearchQuery(""); }} className="hover:opacity-80 transition-opacity">
           <h1 className="flex items-baseline font-extrabold tracking-tighter">
