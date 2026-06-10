@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
   console.log(`[Price Radar] Deploying bots for: ${isbn} / ${title}`);
 
-  // --- THE INDIVIDUAL SHOP BOTS (Now accept dynamic queries) ---
+ // --- THE INDIVIDUAL SHOP BOTS (Defaulting to Check Site on errors) ---
 
   const scrapeBlackwells = async (query: string) => {
     try {
@@ -33,8 +33,8 @@ export async function GET(request: Request) {
       const $ = cheerio.load(html);
       const priceText = $('.product-price').first().text().trim() || $('.price').first().text().trim();
       const match = priceText.match(/[£$€][\d.]+/);
-      return match ? match[0] : 'Out of Stock';
-    } catch (e) { return 'Out of Stock'; }
+      return match ? match[0] : 'Check Site';
+    } catch (e) { return 'Check Site'; }
   };
 
   const scrapeWaterstones = async (query: string) => {
@@ -45,8 +45,8 @@ export async function GET(request: Request) {
       const $ = cheerio.load(html);
       const priceText = $('.price').first().text().trim();
       const match = priceText.match(/[£$€][\d.]+/);
-      return match ? match[0] : 'Out of Stock';
-    } catch (e) { return 'Out of Stock'; }
+      return match ? match[0] : 'Check Site';
+    } catch (e) { return 'Check Site'; }
   };
 
   const scrapeEbay = async (query: string) => {

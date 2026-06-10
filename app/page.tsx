@@ -38,9 +38,13 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
   }, [initiallyOwned, initiallyWishlisted]);
 
   const formatPrice = (raw: string | undefined) => {
-    if (!raw || raw === 'Out of Stock' || raw === 'N/A') return 'Out of Stock';
+    if (!raw) return 'Check Site';
+    if (raw === 'Out of Stock') return 'Out of Stock';
+    if (raw === 'Check Site') return 'Check Site';
+    
+    // Only attempt to extract a currency symbol if it's not one of our standard statuses
     const match = raw.match(/[£$€][\d.]+/);
-    return match ? match[0] : 'Out of Stock';
+    return match ? match[0] : 'Check Site';
   };
 
   // 🌍 THE TARGETED ROUTING VAULT: Title-Only Search to bypass legacy confusion
