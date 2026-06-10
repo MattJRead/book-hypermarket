@@ -40,16 +40,11 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     return match ? match[0] : raw.substring(0, 10);
   };
 
-  const sovrnKey = 'YOUR_SOVRN_API_KEY'; 
-  const amazonTag = 'YOUR_AMAZON_TAG-21'; 
-
-  const targetWaterstones = `https://www.waterstones.com/books/search/term/${book.isbn13}`;
-  const targetBlackwells = `https://blackwells.co.uk/bookshop/search/?keyword=${book.isbn13}`;
-
-  const waterstonesLink = `https://redirect.viglink.com?key=${sovrnKey}&u=${encodeURIComponent(targetWaterstones)}`;
-  const blackwellsLink = `https://redirect.viglink.com?key=${sovrnKey}&u=${encodeURIComponent(targetBlackwells)}`;
-  const amazonLink = `https://www.amazon.co.uk/s?k=${book.isbn13}&tag=${amazonTag}`;
-
+  // 🚨 TEMPORARY DIRECT ROUTING: Affiliate wrappers removed until approved
+  const waterstonesLink = `https://www.waterstones.com/books/search/term/${book.isbn13}`;
+  const blackwellsLink = `https://blackwells.co.uk/bookshop/search/?keyword=${book.isbn13}`;
+  const amazonLink = `https://www.amazon.co.uk/s?k=${book.isbn13}`;
+  
   useEffect(() => {
     async function fetchPrices() {
       try {
