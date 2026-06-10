@@ -13,6 +13,7 @@ type Book = {
   isbn13: string;
   category: string;
   cover_image_url?: string; 
+  format?: string; // 🚨 NEW: Added for future database expansion
 };
 
 // ==========================================
@@ -136,9 +137,21 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
       <h3 className="font-bold text-lg mb-1 leading-tight line-clamp-2 break-words w-full z-10" title={book.title}>
         {book.title}
       </h3>
-      <p className={`text-sm mb-4 line-clamp-1 break-words w-full z-10 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} title={book.author}>
+      <p className={`text-sm mb-2 line-clamp-1 break-words w-full z-10 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} title={book.author}>
         {book.author}
       </p>
+
+      {/* 🏷️ NEW: ISBN and Format Badges */}
+      <div className="flex flex-col items-center gap-1 mb-4 w-full z-10">
+        <span className={`text-xs font-mono px-2 py-0.5 rounded-md ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
+          ISBN: {book.isbn13}
+        </span>
+        <div className="flex gap-1 mt-1 flex-wrap justify-center">
+          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${isDarkMode ? 'border-gray-700 text-gray-300' : 'border-gray-300 text-gray-600'}`}>
+            {book.format || 'Standard Edition'}
+          </span>
+        </div>
+      </div>
       
       <div className="mt-auto w-full pt-4 border-t border-gray-800/30 z-10 flex flex-col gap-3">
         {userId && (

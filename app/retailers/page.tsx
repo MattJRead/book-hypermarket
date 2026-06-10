@@ -1,5 +1,6 @@
 'use client';
 
+import FloatingMenu from '../../components/FloatingMenu';
 import { useState } from 'react';
 import Link from 'next/link';
 // Note: Depending on where your lib folder is, you may need to add an extra '../' to this path
@@ -101,6 +102,7 @@ export default function RetailersPage() {
           </form>
         )}
       </div>
+      <FloatingMenu />
     </main>
   );
 }

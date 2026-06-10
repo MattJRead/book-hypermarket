@@ -1,5 +1,5 @@
 import Link from 'next/link';
-
+import FloatingMenu from '../../components/FloatingMenu';
 export default function AboutPage() {
   return (
     <main className="min-h-screen bg-gray-950 text-white flex flex-col items-center py-16 px-6 relative overflow-hidden">
@@ -36,6 +36,7 @@ export default function AboutPage() {
           </p>
         </div>
       </div>
+      <FloatingMenu />
     </main>
   );
 }
