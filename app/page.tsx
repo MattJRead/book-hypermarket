@@ -29,7 +29,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
   const [isWishlisted, setIsWishlisted] = useState(initiallyWishlisted);
   const [isWishlistUpdating, setIsWishlistUpdating] = useState(false);
 
-  // 🎯 NEW: Track which shop is selected in the dropdown
   const [selectedShopId, setSelectedShopId] = useState('waterstones');
 
   useEffect(() => {
@@ -37,19 +36,20 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     setIsWishlisted(initiallyWishlisted);
   }, [initiallyOwned, initiallyWishlisted]);
 
-  // Clean the price for the dropdown display
   const formatPrice = (raw: string | undefined) => {
     if (!raw || raw === 'Out of Stock' || raw === 'N/A') return 'Out of Stock';
     const match = raw.match(/[£$€][\d.]+/);
     return match ? match[0] : 'Out of Stock';
   };
 
-  // 🌍 THE ROUTING VAULT: Direct searches based on ISBN
-  const waterstonesLink = `https://www.waterstones.com/books/search/term/${book.isbn13}`;
-  const blackwellsLink = `https://blackwells.co.uk/bookshop/search/?keyword=${book.isbn13}`;
-  const amazonLink = `https://www.amazon.co.uk/s?k=${book.isbn13}`;
-  const ebayLink = `https://www.ebay.co.uk/sch/i.html?_nkw=${book.isbn13}`;
-  const wobLink = `https://www.wob.com/en-gb/category/all?search=${book.isbn13}`;
+  // 🌍 THE UPGRADED ROUTING VAULT: Broadnet Search (Title + Author + ISBN)
+  const advancedSearchQuery = encodeURIComponent(`${book.title} ${book.author} ${book.isbn13}`);
+  
+  const waterstonesLink = `https://www.waterstones.com/books/search/term/${advancedSearchQuery}`;
+  const blackwellsLink = `https://blackwells.co.uk/bookshop/search/?keyword=${advancedSearchQuery}`;
+  const amazonLink = `https://www.amazon.co.uk/s?k=${advancedSearchQuery}`;
+  const ebayLink = `https://www.ebay.co.uk/sch/i.html?_nkw=${advancedSearchQuery}`;
+  const wobLink = `https://www.wob.com/en-gb/category/all?search=${advancedSearchQuery}`;
 
   useEffect(() => {
     async function fetchPrices() {
@@ -207,13 +207,17 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
               </div>
             </div>
             
+            {/* 🛒 THE BASKET ICON BUTTON */}
             <a 
               href={currentShop.url} 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="flex items-center justify-center shrink-0 bg-sky-600 hover:bg-sky-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition-colors shadow-md"
+              className="flex items-center justify-center shrink-0 bg-sky-600 hover:bg-sky-500 text-white p-2.5 rounded-lg transition-colors shadow-md w-10 h-10"
+              title="Go to Store"
             >
-              Buy Now
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
             </a>
           </div>
         )}
