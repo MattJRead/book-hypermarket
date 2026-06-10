@@ -4,6 +4,11 @@ import { supabase } from '../../../lib/supabase';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q') || 'warhammer'; 
+  
+  // 🎯 NEW: The Page Parameter (Defaults to page 1)
+  const pageParam = parseInt(searchParams.get('page') || '1');
+  const startIndex = (pageParam - 1) * 40; 
+  
   const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
 
   if (!apiKey) {
@@ -21,11 +26,14 @@ export async function GET(request: Request) {
   };
 
   try {
-    const googleRes = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=40&key=${apiKey}`);
+    console.log(`[Deep Scan] Initiated: Query="${query}", Page=${pageParam}, StartIndex=${startIndex}`);
+    
+    // 🎯 NEW: Asking Google to start from our specific index
+    const googleRes = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&startIndex=${startIndex}&maxResults=40&key=${apiKey}`);
     const data = await googleRes.json();
 
     if (!data.items) {
-      return NextResponse.json({ error: 'No books found in Google Vault.' }, { status: 404 });
+      return NextResponse.json({ error: `Vault empty. No books found on page ${pageParam}.` }, { status: 404 });
     }
 
     const booksToInsert = [];
@@ -45,15 +53,14 @@ export async function GET(request: Request) {
       // TIER 1: Google
       const rawImageUrl = info.imageLinks?.thumbnail || null;
       let finalImageUrl = rawImageUrl ? rawImageUrl.replace('http:', 'https:') : null;
-      let imageSource = finalImageUrl ? 'GOOGLE' : 'NONE';
-
+      
       // TIER 2: Gardners Backdoor
       if (!finalImageUrl && isbn13) {
         const gardnersPrefix = isbn13.substring(0, 8);
         const gardnersUrl = `https://jackets.gardners.com/media/640/${gardnersPrefix}/${isbn13}.jpg`;
         try {
           const check = await fetch(gardnersUrl, { method: 'HEAD' });
-          if (check.ok) { finalImageUrl = gardnersUrl; imageSource = 'GARDNERS'; }
+          if (check.ok) finalImageUrl = gardnersUrl;
         } catch (e) {}
       }
 
@@ -63,21 +70,18 @@ export async function GET(request: Request) {
         const dmmUrl = `https://jackets.dmmserver.com/media/640/${dmmPrefix}/${isbn13}.jpg`;
         try {
           const check = await fetch(dmmUrl, { method: 'HEAD' });
-          if (check.ok) { finalImageUrl = dmmUrl; imageSource = 'DMMSERVER'; }
+          if (check.ok) finalImageUrl = dmmUrl; 
         } catch (e) {}
       }
 
-      // TIER 4: Open Library (Ghost-Pixel Proofed)
+      // TIER 4: Open Library 
       if (!finalImageUrl && isbn13) {
-        // The ?default=false forces a 404 error if the image doesn't actually exist
         const olUrl = `https://covers.openlibrary.org/b/isbn/${isbn13}-L.jpg?default=false`;
         try {
           const check = await fetch(olUrl, { method: 'HEAD' });
-          if (check.ok) { finalImageUrl = olUrl; imageSource = 'OPEN_LIBRARY'; }
+          if (check.ok) finalImageUrl = olUrl; 
         } catch (e) {}
       }
-
-      console.log(`Scanning: ${title.substring(0,30)}... | Source Secured: ${imageSource}`);
 
       if (title && authors && isbn13) {
         booksToInsert.push({ 
@@ -95,7 +99,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      message: `Successfully ingested ${booksToInsert.length} books. 4-Tier Waterfall Active.` 
+      message: `Successfully ingested ${booksToInsert.length} books from Page ${pageParam}.` 
     });
 
   } catch (error) {
