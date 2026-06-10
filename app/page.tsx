@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '../lib/supabase';
 import FloatingMenu from '../components/FloatingMenu';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 type Book = {
   id: string;
@@ -20,7 +21,7 @@ type Book = {
 // 1. THE BOOK CARD ENGINE
 // ==========================================
 function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishlisted }: { book: Book, isDarkMode: boolean, userId: string | null, initiallyOwned: boolean, initiallyWishlisted: boolean }) {
-  const [prices, setPrices] = useState<{ waterstones: string, blackwells: string } | null>(null);
+  const [prices, setPrices] = useState<{ waterstones: string, blackwells: string, amazon: string, ebay: string, wob: string } | null>(null);
   const [isLoadingPrice, setIsLoadingPrice] = useState(true);
   
   const [isOwned, setIsOwned] = useState(initiallyOwned);
@@ -42,36 +43,62 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     return match ? match[0] : 'Out of Stock';
   };
 
-  // 🌍 THE UPGRADED ROUTING VAULT: Broadnet Search (Title + Author + ISBN)
-  const advancedSearchQuery = encodeURIComponent(`${book.title} ${book.author} ${book.isbn13}`);
+  // 🌍 THE TARGETED ROUTING VAULT: Title-Only Search to bypass legacy confusion
+  const titleSearchQuery = encodeURIComponent(book.title);
   
-  const waterstonesLink = `https://www.waterstones.com/books/search/term/${advancedSearchQuery}`;
-  const blackwellsLink = `https://blackwells.co.uk/bookshop/search/?keyword=${advancedSearchQuery}`;
-  const amazonLink = `https://www.amazon.co.uk/s?k=${advancedSearchQuery}`;
-  const ebayLink = `https://www.ebay.co.uk/sch/i.html?_nkw=${advancedSearchQuery}`;
-  const wobLink = `https://www.wob.com/en-gb/category/all?search=${advancedSearchQuery}`;
+  const waterstonesLink = `https://www.waterstones.com/books/search/term/${titleSearchQuery}`;
+  const blackwellsLink = `https://blackwells.co.uk/bookshop/search/?keyword=${titleSearchQuery}`;
+  const amazonLink = `https://www.amazon.co.uk/s?k=${titleSearchQuery}`;
+  const ebayLink = `https://www.ebay.co.uk/sch/i.html?_nkw=${titleSearchQuery}`;
+  const wobLink = `https://www.wob.com/en-gb/category/all?search=${titleSearchQuery}`;
 
   useEffect(() => {
     async function fetchPrices() {
       try {
-        const res = await fetch(`/api/prices?isbn=${book.isbn13}`);
+        // Send both ISBN and Title to trigger the backend fallback protocol
+        const res = await fetch(`/api/prices?isbn=${book.isbn13}&title=${encodeURIComponent(book.title)}`);
         const data = await res.json();
         setPrices(data);
+
+        // 🧠 ALGORITHM: Calculate the lowest available price for the dropdown default
+        const evaluatePrice = (priceStr: string) => {
+          if (!priceStr || priceStr === 'Out of Stock' || priceStr === 'Check Site') return Infinity;
+          const match = priceStr.match(/[\d.]+/);
+          return match ? parseFloat(match[0]) : Infinity;
+        };
+
+        const shopRankings = [
+          { id: 'waterstones', price: evaluatePrice(data.waterstones) },
+          { id: 'blackwells', price: evaluatePrice(data.blackwells) },
+          { id: 'amazon', price: evaluatePrice(data.amazon) },
+          { id: 'ebay', price: evaluatePrice(data.ebay) },
+          { id: 'wob', price: evaluatePrice(data.wob) }
+        ];
+
+        // Sort ascending by price
+        shopRankings.sort((a, b) => a.price - b.price);
+
+        // Set the default to the first shop that actually has a numerical price
+        const bestShop = shopRankings.find(s => s.price !== Infinity);
+        if (bestShop) {
+          setSelectedShopId(bestShop.id);
+        }
+
       } catch (error) {
         console.error("Failed to fetch prices");
       }
       setIsLoadingPrice(false);
     }
     fetchPrices();
-  }, [book.isbn13]);
+  }, [book.isbn13, book.title]);
 
   // 🛒 THE SHOP OPTIONS ARRAY
   const shops = [
     { id: 'waterstones', name: 'Waterstones', url: waterstonesLink, displayPrice: formatPrice(prices?.waterstones) },
     { id: 'blackwells', name: 'Blackwells', url: blackwellsLink, displayPrice: formatPrice(prices?.blackwells) },
-    { id: 'amazon', name: 'Amazon', url: amazonLink, displayPrice: 'Check Site' },
-    { id: 'ebay', name: 'eBay', url: ebayLink, displayPrice: 'Check Site' },
-    { id: 'wob', name: 'World of Books', url: wobLink, displayPrice: 'Check Site' },
+    { id: 'amazon', name: 'Amazon', url: amazonLink, displayPrice: formatPrice(prices?.amazon) },
+    { id: 'ebay', name: 'eBay', url: ebayLink, displayPrice: formatPrice(prices?.ebay) },
+    { id: 'wob', name: 'World of Books', url: wobLink, displayPrice: formatPrice(prices?.wob) },
   ];
 
   const currentShop = shops.find(s => s.id === selectedShopId) || shops[0];
@@ -399,7 +426,7 @@ export default function Home() {
 
       {/* THE GLOBAL MENU INJECTION */}
       <FloatingMenu isDarkMode={isDarkMode} toggleTheme={() => setIsDarkMode(!isDarkMode)} />
-      
+      <SpeedInsights />
     </main>
   );
 }
