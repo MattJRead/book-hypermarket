@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '../lib/supabase';
 import FloatingMenu from '../components/FloatingMenu';
-import { SpeedInsights } from "@vercel/speed-insights/next"
 
 type Book = {
   id: string;
@@ -14,7 +13,7 @@ type Book = {
   isbn13: string;
   category: string;
   cover_image_url?: string; 
-  format?: string; // 🚨 NEW: Added for future database expansion
+  format?: string; 
 };
 
 // ==========================================
@@ -30,21 +29,27 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
   const [isWishlisted, setIsWishlisted] = useState(initiallyWishlisted);
   const [isWishlistUpdating, setIsWishlistUpdating] = useState(false);
 
+  // 🎯 NEW: Track which shop is selected in the dropdown
+  const [selectedShopId, setSelectedShopId] = useState('waterstones');
+
   useEffect(() => {
     setIsOwned(initiallyOwned);
     setIsWishlisted(initiallyWishlisted);
   }, [initiallyOwned, initiallyWishlisted]);
 
-  const cleanPrice = (raw: string) => {
-    if (!raw || raw === 'Out of Stock') return 'N/A';
+  // Clean the price for the dropdown display
+  const formatPrice = (raw: string | undefined) => {
+    if (!raw || raw === 'Out of Stock' || raw === 'N/A') return 'Out of Stock';
     const match = raw.match(/[£$€][\d.]+/);
-    return match ? match[0] : raw.substring(0, 10);
+    return match ? match[0] : 'Out of Stock';
   };
 
-  // 🚨 TEMPORARY DIRECT ROUTING: Affiliate wrappers removed until approved
+  // 🌍 THE ROUTING VAULT: Direct searches based on ISBN
   const waterstonesLink = `https://www.waterstones.com/books/search/term/${book.isbn13}`;
   const blackwellsLink = `https://blackwells.co.uk/bookshop/search/?keyword=${book.isbn13}`;
   const amazonLink = `https://www.amazon.co.uk/s?k=${book.isbn13}`;
+  const ebayLink = `https://www.ebay.co.uk/sch/i.html?_nkw=${book.isbn13}`;
+  const wobLink = `https://www.wob.com/en-gb/category/all?search=${book.isbn13}`;
 
   useEffect(() => {
     async function fetchPrices() {
@@ -59,6 +64,17 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     }
     fetchPrices();
   }, [book.isbn13]);
+
+  // 🛒 THE SHOP OPTIONS ARRAY
+  const shops = [
+    { id: 'waterstones', name: 'Waterstones', url: waterstonesLink, displayPrice: formatPrice(prices?.waterstones) },
+    { id: 'blackwells', name: 'Blackwells', url: blackwellsLink, displayPrice: formatPrice(prices?.blackwells) },
+    { id: 'amazon', name: 'Amazon', url: amazonLink, displayPrice: 'Check Site' },
+    { id: 'ebay', name: 'eBay', url: ebayLink, displayPrice: 'Check Site' },
+    { id: 'wob', name: 'World of Books', url: wobLink, displayPrice: 'Check Site' },
+  ];
+
+  const currentShop = shops.find(s => s.id === selectedShopId) || shops[0];
 
   const toggleLibrary = async () => {
     if (!userId) return;
@@ -137,7 +153,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
         {book.author}
       </p>
 
-      {/* 🏷️ NEW: ISBN and Format Badges */}
+      {/* 🏷️ ISBN and Format Badges */}
       <div className="flex flex-col items-center gap-1 mb-4 w-full z-10">
         <span className={`text-xs font-mono px-2 py-0.5 rounded-md ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
           ISBN: {book.isbn13}
@@ -171,25 +187,34 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
         {isOwned ? (
           <div className="text-xs font-mono text-emerald-500/70 mt-1">Purchase options hidden.</div>
         ) : isLoadingPrice ? (
-          <div className="text-xs font-mono text-gray-500 animate-pulse">Scanning prices...</div>
+          <div className="text-xs font-mono text-gray-500 animate-pulse py-2">Scanning vaults...</div>
         ) : (
-          <div className="grid grid-cols-3 gap-2">
-             <a href={waterstonesLink} target="_blank" rel="noopener noreferrer" className={`flex flex-col items-center p-2 rounded-lg transition-colors hover:bg-sky-500/10 cursor-pointer`}>
-                <span className="font-serif font-bold text-lg leading-none mb-1 text-gray-400">W</span>
-                <span className={`font-bold text-xs ${prices?.waterstones && prices.waterstones !== 'Out of Stock' ? 'text-sky-500' : 'text-gray-500'}`}>
-                  {cleanPrice(prices?.waterstones || '')}
-                </span>
-             </a>
-             <a href={blackwellsLink} target="_blank" rel="noopener noreferrer" className={`flex flex-col items-center p-2 rounded-lg transition-colors hover:bg-sky-500/10 cursor-pointer`}>
-                <span className="font-sans font-bold text-lg leading-none mb-1 text-gray-400">B</span>
-                <span className={`font-bold text-xs ${prices?.blackwells && prices.blackwells !== 'Out of Stock' ? 'text-sky-500' : 'text-gray-500'}`}>
-                  {cleanPrice(prices?.blackwells || '')}
-                </span>
-             </a>
-             <a href={amazonLink} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center p-2 rounded-lg transition-colors hover:bg-sky-500/10 cursor-pointer">
-                <span className="font-sans font-bold text-lg leading-none mb-1 text-gray-400">a</span>
-                <span className="font-bold text-xs text-sky-500">Check</span>
-             </a>
+          <div className="flex w-full gap-2 mt-1">
+            <div className={`relative flex-grow rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-50'}`}>
+              <select 
+                value={selectedShopId}
+                onChange={(e) => setSelectedShopId(e.target.value)}
+                className="w-full h-full appearance-none bg-transparent pl-3 pr-8 py-2 text-xs font-bold focus:outline-none cursor-pointer"
+              >
+                {shops.map(shop => (
+                  <option key={shop.id} value={shop.id} className={isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}>
+                    {shop.name} - {shop.displayPrice}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+            
+            <a 
+              href={currentShop.url} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center justify-center shrink-0 bg-sky-600 hover:bg-sky-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition-colors shadow-md"
+            >
+              Buy Now
+            </a>
           </div>
         )}
       </div>
@@ -370,7 +395,6 @@ export default function Home() {
 
       {/* THE GLOBAL MENU INJECTION */}
       <FloatingMenu isDarkMode={isDarkMode} toggleTheme={() => setIsDarkMode(!isDarkMode)} />
-      <SpeedInsights />
       
     </main>
   );
