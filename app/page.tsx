@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '../lib/supabase';
 import FloatingMenu from '../components/FloatingMenu';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 type Book = {
   id: string;
@@ -44,7 +45,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
   const waterstonesLink = `https://www.waterstones.com/books/search/term/${book.isbn13}`;
   const blackwellsLink = `https://blackwells.co.uk/bookshop/search/?keyword=${book.isbn13}`;
   const amazonLink = `https://www.amazon.co.uk/s?k=${book.isbn13}`;
-  
+
   useEffect(() => {
     async function fetchPrices() {
       try {
@@ -369,6 +370,7 @@ export default function Home() {
 
       {/* THE GLOBAL MENU INJECTION */}
       <FloatingMenu isDarkMode={isDarkMode} toggleTheme={() => setIsDarkMode(!isDarkMode)} />
+      <SpeedInsights />
       
     </main>
   );

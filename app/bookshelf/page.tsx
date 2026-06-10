@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 type Book = {
   id: string;
@@ -103,6 +104,7 @@ export default function PersonalLibrary() {
         )}
       </div>
       <FloatingMenu />
+      <SpeedInsights />
     </main>
   );
 }

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
 import FloatingMenu from '../../components/FloatingMenu';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 type Book = {
   id: string;
@@ -91,6 +92,7 @@ export default function Wishlist() {
 
       {/* THE GLOBAL MENU INJECTION */}
       <FloatingMenu isDarkMode={true} />
+      <SpeedInsights />
     </main>
   );
 }

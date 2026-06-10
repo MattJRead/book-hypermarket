@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 // Note: Depending on where your lib folder is, you may need to add an extra '../' to this path
 import { supabase } from '../../lib/supabase'; 
+import { SpeedInsights } from "@vercel/speed-insights/next"   
 
 export default function RetailersPage() {
   const [formData, setFormData] = useState({
@@ -103,6 +104,7 @@ export default function RetailersPage() {
         )}
       </div>
       <FloatingMenu />
+      <SpeedInsights />
     </main>
   );
 }
