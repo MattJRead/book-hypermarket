@@ -165,7 +165,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
           </button>
         )}
 
-        {book.cover_image_url ? (
+        {book.cover_image_url && book.cover_image_url !== 'UNAVAILABLE' ? (
            <Image 
              src={book.cover_image_url.replace('http:', 'https:')} 
              alt={`Cover of ${book.title}`}
