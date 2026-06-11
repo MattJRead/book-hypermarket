@@ -10,7 +10,7 @@ type UserAccount = { id: string; email: string; created_at: string; last_sign_in
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'book_info' | 'broadcast' | 'prices' | 'accounts'>('book_info');
-  const [adminSecret, setAdminSecret] = useState(''); // Used to unlock sensitive tabs
+  const [adminSecret, setAdminSecret] = useState(''); // Global state, but safely rendered at the bottom of forms
 
   // --- BOOK INFO STATE ---
   const [books, setBooks] = useState<Book[]>([]);
@@ -113,22 +113,15 @@ export default function AdminDashboard() {
     <main className="min-h-screen bg-gray-950 text-white flex flex-col items-center py-12 px-6">
       <div className="w-full max-w-5xl">
         
-        {/* Header & Global Admin Secret */}
+        {/* Header (Password field safely removed from here) */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
           <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center">
             <svg className="w-8 h-8 mr-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             Command Center
           </h1>
-          <div className="flex items-center gap-4">
-            <input 
-              type="password" 
-              placeholder="Admin Secret Code" 
-              value={adminSecret} 
-              onChange={(e) => setAdminSecret(e.target.value)} 
-              className="bg-gray-900 border border-gray-800 rounded-lg px-4 py-2 text-sm focus:border-red-500 focus:outline-none text-red-400 placeholder-gray-600"
-            />
-            <Link href="/" className="px-4 py-2 rounded-lg text-sm font-bold bg-gray-800 hover:bg-gray-700 transition-colors">Storefront</Link>
-          </div>
+          <Link href="/" className="px-6 py-2 rounded-lg text-sm font-bold bg-gray-800 hover:bg-gray-700 transition-colors shadow-md">
+            Return to Storefront
+          </Link>
         </div>
 
         {/* 📑 INVISIBLE TABS NAVIGATION */}
@@ -240,9 +233,20 @@ export default function AdminDashboard() {
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Action URL (Optional)</label>
                 <input type="text" value={bcActionUrl} onChange={(e) => setBcActionUrl(e.target.value)} placeholder="e.g. /wishlist" className="w-full bg-black border border-gray-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-500" />
               </div>
+
+              {/* DEDICATED PASSWORD FIELD */}
+              <div className="pt-4 border-t border-gray-800 mt-2">
+                <label className="block text-xs font-bold text-red-500 uppercase tracking-wider mb-2 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                  Authorization Code
+                </label>
+                <input required type="password" value={adminSecret} onChange={(e) => setAdminSecret(e.target.value)} placeholder="Enter Admin Secret..." className="w-full bg-black border border-red-900 rounded-lg p-3 text-sm focus:outline-none focus:border-red-500 text-red-500" />
+              </div>
+
               <button disabled={bcStatus.loading || !adminSecret} type="submit" className={`mt-2 w-full py-4 rounded-lg font-bold text-sm transition-all flex justify-center items-center ${bcStatus.loading || !adminSecret ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_15px_rgba(220,38,38,0.5)]'}`}>
                 {!adminSecret ? 'REQUIRES ADMIN SECRET' : bcStatus.loading ? '[ DEPLOYING... ]' : 'DEPLOY BROADCAST'}
               </button>
+              
               {bcStatus.message && (
                 <div className={`p-4 rounded-lg text-sm font-mono border ${bcStatus.isError ? 'bg-red-950/50 border-red-900 text-red-400' : 'bg-emerald-950/50 border-emerald-900 text-emerald-400'}`}>
                   {bcStatus.message}
@@ -257,12 +261,18 @@ export default function AdminDashboard() {
             ========================================= */}
         {activeTab === 'accounts' && (
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <h2 className="text-lg font-bold text-sky-400">Platform Registry</h2>
-              <button onClick={fetchAccounts} disabled={!adminSecret} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${!adminSecret ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-sky-600 hover:bg-sky-500 text-white'}`}>
-                Sync Registry
-              </button>
+              
+              {/* DEDICATED PASSWORD FIELD */}
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                <input type="password" value={adminSecret} onChange={(e) => setAdminSecret(e.target.value)} placeholder="Admin Secret..." className="bg-black border border-gray-800 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-sky-500 text-gray-300 w-full sm:w-auto" />
+                <button onClick={fetchAccounts} disabled={!adminSecret} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors w-full sm:w-auto whitespace-nowrap ${!adminSecret ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-sky-600 hover:bg-sky-500 text-white'}`}>
+                  Sync Registry
+                </button>
+              </div>
             </div>
+            
             {accountsStatus && <div className="text-sm font-mono text-gray-400 mb-4">{accountsStatus}</div>}
             
             <div className="overflow-x-auto">
