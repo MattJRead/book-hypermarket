@@ -8,7 +8,6 @@ import FloatingMenu from '../components/FloatingMenu';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import NotificationBell from '../components/NotificationBell';
 
-
 type Book = {
   id: string;
   title: string;
@@ -375,6 +374,7 @@ export default function Home() {
     return book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
            book.author.toLowerCase().includes(searchQuery.toLowerCase());
   });
+  
   // 🚀 THE INFINITE SHELF PROTOCOL
   const handleLiveSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchQuery.trim() !== '') {
