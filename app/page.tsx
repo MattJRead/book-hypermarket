@@ -426,7 +426,7 @@ export default function Home() {
       
       setIsLoading(false);
     }
-  };
+ ;
 
   return (
     <main className={`min-h-screen flex flex-col py-8 pb-32 transition-colors duration-300 overflow-hidden ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
