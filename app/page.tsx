@@ -32,6 +32,11 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
   const [isWishlistUpdating, setIsWishlistUpdating] = useState(false);
 
   const [selectedShopId, setSelectedShopId] = useState('waterstones');
+  
+  // The Fox Image State
+  const [imageStatus, setImageStatus] = useState<'loading' | 'loaded' | 'error'>(
+    book.cover_image_url === 'UNAVAILABLE' ? 'error' : 'loading'
+  );
 
   useEffect(() => {
     setIsOwned(initiallyOwned);
@@ -43,12 +48,10 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     if (raw === 'Out of Stock') return 'Out of Stock';
     if (raw === 'Check Site') return 'Check Site';
     
-    // Only attempt to extract a currency symbol if it's not one of our standard statuses
     const match = raw.match(/[£$€][\d.]+/);
     return match ? match[0] : 'Check Site';
   };
 
-  // 🌍 THE TARGETED ROUTING VAULT: Title-Only Search to bypass legacy confusion
   const titleSearchQuery = encodeURIComponent(book.title);
   
   const waterstonesLink = `https://www.waterstones.com/books/search/term/${titleSearchQuery}`;
@@ -60,12 +63,10 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
   useEffect(() => {
     async function fetchPrices() {
       try {
-        // Send both ISBN and Title to trigger the backend fallback protocol
         const res = await fetch(`/api/prices?isbn=${book.isbn13}&title=${encodeURIComponent(book.title)}`);
         const data = await res.json();
         setPrices(data);
 
-        // 🧠 ALGORITHM: Calculate the lowest available price for the dropdown default
         const evaluatePrice = (priceStr: string) => {
           if (!priceStr || priceStr === 'Out of Stock' || priceStr === 'Check Site') return Infinity;
           const match = priceStr.match(/[\d.]+/);
@@ -80,10 +81,8 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
           { id: 'wob', price: evaluatePrice(data.wob) }
         ];
 
-        // Sort ascending by price
         shopRankings.sort((a, b) => a.price - b.price);
 
-        // Set the default to the first shop that actually has a numerical price
         const bestShop = shopRankings.find(s => s.price !== Infinity);
         if (bestShop) {
           setSelectedShopId(bestShop.id);
@@ -97,7 +96,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     fetchPrices();
   }, [book.isbn13, book.title]);
 
-  // 🛒 THE SHOP OPTIONS ARRAY
   const shops = [
     { id: 'waterstones', name: 'Waterstones', url: waterstonesLink, displayPrice: formatPrice(prices?.waterstones) },
     { id: 'blackwells', name: 'Blackwells', url: blackwellsLink, displayPrice: formatPrice(prices?.blackwells) },
@@ -149,7 +147,8 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     <div className={`p-6 rounded-2xl border flex flex-col items-center text-center transition-all hover:scale-[1.02] shadow-sm h-full relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} ${isOwned ? 'ring-2 ring-emerald-500' : ''}`}>
       {isOwned && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none"></div>}
 
-      <div className={`w-32 h-48 shrink-0 rounded-md mb-4 shadow-lg flex flex-col items-center justify-center z-10 overflow-hidden relative ${!book.cover_image_url ? 'border-2 border-dashed' : 'border border-gray-700'} ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-300'}`}>
+      {/* THE UNIFIED COVER CONTAINER */}
+      <div className={`w-32 h-48 shrink-0 rounded-md mb-4 shadow-lg flex flex-col items-center justify-center z-10 overflow-hidden relative border ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-100'}`}>
         
         {/* ⭐ THE WISHLIST STAR */}
         {userId && (
@@ -165,16 +164,30 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
           </button>
         )}
 
-        {book.cover_image_url && book.cover_image_url !== 'UNAVAILABLE' ? (
-           <Image 
-             src={book.cover_image_url.replace('http:', 'https:')} 
-             alt={`Cover of ${book.title}`}
-             width={128}
-             height={192}
-             className="w-full h-full object-cover"
-           />
-        ) : (
-          <span className="text-gray-500 text-xs font-mono uppercase tracking-widest mb-2 z-10">Cover</span>
+        {/* NEW: Permanent fox illustration (Visible when loading or when real image failed) */}
+        <Image
+          src="/fox-placeholder.png"
+          alt="Loading placeholder"
+          width={80}
+          height={120}
+          className={`absolute object-contain z-10 transition-opacity duration-300 ${
+            imageStatus === 'loaded' ? 'opacity-0' : 'opacity-100'
+          }`}
+        />
+
+        {/* Real cover image (if available in DB and not explicitly 'UNAVAILABLE') */}
+        {book.cover_image_url && book.cover_image_url !== 'UNAVAILABLE' && (
+          <Image 
+            src={book.cover_image_url.replace('http:', 'https:')} 
+            alt={`Cover of ${book.title}`}
+            fill
+            sizes="128px"
+            className={`absolute object-cover z-20 transition-opacity duration-500 ${
+              imageStatus === 'loaded' ? 'opacity-100' : 'opacity-0'
+            }`}
+            onLoad={() => setImageStatus('loaded')}
+            onError={() => setImageStatus('error')}
+          />
         )}
       </div>
       
@@ -378,14 +391,13 @@ export default function Home() {
   // 🚀 THE INFINITE SHELF PROTOCOL
   const handleLiveSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchQuery.trim() !== '') {
-      setIsLoading(true); // Triggers your "Syncing Database..." animation
+      setIsLoading(true); 
       
       try {
         const res = await fetch(`/api/live-search?q=${encodeURIComponent(searchQuery)}`);
         const data = await res.json();
         
         if (data.success && data.source === 'google_ingested' && data.books.length > 0) {
-          // Google found new books! We inject them directly into your storefront's memory.
           const brandNewBooks = data.books.filter((newBook: Book) => !books.some(b => b.id === newBook.id));
           setBooks(prevBooks => [...brandNewBooks, ...prevBooks]);
         }
