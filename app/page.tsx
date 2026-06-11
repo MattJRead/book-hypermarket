@@ -391,8 +391,27 @@ export default function Home() {
   // 🚀 THE INFINITE SHELF PROTOCOL
   const handleLiveSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchQuery.trim() !== '') {
-      setIsLoading(true); 
+      setIsLoading(true);
       
+      try {
+        const res = await fetch(`/api/live-search?q=${encodeURIComponent(searchQuery)}`);
+        const data = await res.json();
+        
+        // ADDED THIS LOG:
+        console.log("DEBUG: API Response received:", data);
+        
+        if (data.success && data.books.length > 0) {
+          setBooks(prevBooks => [...data.books, ...prevBooks]);
+        } else {
+          console.warn("DEBUG: No books returned in API response");
+        }
+      } catch (error) {
+        console.error("DEBUG: Frontend catch block error:", error);
+      }
+      
+      setIsLoading(false);
+    }
+  };
       try {
         const res = await fetch(`/api/live-search?q=${encodeURIComponent(searchQuery)}`);
         const data = await res.json();
