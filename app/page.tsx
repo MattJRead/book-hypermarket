@@ -374,6 +374,27 @@ export default function Home() {
     return book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
            book.author.toLowerCase().includes(searchQuery.toLowerCase());
   });
+  // 🚀 THE INFINITE SHELF PROTOCOL
+  const handleLiveSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchQuery.trim() !== '') {
+      setIsLoading(true); // Triggers your "Syncing Database..." animation
+      
+      try {
+        const res = await fetch(`/api/live-search?q=${encodeURIComponent(searchQuery)}`);
+        const data = await res.json();
+        
+        if (data.success && data.source === 'google_ingested' && data.books.length > 0) {
+          // Google found new books! We inject them directly into your storefront's memory.
+          const brandNewBooks = data.books.filter((newBook: Book) => !books.some(b => b.id === newBook.id));
+          setBooks(prevBooks => [...brandNewBooks, ...prevBooks]);
+        }
+      } catch (error) {
+        console.error("Vault breach failed", error);
+      }
+      
+      setIsLoading(false);
+    }
+  };
 
   return (
     <main className={`min-h-screen flex flex-col py-8 pb-32 transition-colors duration-300 overflow-hidden ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
@@ -407,7 +428,14 @@ export default function Home() {
       ) : (
         <>
           <div className="w-full mb-12 flex flex-col items-center gap-6 px-4">
-            <input type="text" placeholder="Search entire vault..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={`w-full max-w-2xl p-4 rounded-xl border text-lg focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-xl z-20 relative ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
+            <input 
+               type="text" 
+               placeholder="Search entire vault... (Press Enter to scour global databases)" 
+               value={searchQuery} 
+               onChange={(e) => setSearchQuery(e.target.value)} 
+               onKeyDown={handleLiveSearch} 
+              className={`w-full max-w-2xl p-4 rounded-xl border text-lg focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-xl z-20 relative ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} 
+/>
           </div>
 
           <div className="w-full relative z-10">

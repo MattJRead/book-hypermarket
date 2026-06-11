@@ -1,17 +1,15 @@
-// The Categories you requested
+// The Expanded Categories and Niches
 const queries = [
-  "fiction", 
-  "non-fiction", 
-  "science+fiction", 
-  "comic+books", 
-  "art", 
-  "photography", 
-  "educational", 
-  "language"
+  "upcoming books 2026",
+  "new releases 2026",
+  "expected releases 2026 fiction",
+  "highly anticipated books 2026",
+  "pre order fantasy books",
+  "pre order thriller novels"
 ];
 
-// How deep into Google's vault to dig per category (5 pages = 200 books per genre)
-const pagesPerQuery = 5; 
+// Increased dig depth: 15 pages = 600 books per niche above
+const pagesPerQuery = 15; 
 
 // A 3-second breather between requests to prevent server crashes and API bans
 const delayMs = 3000; 
@@ -29,7 +27,7 @@ async function run() {
     console.log(`========================================`);
     
     for (let p = 1; p <= pagesPerQuery; p++) {
-      const url = `http://localhost:3000/api/ingest?q=${q}&page=${p}`;
+      const url = `http://localhost:3000/api/ingest?q=${q.replace(/ /g, '+')}&page=${p}`;
       console.log(`\n📡 Stripmining: ${url}`);
       
       try {
@@ -50,7 +48,7 @@ async function run() {
     }
   }
   
-  console.log("\n Mass Ingestion Complete. The Vault is full.");
+  console.log("\n🎉 Mass Ingestion Complete. The Vault is full.");
 }
 
 run();
