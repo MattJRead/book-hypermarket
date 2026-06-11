@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+// This command bans Next.js from pre-building this route
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request) {
+
 export async function GET(request: Request) {
   // 1. Initialize the Admin client INSIDE the function so the compiler ignores it during build
   const supabaseAdmin = createClient(

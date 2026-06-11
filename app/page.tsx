@@ -8,6 +8,7 @@ import FloatingMenu from '../components/FloatingMenu';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import NotificationBell from '../components/NotificationBell';
 
+
 type Book = {
   id: string;
   title: string;
