@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
+import CategoryManager from '../../components/CategoryManager'; 
+// (Adjust the '../' based on exactly how deep your admin page is)
 
 type Book = { id: string; title: string; author: string; category: string; cover_image_url?: string };
 type UserAccount = { id: string; email: string; created_at: string; last_sign_in: string };
