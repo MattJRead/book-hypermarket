@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  // 1. Initialize the Admin client INSIDE the function so the compiler ignores it during build
+  // 1. Initialize the Admin client INSIDE the function
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -40,8 +40,13 @@ export async function GET(request: Request) {
 
     console.log(`[LIVE SEARCH] Vault empty. Striking Google API...`);
 
-    // 3. Strike the Google API
-    const googleRes = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5`);
+    // 3. Strike the Google API with the VIP Badge
+    const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+    const fetchUrl = apiKey 
+      ? `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5&key=${apiKey}`
+      : `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5`;
+
+    const googleRes = await fetch(fetchUrl);
     
     if (!googleRes.ok) {
        console.error(`[LIVE SEARCH] Google API rejected request. Status: ${googleRes.status}`);
