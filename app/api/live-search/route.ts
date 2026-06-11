@@ -31,8 +31,8 @@ export async function GET(request: Request) {
     // Strike the Google API with the VIP Badge
     const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
     const fetchUrl = apiKey 
-      ? `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5&key=${apiKey}`
-      : `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5`;
+      ? `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10&key=${apiKey}`
+      : `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10`;
 
     const googleRes = await fetch(fetchUrl);
     
