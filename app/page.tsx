@@ -397,36 +397,25 @@ export default function Home() {
         const res = await fetch(`/api/live-search?q=${encodeURIComponent(searchQuery)}`);
         const data = await res.json();
         
-        // ADDED THIS LOG:
-        console.log("DEBUG: API Response received:", data);
+        console.log("DEBUG: API Response:", data);
         
-        if (data.success && data.books.length > 0) {
-          setBooks(prevBooks => [...data.books, ...prevBooks]);
+        if (data.success && data.books && data.books.length > 0) {
+          setBooks(prevBooks => {
+            const combined = [...data.books, ...prevBooks];
+            // Remove duplicates by ID
+            const unique = Array.from(new Map(combined.map(b => [b.id, b])).values());
+            return unique;
+          });
         } else {
           console.warn("DEBUG: No books returned in API response");
         }
       } catch (error) {
-        console.error("DEBUG: Frontend catch block error:", error);
+        console.error("DEBUG: Frontend error:", error);
       }
       
       setIsLoading(false);
     }
   };
-      try {
-        const res = await fetch(`/api/live-search?q=${encodeURIComponent(searchQuery)}`);
-        const data = await res.json();
-        
-        if (data.success && data.source === 'google_ingested' && data.books.length > 0) {
-          const brandNewBooks = data.books.filter((newBook: Book) => !books.some(b => b.id === newBook.id));
-          setBooks(prevBooks => [...brandNewBooks, ...prevBooks]);
-        }
-      } catch (error) {
-        console.error("Vault breach failed", error);
-      }
-      
-      setIsLoading(false);
-    }
- ;
 
   return (
     <main className={`min-h-screen flex flex-col py-8 pb-32 transition-colors duration-300 overflow-hidden ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
