@@ -33,7 +33,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
 
   const [selectedShopId, setSelectedShopId] = useState('waterstones');
   
-  // The Fox Image State
   const [imageStatus, setImageStatus] = useState<'loading' | 'loaded' | 'error'>(
     book.cover_image_url === 'UNAVAILABLE' ? 'error' : 'loading'
   );
@@ -87,7 +86,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
         if (bestShop) {
           setSelectedShopId(bestShop.id);
         }
-
       } catch (error) {
         console.error("Failed to fetch prices");
       }
@@ -147,10 +145,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     <div className={`p-6 rounded-2xl border flex flex-col items-center text-center transition-all hover:scale-[1.02] shadow-sm h-full relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} ${isOwned ? 'ring-2 ring-emerald-500' : ''}`}>
       {isOwned && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none"></div>}
 
-      {/* THE UNIFIED COVER CONTAINER */}
       <div className={`w-32 h-48 shrink-0 rounded-md mb-4 shadow-lg flex flex-col items-center justify-center z-10 overflow-hidden relative border ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-100'}`}>
-        
-        {/* ⭐ THE WISHLIST STAR */}
         {userId && (
           <button 
             onClick={toggleWishlist}
@@ -164,7 +159,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
           </button>
         )}
 
-        {/* NEW: Permanent fox illustration (Visible when loading or when real image failed) */}
         <Image
           src="/fox-placeholder.png"
           alt="Loading placeholder"
@@ -175,7 +169,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
           }`}
         />
 
-        {/* Real cover image (if available in DB and not explicitly 'UNAVAILABLE') */}
         {book.cover_image_url && book.cover_image_url !== 'UNAVAILABLE' && (
           <Image 
             src={book.cover_image_url.replace('http:', 'https:')} 
@@ -198,7 +191,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
         {book.author}
       </p>
 
-      {/* 🏷️ ISBN and Format Badges */}
       <div className="flex flex-col items-center gap-1 mb-4 w-full z-10">
         <span className={`text-xs font-mono px-2 py-0.5 rounded-md ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
           ISBN: {book.isbn13}
@@ -252,7 +244,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
               </div>
             </div>
             
-            {/* 🛒 THE BASKET ICON BUTTON */}
             <a 
               href={currentShop.url} 
               target="_blank" 
@@ -402,12 +393,9 @@ export default function Home() {
         if (data.success && data.books && data.books.length > 0) {
           setBooks(prevBooks => {
             const combined = [...data.books, ...prevBooks];
-            // Remove duplicates by ID
             const unique = Array.from(new Map(combined.map(b => [b.id, b])).values());
             return unique;
           });
-        } else {
-          console.warn("DEBUG: No books returned in API response");
         }
       } catch (error) {
         console.error("DEBUG: Frontend error:", error);
@@ -455,8 +443,8 @@ export default function Home() {
                value={searchQuery} 
                onChange={(e) => setSearchQuery(e.target.value)} 
                onKeyDown={handleLiveSearch} 
-              className={`w-full max-w-2xl p-4 rounded-xl border text-lg focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-xl z-20 relative ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} 
-/>
+               className={`w-full max-w-2xl p-4 rounded-xl border text-lg focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-xl z-20 relative ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} 
+            />
           </div>
 
           <div className="w-full relative z-10">

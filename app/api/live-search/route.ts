@@ -17,9 +17,9 @@ export async function GET(request: Request) {
   if (!query) return NextResponse.json({ error: 'No query provided.' }, { status: 400 });
 
   try {
-    // 1. Strike Google for 40 Books (The Maximum Yield)
+    // 1. Strike Google for 10 Books (The Maximum Yield)
     const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
-    const fetchUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=40&key=${apiKey}`;
+    const fetchUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10&key=${apiKey}`;
     
     const googleRes = await fetch(fetchUrl);
     const googleData = await googleRes.json();
@@ -49,12 +49,12 @@ export async function GET(request: Request) {
       }
     }
 
-    // 4. Fetch the final 40 results from your vault
+    // 4. Fetch the final 10 results from your vault
     const { data: finalBooks } = await supabaseAdmin
       .from('books')
       .select('id, title, author, category, cover_image_url, isbn13')
       .or(`title.ilike.%${query}%,author.ilike.%${query}%`)
-      .limit(40);
+      .limit(10 );
 
     return NextResponse.json({ success: true, books: finalBooks });
 
