@@ -10,15 +10,19 @@ export async function GET(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  // 🔽 INJECTION 1: Grab the offset from the URL
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q');
+  const offset = searchParams.get('offset') || '0'; 
 
   if (!query) return NextResponse.json({ error: 'No query provided.' }, { status: 400 });
 
   try {
     // 1. Fetch from Google First (The Global Haul)
     const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
-    const fetchUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&key=${apiKey}`;
+    
+    // 🔽 INJECTION 2: Add startIndex and change maxResults to 10
+    const fetchUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&startIndex=${offset}&maxResults=10&key=${apiKey}`;
     
     const googleRes = await fetch(fetchUrl);
     const googleData = await googleRes.json();
@@ -53,11 +57,15 @@ export async function GET(request: Request) {
     // 4. Fetch whatever we already have in the Vault
     let vaultBooks: any[] = [];
     try {
+      // 🔽 INJECTION 3: Calculate the numeric offset for Supabase pagination
+      const numericOffset = parseInt(offset, 10);
+      
       const { data } = await supabaseAdmin
         .from('books')
         .select('id, title, author, category, cover_image_url, isbn13')
         .or(`title.ilike.%${query}%,author.ilike.%${query}%`)
-        .limit(20);
+        .range(numericOffset, numericOffset + 9); // This replaces .limit(20) to fetch the next 10 items
+        
       if (data) vaultBooks = data;
     } catch (dbFetchError) {
       console.warn('[VAULT WARNING] Vault read failed.');

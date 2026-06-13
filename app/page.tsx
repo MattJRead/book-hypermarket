@@ -322,6 +322,9 @@ export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchOffset, setSearchOffset] = useState(0);
+  const [hasMoreResults, setHasMoreResults] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [activeCategoryView, setActiveCategoryView] = useState<{name: string, books: Book[]} | null>(null);
 
   const [userId, setUserId] = useState<string | null>(null);
@@ -400,30 +403,58 @@ export default function Home() {
            book.author.toLowerCase().includes(searchQuery.toLowerCase());
   });
   
-  // 🚀 THE INFINITE SHELF PROTOCOL
+  // 🚀 THE INFINITE SHELF PROTOCOL (Upgraded)
   const handleLiveSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchQuery.trim() !== '') {
       setIsLoading(true);
+      setSearchOffset(0); // Reset the tracker for a new search
+      setHasMoreResults(true); 
       
       try {
-        const res = await fetch(`/api/live-search?q=${encodeURIComponent(searchQuery)}`);
+        const res = await fetch(`/api/live-search?q=${encodeURIComponent(searchQuery)}&offset=0`);
         const data = await res.json();
         
-        console.log("DEBUG: API Response:", data);
-        
         if (data.success && data.books && data.books.length > 0) {
+          if (data.books.length < 10) setHasMoreResults(false);
+          
           setBooks(prevBooks => {
             const combined = [...data.books, ...prevBooks];
-            const unique = Array.from(new Map(combined.map(b => [b.id, b])).values());
-            return unique;
+            return Array.from(new Map(combined.map(b => [b.id, b])).values());
           });
+        } else {
+          setHasMoreResults(false);
         }
       } catch (error) {
         console.error("DEBUG: Frontend error:", error);
       }
-      
       setIsLoading(false);
     }
+  };
+
+  // 🔽 THE NEW LOAD MORE PROTOCOL
+  const handleLoadMore = async () => {
+    setIsFetchingMore(true);
+    const nextOffset = searchOffset + 10; // Jump ahead by 10 books
+    setSearchOffset(nextOffset);
+    
+    try {
+      const res = await fetch(`/api/live-search?q=${encodeURIComponent(searchQuery)}&offset=${nextOffset}`);
+      const data = await res.json();
+      
+      if (data.success && data.books && data.books.length > 0) {
+        if (data.books.length < 10) setHasMoreResults(false);
+        
+        setBooks(prevBooks => {
+          const combined = [...prevBooks, ...data.books];
+          return Array.from(new Map(combined.map(b => [b.id, b])).values());
+        });
+      } else {
+        setHasMoreResults(false); 
+      }
+    } catch (error) {
+      console.error("DEBUG: Frontend error:", error);
+    }
+    setIsFetchingMore(false);
   };
 
   return (
@@ -472,8 +503,33 @@ export default function Home() {
             {isLoading ? (
               <div className="text-center py-12 text-sky-400 animate-pulse font-mono">[ Syncing Database... ]</div>
             ) : searchQuery ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto px-6">
-                {searchResults.length === 0 ? <p className="col-span-full text-center">No results.</p> : searchResults.map(book => <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} />)}
+              <div className="flex flex-col items-center pb-12 w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto px-6 w-full">
+                  {searchResults.length === 0 ? (
+                    <p className="col-span-full text-center text-gray-500">No results found in the vault.</p>
+                  ) : (
+                    searchResults.map(book => <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} />)
+                  )}
+                </div>
+                
+                {/* --- DYNAMIC LOAD MORE BUTTON --- */}
+                {searchResults.length > 0 && (
+                  <div className="mt-12">
+                    {hasMoreResults ? (
+                      <button 
+                        onClick={handleLoadMore}
+                        disabled={isFetchingMore}
+                        className={`px-8 py-3 rounded-full font-bold transition-all flex items-center shadow-lg ${isDarkMode ? 'bg-sky-600 hover:bg-sky-500 text-white' : 'bg-sky-500 hover:bg-sky-400 text-white'} ${isFetchingMore ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-1'}`}
+                      >
+                        {isFetchingMore ? '[ EXCAVATING VAULT... ]' : 'Load More Results'}
+                      </button>
+                    ) : (
+                      <div className={`px-8 py-3 rounded-full font-mono text-sm border ${isDarkMode ? 'border-gray-800 text-gray-500 bg-gray-900/50' : 'border-gray-300 text-gray-500 bg-gray-100/50'}`}>
+                        [ ALL ENTRIES LOADED ]
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <>
