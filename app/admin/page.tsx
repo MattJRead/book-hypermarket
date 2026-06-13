@@ -158,7 +158,7 @@ export default function AdminDashboard() {
             { id: 'analytics', label: 'Analytics' },
             { id: 'book_info', label: 'Book Info' },
             { id: 'accounts', label: 'Accounts (Offline)' },
-            { id: 'broadcast', label: 'Broadcast (Offline)' }
+            { id: 'broadcast', label: 'Broadcast (Online)' }
           ].map(tab => (
             <button
               key={tab.id}
