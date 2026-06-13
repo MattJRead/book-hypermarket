@@ -7,6 +7,8 @@ import { supabase } from '../lib/supabase';
 import FloatingMenu from '../components/FloatingMenu';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import NotificationBell from '../components/NotificationBell';
+import BarcodeScanner from '../components/BarcodeScanner';
+import CoverScanner from '../components/CoverScanner';
 
 type Book = {
   id: string;
@@ -36,6 +38,9 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
   const [imageStatus, setImageStatus] = useState<'loading' | 'loaded' | 'error'>(
     book.cover_image_url === 'UNAVAILABLE' ? 'error' : 'loading'
   );
+
+  // 🔽 NEW STATE FOR THE COVER ART MODAL
+  const [isCoverModalOpen, setIsCoverModalOpen] = useState(false);
 
   useEffect(() => {
     setIsOwned(initiallyOwned);
@@ -142,133 +147,179 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
   };
 
   return (
-    <div className={`p-6 rounded-2xl border flex flex-col items-center text-center transition-all hover:scale-[1.02] shadow-sm h-full relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} ${isOwned ? 'ring-2 ring-emerald-500' : ''}`}>
-      {isOwned && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none"></div>}
+    <>
+      <div className={`p-6 rounded-2xl border flex flex-col items-center text-center transition-all hover:scale-[1.02] shadow-sm h-full relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} ${isOwned ? 'ring-2 ring-emerald-500' : ''}`}>
+        {isOwned && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none"></div>}
 
-      <div className={`w-32 h-48 shrink-0 rounded-md mb-4 shadow-lg flex flex-col items-center justify-center z-10 overflow-hidden relative border ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-100'}`}>
-        {userId && (
-          <button 
-            onClick={toggleWishlist}
-            disabled={isWishlistUpdating}
-            className="absolute top-2 right-2 z-30 p-1.5 rounded-full bg-black/40 backdrop-blur-sm shadow-md transition-transform hover:scale-110 border border-white/10"
-            title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
-          >
-            <svg className={`w-5 h-5 ${isWishlisted ? 'text-yellow-400 fill-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]' : 'text-white fill-transparent hover:text-yellow-200'}`} stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-            </svg>
-          </button>
-        )}
+        {/* 🔽 UPDATED: Added cursor-pointer, click handler, and hover effects to the cover art */}
+        <div 
+          onClick={() => setIsCoverModalOpen(true)}
+          className={`w-32 h-48 shrink-0 rounded-md mb-4 shadow-lg flex flex-col items-center justify-center z-10 overflow-hidden relative border cursor-pointer transition-all hover:ring-2 hover:ring-sky-500 group ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-100'}`}
+          title="Click to expand cover"
+        >
+          {userId && (
+            <button 
+              onClick={toggleWishlist}
+              disabled={isWishlistUpdating}
+              className="absolute top-2 right-2 z-30 p-1.5 rounded-full bg-black/40 backdrop-blur-sm shadow-md transition-transform hover:scale-110 border border-white/10"
+              title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
+            >
+              <svg className={`w-5 h-5 ${isWishlisted ? 'text-yellow-400 fill-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]' : 'text-white fill-transparent hover:text-yellow-200'}`} stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+              </svg>
+            </button>
+          )}
 
-        <Image
-          src="/fox-placeholder.png"
-          alt="Loading placeholder"
-          width={80}
-          height={120}
-          className={`absolute object-contain z-10 transition-opacity duration-300 ${
-            imageStatus === 'loaded' ? 'opacity-0' : 'opacity-100'
-          }`}
-        />
+          {/* Hover Overlay Icon for the cover */}
+          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center justify-center">
+             <svg className="w-8 h-8 text-white drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+          </div>
 
-        {book.cover_image_url && book.cover_image_url !== 'UNAVAILABLE' && (
-          <Image 
-            src={book.cover_image_url.replace('http:', 'https:')} 
-            alt={`Cover of ${book.title}`}
-            fill
-            sizes="128px"
-            className={`absolute object-cover z-20 transition-opacity duration-500 ${
-              imageStatus === 'loaded' ? 'opacity-100' : 'opacity-0'
+          <Image
+            src="/fox-placeholder.png"
+            alt="Loading placeholder"
+            width={80}
+            height={120}
+            className={`absolute object-contain z-10 transition-opacity duration-300 ${
+              imageStatus === 'loaded' ? 'opacity-0' : 'opacity-100'
             }`}
-            onLoad={() => setImageStatus('loaded')}
-            onError={() => setImageStatus('error')}
           />
-        )}
-      </div>
-      
-      <h3 className="font-bold text-lg mb-1 leading-tight line-clamp-2 break-words w-full z-10" title={book.title}>
-        {book.title}
-      </h3>
-      <p className={`text-sm mb-2 line-clamp-1 break-words w-full z-10 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} title={book.author}>
-        {book.author}
-      </p>
 
-      <div className="flex flex-col items-center gap-1 mb-4 w-full z-10">
-        <span className={`text-xs font-mono px-2 py-0.5 rounded-md ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
-          ISBN: {book.isbn13}
-        </span>
-        <div className="flex gap-1 mt-1 flex-wrap justify-center">
-          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${isDarkMode ? 'border-gray-700 text-gray-300' : 'border-gray-300 text-gray-600'}`}>
-            {book.format || 'Standard Edition'}
+          {book.cover_image_url && book.cover_image_url !== 'UNAVAILABLE' && (
+            <Image 
+              src={book.cover_image_url.replace('http:', 'https:')} 
+              alt={`Cover of ${book.title}`}
+              fill
+              sizes="128px"
+              className={`absolute object-cover z-20 transition-opacity duration-500 ${
+                imageStatus === 'loaded' ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={() => setImageStatus('loaded')}
+              onError={() => setImageStatus('error')}
+            />
+          )}
+        </div>
+        
+        <h3 className="font-bold text-lg mb-1 leading-tight line-clamp-2 break-words w-full z-10" title={book.title}>
+          {book.title}
+        </h3>
+        <p className={`text-sm mb-2 line-clamp-1 break-words w-full z-10 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} title={book.author}>
+          {book.author}
+        </p>
+
+        <div className="flex flex-col items-center gap-1 mb-4 w-full z-10">
+          <span className={`text-xs font-mono px-2 py-0.5 rounded-md ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
+            ISBN: {book.isbn13}
           </span>
+          <div className="flex gap-1 mt-1 flex-wrap justify-center">
+            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${isDarkMode ? 'border-gray-700 text-gray-300' : 'border-gray-300 text-gray-600'}`}>
+              {book.format || 'Standard Edition'}
+            </span>
+          </div>
+        </div>
+        
+        <div className="mt-auto w-full pt-4 border-t border-gray-800/30 z-10 flex flex-col gap-3">
+          {userId && (
+            <button 
+              onClick={toggleLibrary}
+              disabled={isUpdating}
+              className={`w-full py-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center ${
+                isOwned 
+                  ? 'bg-emerald-900/40 text-emerald-400 hover:bg-emerald-900/60 border border-emerald-800/50' 
+                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'
+              }`}
+            >
+              {isOwned ? (
+                <><svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg> ON YOUR BOOKSHELF</>
+              ) : (
+                <><svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg> Add to Bookshelf</>
+              )}
+            </button>
+          )}
+
+          {isOwned ? (
+            <div className="text-xs font-mono text-emerald-500/70 mt-1">Purchase options hidden.</div>
+          ) : isLoadingPrice ? (
+            <div className="text-xs font-mono text-gray-500 animate-pulse py-2">Scanning vaults...</div>
+          ) : (
+            <div className="flex w-full gap-2 mt-1">
+              <div className={`relative flex-grow rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-50'}`}>
+                <select 
+                  value={selectedShopId}
+                  onChange={(e) => setSelectedShopId(e.target.value)}
+                  className="w-full h-full appearance-none bg-transparent pl-3 pr-8 py-2 text-xs font-bold focus:outline-none cursor-pointer"
+                >
+                  {shops.map(shop => (
+                    <option key={shop.id} value={shop.id} className={isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}>
+                      {shop.name} - {shop.displayPrice}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                </div>
+              </div>
+              
+              <a 
+                href={currentShop.url} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                onClick={() => {
+                  fetch('/api/track', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                      event_type: 'affiliate_click',
+                      details: { shop: currentShop.id, book_title: book.title, target_url: currentShop.url }
+                    })
+                  });
+                }}
+                className="flex items-center justify-center shrink-0 bg-sky-600 hover:bg-sky-500 text-white p-2.5 rounded-lg transition-colors shadow-md w-10 h-10"
+                title="Go to Store"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </a>
+            </div>
+          )}
         </div>
       </div>
-      
-      <div className="mt-auto w-full pt-4 border-t border-gray-800/30 z-10 flex flex-col gap-3">
-        {userId && (
-          <button 
-            onClick={toggleLibrary}
-            disabled={isUpdating}
-            className={`w-full py-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center ${
-              isOwned 
-                ? 'bg-emerald-900/40 text-emerald-400 hover:bg-emerald-900/60 border border-emerald-800/50' 
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'
-            }`}
-          >
-            {isOwned ? (
-              <><svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg> ON YOUR BOOKSHELF</>
-            ) : (
-              <><svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg> Add to Bookshelf</>
-            )}
-          </button>
-        )}
 
-        {isOwned ? (
-          <div className="text-xs font-mono text-emerald-500/70 mt-1">Purchase options hidden.</div>
-        ) : isLoadingPrice ? (
-          <div className="text-xs font-mono text-gray-500 animate-pulse py-2">Scanning vaults...</div>
-        ) : (
-          <div className="flex w-full gap-2 mt-1">
-            <div className={`relative flex-grow rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-50'}`}>
-              <select 
-                value={selectedShopId}
-                onChange={(e) => setSelectedShopId(e.target.value)}
-                className="w-full h-full appearance-none bg-transparent pl-3 pr-8 py-2 text-xs font-bold focus:outline-none cursor-pointer"
-              >
-                {shops.map(shop => (
-                  <option key={shop.id} value={shop.id} className={isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}>
-                    {shop.name} - {shop.displayPrice}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-              </div>
+      {/* 🔽 THE INJECTED COVER ART MODAL */}
+      {isCoverModalOpen && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsCoverModalOpen(false);
+          }}
+        >
+          <div className={`relative w-full max-w-sm rounded-3xl p-8 shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200 ${isDarkMode ? 'bg-gray-900 border border-gray-800 text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
+            <button 
+              onClick={() => setIsCoverModalOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-red-500/80 text-white transition-colors z-30"
+              title="Close Modal"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            
+            <div className={`relative w-48 h-72 md:w-56 md:h-80 rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] mb-6 border ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-100'}`}>
+              {book.cover_image_url && book.cover_image_url !== 'UNAVAILABLE' ? (
+                <Image src={book.cover_image_url.replace('http:', 'https:')} alt={`Cover of ${book.title}`} fill sizes="256px" className="object-cover" />
+              ) : (
+                <Image src="/fox-placeholder.png" alt="Placeholder" fill sizes="256px" className="object-contain p-8" />
+              )}
             </div>
             
-            <a 
-              href={currentShop.url} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              onClick={() => {
-                // FIRE THE TRACKER
-                fetch('/api/track', {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    event_type: 'affiliate_click',
-                    details: { shop: currentShop.id, book_title: book.title, target_url: currentShop.url }
-                  })
-                });
-              }}
-              className="flex items-center justify-center shrink-0 bg-sky-600 hover:bg-sky-500 text-white p-2.5 rounded-lg transition-colors shadow-md w-10 h-10"
-              title="Go to Store"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </a>
+            <h2 className="text-2xl font-black text-center mb-2 leading-tight drop-shadow-md">{book.title}</h2>
+            <p className={`text-lg text-center mb-6 font-medium ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`}>{book.author}</p>
+            
+            <div className={`px-4 py-2 rounded-lg font-mono text-sm tracking-widest ${isDarkMode ? 'bg-gray-950 text-gray-400' : 'bg-gray-100 text-gray-600'}`}>
+              ISBN: <span className="font-bold text-white">{book.isbn13}</span>
+            </div>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -322,6 +373,7 @@ export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isScanning, setIsScanning] = useState(false);
   const [searchOffset, setSearchOffset] = useState(0);
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -403,38 +455,37 @@ export default function Home() {
            book.author.toLowerCase().includes(searchQuery.toLowerCase());
   });
   
-  // 🚀 THE INFINITE SHELF PROTOCOL (Upgraded)
-  const handleLiveSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && searchQuery.trim() !== '') {
-      setIsLoading(true);
-      setSearchOffset(0); // Reset the tracker for a new search
-      setHasMoreResults(true); 
+  // 🚀 THE INFINITE SHELF PROTOCOL & SCANNER ENGINE
+  const executeSearch = async (queryToSearch: string) => {
+    if (!queryToSearch.trim()) return;
+    
+    setSearchQuery(queryToSearch); // Update the text box visually
+    setIsLoading(true); 
+    
+    try {
+      const res = await fetch(`/api/live-search?q=${encodeURIComponent(queryToSearch)}`);
+      const data = await res.json();
       
-      try {
-        const res = await fetch(`/api/live-search?q=${encodeURIComponent(searchQuery)}&offset=0`);
-        const data = await res.json();
-        
-        if (data.success && data.books && data.books.length > 0) {
-          if (data.books.length < 10) setHasMoreResults(false);
-          
-          setBooks(prevBooks => {
-            const combined = [...data.books, ...prevBooks];
-            return Array.from(new Map(combined.map(b => [b.id, b])).values());
-          });
-        } else {
-          setHasMoreResults(false);
-        }
-      } catch (error) {
-        console.error("DEBUG: Frontend error:", error);
+      if (data.success && data.source === 'google_ingested' && data.books.length > 0) {
+        const brandNewBooks = data.books.filter((newBook: Book) => !books.some(b => b.id === newBook.id));
+        setBooks(prevBooks => [...brandNewBooks, ...prevBooks]);
       }
-      setIsLoading(false);
+    } catch (error) {
+      console.error("Vault breach failed", error);
+    }
+    
+    setIsLoading(false);
+  };
+
+  const handleLiveSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      await executeSearch(searchQuery);
     }
   };
 
-  // 🔽 THE NEW LOAD MORE PROTOCOL
   const handleLoadMore = async () => {
     setIsFetchingMore(true);
-    const nextOffset = searchOffset + 10; // Jump ahead by 10 books
+    const nextOffset = searchOffset + 10;
     setSearchOffset(nextOffset);
     
     try {
@@ -489,14 +540,44 @@ export default function Home() {
       ) : (
         <>
           <div className="w-full mb-12 flex flex-col items-center gap-6 px-4">
-            <input 
-               type="text" 
-               placeholder="Search entire vault... (Press Enter to scour global databases)" 
-               value={searchQuery} 
-               onChange={(e) => setSearchQuery(e.target.value)} 
-               onKeyDown={handleLiveSearch} 
-               className={`w-full max-w-2xl p-4 rounded-xl border text-lg focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-xl z-20 relative ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} 
-            />
+            <div className="w-full max-w-2xl relative z-20">
+              <input 
+                type="text" 
+                placeholder="Search entire vault... (Press Enter to scour global databases)" 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                onKeyDown={handleLiveSearch} 
+                className={`w-full p-4 pr-24 rounded-xl border text-lg focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-xl ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} 
+              />
+              
+              {/* Path B: The AI Cover OCR Scanner */}
+              <CoverScanner 
+                isDarkMode={isDarkMode} 
+                onScan={(extractedText) => {
+                  executeSearch(extractedText);
+                }} 
+              />
+
+              {/* Path A: The Barcode Sniper */}
+              <button 
+                onClick={() => setIsScanning(true)}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors ${isDarkMode ? 'text-gray-400 hover:text-sky-400 hover:bg-gray-800' : 'text-gray-500 hover:text-sky-600 hover:bg-gray-200'}`}
+                title="Scan Barcode"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H5v3a1 1 0 01-2 0V4zm14-1a1 1 0 011 1v3a1 1 0 01-2 0V5h-3a1 1 0 010-2h4zM3 20a1 1 0 001 1h4a1 1 0 000-2H5v-3a1 1 0 00-2 0v4zm14 1a1 1 0 001-1v-3a1 1 0 00-2 0v3h-3a1 1 0 000 2h4z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h8v4H8z" /></svg>
+              </button>
+            </div>
+            
+            {/* The Barcode Scanner Modal */}
+            {isScanning && (
+              <BarcodeScanner 
+                onClose={() => setIsScanning(false)} 
+                onScan={(isbn) => {
+                  setIsScanning(false);
+                  executeSearch(isbn);
+                }} 
+              />
+            )}
           </div>
 
           <div className="w-full relative z-10">
@@ -512,7 +593,6 @@ export default function Home() {
                   )}
                 </div>
                 
-                {/* --- DYNAMIC LOAD MORE BUTTON --- */}
                 {searchResults.length > 0 && (
                   <div className="mt-12">
                     {hasMoreResults ? (
