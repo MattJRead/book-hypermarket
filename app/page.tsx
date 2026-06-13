@@ -248,6 +248,16 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
               href={currentShop.url} 
               target="_blank" 
               rel="noopener noreferrer" 
+              onClick={() => {
+                // FIRE THE TRACKER
+                fetch('/api/track', {
+                  method: 'POST',
+                  body: JSON.stringify({
+                    event_type: 'affiliate_click',
+                    details: { shop: currentShop.id, book_title: book.title, target_url: currentShop.url }
+                  })
+                });
+              }}
               className="flex items-center justify-center shrink-0 bg-sky-600 hover:bg-sky-500 text-white p-2.5 rounded-lg transition-colors shadow-md w-10 h-10"
               title="Go to Store"
             >
@@ -317,6 +327,17 @@ export default function Home() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userLibrary, setUserLibrary] = useState<string[]>([]);
   const [userWishlist, setUserWishlist] = useState<string[]>([]);
+
+  // THE GLOBAL VISIT TRACKER
+  useEffect(() => {
+    fetch('/api/track', {
+      method: 'POST',
+      body: JSON.stringify({
+        event_type: 'page_visit',
+        details: { path: '/', timestamp: new Date().toISOString() }
+      })
+    }).catch(err => console.error("Tracking error", err));
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
