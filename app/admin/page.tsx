@@ -295,22 +295,52 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-
-        {/* =========================================
-            TAB: BROADCAST (OFFLINE STATE)
+{/* =========================================
+            TAB: BROADCAST (ONLINE STATE)
             ========================================= */}
         {activeTab === 'broadcast' && (
-          <div className="w-full max-w-2xl mx-auto bg-gray-900 border border-gray-800 rounded-2xl p-8 relative overflow-hidden opacity-75">
-            <h2 className="text-lg font-bold mb-2 text-gray-500">Broadcast System (Offline)</h2>
-            <p className="text-sm text-gray-600 mb-6 font-mono">WARNING: Backend API route missing. Deploying messages will fail until `/api/admin/broadcast` is constructed.</p>
-            <form onSubmit={handleBroadcast} className="flex flex-col gap-5 pointer-events-none grayscale">
+          <div className="w-full max-w-2xl mx-auto bg-gray-900 border border-gray-800 rounded-2xl p-8 relative overflow-hidden animate-in fade-in duration-300">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-orange-500 to-red-600"></div>
+            <h2 className="text-lg font-bold mb-6 text-red-500">Deploy Global Notification</h2>
+            <form onSubmit={handleBroadcast} className="flex flex-col gap-5">
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Title</label>
-                <input disabled type="text" placeholder="System Offline" className="w-full bg-black border border-gray-800 rounded-lg p-3 text-sm focus:outline-none" />
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Notification Type</label>
+                <select value={bcType} onChange={(e) => setBcType(e.target.value)} className="w-full bg-black border border-gray-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-500">
+                  <option value="system_update">System Update</option>
+                  <option value="new_release">New Feature Release</option>
+                  <option value="alert">Alert</option>
+                </select>
               </div>
-              <button disabled type="button" className="mt-2 w-full py-4 rounded-lg font-bold text-sm bg-gray-800 text-gray-600 cursor-not-allowed">
-                SYSTEM OFFLINE
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Title</label>
+                <input required type="text" value={bcTitle} onChange={(e) => setBcTitle(e.target.value)} placeholder="e.g. Price Radar is Live!" className="w-full bg-black border border-gray-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Message</label>
+                <textarea required rows={4} value={bcMessage} onChange={(e) => setBcMessage(e.target.value)} placeholder="Type your broadcast..." className="w-full bg-black border border-gray-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-500 resize-none"></textarea>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Action URL (Optional)</label>
+                <input type="text" value={bcActionUrl} onChange={(e) => setBcActionUrl(e.target.value)} placeholder="e.g. /wishlist" className="w-full bg-black border border-gray-800 rounded-lg p-3 text-sm focus:outline-none focus:border-red-500" />
+              </div>
+
+              <div className="pt-4 border-t border-gray-800 mt-2">
+                <label className="block text-xs font-bold text-red-500 uppercase tracking-wider mb-2 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                  Authorization Code
+                </label>
+                <input required type="password" value={adminSecret} onChange={(e) => setAdminSecret(e.target.value)} placeholder="Enter Admin Secret..." className="w-full bg-black border border-red-900 rounded-lg p-3 text-sm focus:outline-none focus:border-red-500 text-red-500" />
+              </div>
+
+              <button disabled={bcStatus.loading || !adminSecret} type="submit" className={`mt-2 w-full py-4 rounded-lg font-bold text-sm transition-all flex justify-center items-center ${bcStatus.loading || !adminSecret ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_15px_rgba(220,38,38,0.5)]'}`}>
+                {!adminSecret ? 'REQUIRES ADMIN SECRET' : bcStatus.loading ? '[ DEPLOYING... ]' : 'DEPLOY BROADCAST'}
               </button>
+              
+              {bcStatus.message && (
+                <div className={`mt-4 p-4 rounded-lg text-sm font-mono border ${bcStatus.isError ? 'bg-red-950/50 border-red-900 text-red-400' : 'bg-emerald-950/50 border-emerald-900 text-emerald-400'}`}>
+                  {bcStatus.message}
+                </div>
+              )}
             </form>
           </div>
         )}
