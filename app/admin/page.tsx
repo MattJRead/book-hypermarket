@@ -157,7 +157,7 @@ export default function AdminDashboard() {
           {[
             { id: 'analytics', label: 'Analytics' },
             { id: 'book_info', label: 'Book Info' },
-            { id: 'accounts', label: 'Accounts (Offline)' },
+            { id: 'accounts', label: 'Accounts (Online)' },
             { id: 'broadcast', label: 'Broadcast (Online)' }
           ].map(tab => (
             <button
@@ -346,24 +346,44 @@ export default function AdminDashboard() {
         )}
 
         {/* =========================================
-            TAB: ACCOUNTS (OFFLINE STATE)
+            TAB: ACCOUNTS (ONLINE STATE)
             ========================================= */}
         {activeTab === 'accounts' && (
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 opacity-75">
-            <h2 className="text-lg font-bold text-gray-500 mb-2">Platform Registry (Offline)</h2>
-            <p className="text-sm text-gray-600 mb-6 font-mono">WARNING: Backend API route missing. Fetching accounts will fail until `/api/admin/users` is constructed.</p>
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 animate-in fade-in duration-300">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+              <h2 className="text-lg font-bold text-sky-400">Platform Registry</h2>
+              
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                <input type="password" value={adminSecret} onChange={(e) => setAdminSecret(e.target.value)} placeholder="Admin Secret..." className="bg-black border border-gray-800 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-sky-500 text-gray-300 w-full sm:w-auto" />
+                <button onClick={fetchAccounts} disabled={!adminSecret} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors w-full sm:w-auto whitespace-nowrap ${!adminSecret ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-sky-600 hover:bg-sky-500 text-white'}`}>
+                  Sync Registry
+                </button>
+              </div>
+            </div>
             
-            <div className="overflow-x-auto pointer-events-none grayscale">
+            {accountsStatus && <div className="text-sm font-mono text-sky-400 mb-4">{accountsStatus}</div>}
+            
+            <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-black text-gray-600 uppercase text-xs">
+                <thead className="bg-black text-gray-400 uppercase text-xs">
                   <tr>
                     <th className="px-4 py-3 rounded-tl-lg">Email</th>
                     <th className="px-4 py-3">Account Created</th>
                     <th className="px-4 py-3 rounded-tr-lg">Last Sign In</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr><td colSpan={3} className="px-4 py-8 text-center text-gray-700 border-t border-gray-800 font-mono">SYSTEM OFFLINE</td></tr>
+                <tbody className="divide-y divide-gray-800">
+                  {accounts.length === 0 ? (
+                    <tr><td colSpan={3} className="px-4 py-8 text-center text-gray-600 font-mono">No accounts loaded. Enter Admin Secret and sync.</td></tr>
+                  ) : (
+                    accounts.map(acc => (
+                      <tr key={acc.id} className="hover:bg-gray-800/50 transition-colors">
+                        <td className="px-4 py-3 font-mono text-gray-300">{acc.email}</td>
+                        <td className="px-4 py-3 text-gray-500">{new Date(acc.created_at).toLocaleDateString()}</td>
+                        <td className="px-4 py-3 text-gray-500">{acc.last_sign_in ? new Date(acc.last_sign_in).toLocaleDateString() : 'Never'}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
