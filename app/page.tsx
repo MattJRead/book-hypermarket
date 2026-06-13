@@ -55,7 +55,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
   
   const waterstonesLink = `https://www.waterstones.com/books/search/term/${titleSearchQuery}`;
   const blackwellsLink = `https://blackwells.co.uk/bookshop/search/?keyword=${titleSearchQuery}`;
-  const amazonLink = `https://www.amazon.co.uk/s?k=${titleSearchQuery}`;
+  const amazonLink = `https://www.amazon.co.uk/s?k=${titleSearchQuery}&tag=bookhypermarket-21`;
   const ebayLink = `https://www.ebay.co.uk/sch/i.html?_nkw=${titleSearchQuery}`;
   const wobLink = `https://www.wob.com/en-gb/category/all?search=${titleSearchQuery}`;
 
