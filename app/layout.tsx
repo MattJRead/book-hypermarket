@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>  
-        <meta name='impact-site-verification' value='aa76c5d0-1ed2-4b09-8598-cf44b86a79f0'></meta>
+        <meta name='impact-site-verification' content='aa76c5d0-1ed2-4b09-8598-cf44b86a79f0'></meta>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
