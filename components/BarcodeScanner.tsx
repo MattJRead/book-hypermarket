@@ -13,13 +13,15 @@ export default function BarcodeScanner({
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // 1. Initialize the raw core engine (bypassing the clunky UI)
+    // 1. Initialize the raw core engine
     const html5QrCode = new Html5Qrcode("barcode-reader");
 
-    // 2. Start the rear camera, letting the device choose the safest resolution
+    // 2. Start the camera with a soft HD request to keep the barcode sharp
     html5QrCode.start(
       { 
-        facingMode: "environment" // Removed the strict width/height demands
+        facingMode: "environment",
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
       },
       {
         fps: 10, 
@@ -38,7 +40,7 @@ export default function BarcodeScanner({
       console.error(err);
     });
 
-    // 4. Critical Cleanup: Shut the camera off if the user closes the modal early
+    // 4. Critical Cleanup
     return () => {
       if (html5QrCode.isScanning) {
         html5QrCode.stop().catch(console.error);
