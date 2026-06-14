@@ -47,8 +47,7 @@ export default function BarcodeScanner({
   }, [onScanSuccess]);
 
   return (
-    <div style={{ zIndex: 2147483647 }} className="fixed inset-0 flex items-center justify-center bg-black/95 p-0 sm:p-4 backdrop-blur-sm animate-in fade-in">
-      <div className="w-full h-full sm:h-auto sm:max-w-md bg-gray-950 sm:rounded-3xl overflow-hidden shadow-2xl relative flex flex-col">
+<div style={{ zIndex: 999999, isolation: 'isolate' }} className="fixed inset-0 flex items-center justify-center bg-black p-0 sm:p-4 animate-in fade-in">      <div className="w-full h-full sm:h-auto sm:max-w-md bg-gray-950 sm:rounded-3xl overflow-hidden shadow-2xl relative flex flex-col">
         <div className="p-5 flex justify-between items-center border-b border-gray-900 bg-black shrink-0">
           <h3 className="text-sky-500 font-bold tracking-widest text-xs uppercase">Scan ISBN Barcode</h3>
           <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
