@@ -21,15 +21,11 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        // Force the video to play immediately to avoid black screens
         await videoRef.current.play();
       }
 
-      // Check if the phone's hardware allows us to use the flashlight
       const track = stream.getVideoTracks()[0];
       const capabilities = track.getCapabilities ? track.getCapabilities() : null;
-      
-      // 🔽 THE OVERRIDE: Tell TypeScript to safely ignore the strict dictionary check
       if (capabilities && (capabilities as any).torch) {
         setHasTorch(true);
       }
@@ -56,7 +52,6 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
 
   const closeCamera = () => {
     if (streamRef.current) {
-      // Turn off torch before closing to save battery
       const track = streamRef.current.getVideoTracks()[0];
       track.applyConstraints({ advanced: [{ torch: false }] as any }).catch(() => {});
       streamRef.current.getTracks().forEach(t => t.stop());
@@ -78,7 +73,6 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
     
     const ctx = canvas.getContext('2d');
     
-    // Lighten the image slightly in code just in case it's still dark
     if (ctx) {
       ctx.filter = 'brightness(1.2) contrast(1.1)';
       ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
@@ -98,11 +92,10 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
         closeCamera();
         onScan(data.extractedText);
       } else {
-        // Show the ACTUAL error from Gemini so we know exactly why it failed
-        alert(`AI Failure: ${data.error || 'Could not detect text. Try turning on the flashlight.'}`);
+        alert(`AI Failure: ${data.error || 'Could not detect text.'}`);
       }
     } catch (error) {
-      alert("Network timeout. The vaults are unreachable.");
+      alert("Network timeout. The servers are unreachable.");
     }
     setIsAnalyzing(false);
   };
@@ -125,30 +118,31 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
       </button>
 
       {isOpen && (
-<div style={{ zIndex: 999999, isolation: 'isolate' }} className="fixed inset-0 flex items-center justify-center bg-black p-0 sm:p-4 animate-in fade-in">          <div className="w-full h-full sm:h-auto sm:max-w-md bg-gray-950 sm:rounded-3xl overflow-hidden shadow-2xl relative flex flex-col">
-            <div className="p-5 flex justify-between items-center border-b border-gray-900 bg-black">
+        <div style={{ zIndex: 2147483647, isolation: 'isolate' }} className="fixed inset-0 flex items-center justify-center bg-black animate-in fade-in">
+          <div className="w-full h-full flex flex-col relative bg-black">
+            
+            <div className="p-5 flex justify-between items-center border-b border-gray-900 bg-black shrink-0">
               <h3 className="text-purple-500 font-bold tracking-widest text-xs uppercase">AI Cover Scanner</h3>
               <button onClick={closeCamera} className="text-gray-500 hover:text-white transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
             </div>
             
-            <div className="relative w-full flex-grow bg-black flex items-center justify-center overflow-hidden" style={{ minHeight: '50vh' }}>
+            <div className="relative w-full flex-grow bg-black flex items-center justify-center overflow-hidden">
               <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
               
-              {/* THE FLASHLIGHT TOGGLE */}
               {hasTorch && (
                 <button 
                   onClick={toggleTorch} 
-                  className={`absolute top-4 right-4 p-3 rounded-full backdrop-blur-md border ${torchOn ? 'bg-yellow-400/20 border-yellow-400 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]' : 'bg-black/50 border-white/20 text-white'}`}
+                  className={`absolute top-4 right-4 p-4 rounded-full backdrop-blur-md border ${torchOn ? 'bg-yellow-400/20 border-yellow-400 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]' : 'bg-black/50 border-white/20 text-white'}`}
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                 </button>
               )}
 
               {isAnalyzing && (
                 <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center backdrop-blur-sm z-10">
-                  <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-6"></div>
                   <span className="text-purple-400 font-mono text-sm tracking-widest uppercase animate-pulse drop-shadow-md text-center px-4">
                     [ Interrogating Gemini... ]
                   </span>
@@ -156,12 +150,13 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
               )}
             </div>
             
-            <div className="p-8 bg-black flex flex-col items-center justify-center gap-4 border-t border-gray-900">
+            <div className="p-8 bg-black flex flex-col items-center justify-center gap-4 border-t border-gray-900 shrink-0">
               <button 
                 onClick={takeSnapshot}
                 disabled={isAnalyzing}
-                className="w-20 h-20 rounded-full bg-purple-600 border-4 border-gray-900 hover:bg-purple-500 transition-colors shadow-[0_0_30px_rgba(168,85,247,0.4)] disabled:opacity-50 ring-2 ring-purple-400"
+                className="w-24 h-24 rounded-full bg-purple-600 border-4 border-gray-900 hover:bg-purple-500 transition-colors shadow-[0_0_30px_rgba(168,85,247,0.4)] disabled:opacity-50 ring-2 ring-purple-400"
               ></button>
+              <span className="text-xs text-gray-600 uppercase tracking-widest font-bold mt-2">Tap to Scan Cover</span>
             </div>
           </div>
         </div>
