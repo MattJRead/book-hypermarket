@@ -16,12 +16,17 @@ export default function BarcodeScanner({
     // 1. Initialize the raw core engine (bypassing the clunky UI)
     const html5QrCode = new Html5Qrcode("barcode-reader");
 
-    // 2. Force start the rear camera automatically
+    // 2. Force start the rear camera with High Definition and Auto-Focus
     html5QrCode.start(
-      { facingMode: "environment" }, // This strictly commands the phone to use the back camera
+      { 
+        facingMode: "environment",
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        advanced: [{ focusMode: "continuous" } as any] 
+      }, 
       {
-        fps: 10, // Scans 10 frames per second
-        qrbox: { width: 250, height: 150 } // Creates a targeted horizontal box for ISBNs
+        fps: 10, 
+        qrbox: { width: 250, height: 150 } 
       },
       (decodedText) => {
         // 3. When it catches a barcode, stop the camera and pass the numbers back
@@ -30,10 +35,10 @@ export default function BarcodeScanner({
         }).catch(console.error);
       },
       (errorMessage) => {
-        // The engine constantly throws background errors when it doesn't see a barcode in the frame. We safely ignore these.
+        // Safely ignore background scanning errors
       }
     ).catch((err) => {
-      setError('Camera failed to ignite. Please ensure browser permissions are granted.');
+      setError('Camera failed to ignite or auto-focus is unsupported.');
       console.error(err);
     });
 
