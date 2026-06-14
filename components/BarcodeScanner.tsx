@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 
 export default function BarcodeScanner({ 
   onScanSuccess, 
@@ -13,11 +13,8 @@ export default function BarcodeScanner({
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // 🔽 THE FIX: We tell the engine to only look for books right as it turns on
-    const html5QrCode = new Html5Qrcode("barcode-reader", {
-      formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.UPC_A ]
-    });
-    
+    // 🔽 Removed the formatsToSupport block entirely to bypass the TypeScript error
+    const html5QrCode = new Html5Qrcode("barcode-reader");
     let isComponentMounted = true;
 
     // 1. Manually interrogate the phone's hardware for its exact camera IDs
@@ -25,7 +22,7 @@ export default function BarcodeScanner({
       if (!isComponentMounted) return;
       
       if (devices && devices.length > 0) {
-        // 2. Scan the hardware list to find the back camera.
+        // 2. Scan the hardware list to find the back camera. 
         let targetCameraId = devices[0].id;
         for (const device of devices) {
           if (device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('environment')) {
