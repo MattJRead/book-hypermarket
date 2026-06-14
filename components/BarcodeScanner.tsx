@@ -13,7 +13,11 @@ export default function BarcodeScanner({
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const html5QrCode = new Html5Qrcode("barcode-reader");
+    // 🔽 THE FIX: We tell the engine to only look for books right as it turns on
+    const html5QrCode = new Html5Qrcode("barcode-reader", {
+      formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.UPC_A ]
+    });
+    
     let isComponentMounted = true;
 
     // 1. Manually interrogate the phone's hardware for its exact camera IDs
@@ -21,8 +25,7 @@ export default function BarcodeScanner({
       if (!isComponentMounted) return;
       
       if (devices && devices.length > 0) {
-        // 2. Scan the hardware list to find the back camera. 
-        // If it isn't explicitly named, default to the last camera in the array (standard for Android main lenses).
+        // 2. Scan the hardware list to find the back camera.
         let targetCameraId = devices[0].id;
         for (const device of devices) {
           if (device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('environment')) {
@@ -40,8 +43,7 @@ export default function BarcodeScanner({
           targetCameraId,
           {
             fps: 15, // Bumped up for faster capture
-            qrbox: { width: 280, height: 120 }, // Widened so the white "quiet zones" on the edges of the barcode can be read
-            formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.UPC_A ] // Strictly look for book barcodes
+            qrbox: { width: 280, height: 120 } // Widened for the barcode's quiet zones
           },
           (decodedText) => {
             // 4. Handle the successful scan
