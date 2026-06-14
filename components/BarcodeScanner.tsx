@@ -13,16 +13,12 @@ export default function BarcodeScanner({
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // 1. Initialize the raw core engine
     const html5QrCode = new Html5Qrcode("barcode-reader");
 
-    // 2. Start the camera with a soft HD request to keep the barcode sharp
+    // We only ask for the environment camera. No strict resolution demands.
+    // This guarantees the browser will prompt for permissions.
     html5QrCode.start(
-      { 
-        facingMode: "environment",
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      },
+      { facingMode: "environment" },
       {
         fps: 10, 
         qrbox: { width: 250, height: 150 } 
@@ -33,14 +29,13 @@ export default function BarcodeScanner({
         }).catch(console.error);
       },
       (errorMessage) => {
-        // Safely ignore background scanning errors
+        // Ignore background errors
       }
     ).catch((err) => {
-      setError('Camera failed to ignite. Please ensure browser permissions are granted.');
+      setError('Camera failed to ignite. Please tap the lock icon in your URL bar and allow camera access.');
       console.error(err);
     });
 
-    // 4. Critical Cleanup
     return () => {
       if (html5QrCode.isScanning) {
         html5QrCode.stop().catch(console.error);
@@ -49,29 +44,31 @@ export default function BarcodeScanner({
   }, [onScanSuccess]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm animate-in fade-in">
-      <div className="w-full max-w-md bg-gray-950 rounded-3xl overflow-hidden border border-gray-800 shadow-2xl relative flex flex-col">
+    /* z-[9999] hides the bell and menu */
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black p-0 sm:p-4 animate-in fade-in">
+      <div className="w-full h-full sm:h-auto sm:max-w-md bg-gray-950 sm:rounded-3xl overflow-hidden border-0 sm:border border-gray-800 shadow-2xl relative flex flex-col">
         
-        {/* Header */}
-        <div className="p-5 flex justify-between items-center border-b border-gray-900 bg-black">
+        <div className="p-5 flex justify-between items-center border-b border-gray-900 bg-black shrink-0">
           <h3 className="text-sky-500 font-bold tracking-widest text-xs uppercase">Scan ISBN Barcode</h3>
           <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
         
-        {/* Camera Feed Container */}
-        <div className="relative w-full bg-black flex items-center justify-center overflow-hidden" style={{ minHeight: '300px' }}>
+        <div className="relative w-full flex-grow bg-black flex items-center justify-center overflow-hidden" style={{ minHeight: '50vh' }}>
           {error ? (
-             <p className="text-red-500 p-6 text-center text-sm font-mono">{error}</p>
+             <div className="p-8 text-center">
+               <svg className="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+               <p className="text-red-400 text-sm font-mono leading-relaxed">{error}</p>
+             </div>
           ) : (
-             <div id="barcode-reader" className="w-full"></div>
+             <div id="barcode-reader" className="w-full h-full [&>video]:object-cover [&>video]:h-full"></div>
           )}
         </div>
         
-        {/* Footer Instructions */}
-        <div className="p-6 text-center text-xs text-gray-500 uppercase tracking-widest bg-black">
-          Align the barcode within the targeting frame
+        <div className="p-8 text-center bg-black border-t border-gray-900 shrink-0">
+          <p className="text-xs text-sky-500 uppercase tracking-widest font-bold mb-2">Align barcode within the frame</p>
+          <p className="text-[10px] text-gray-500">Hold phone 6 to 8 inches away for auto-focus</p>
         </div>
       </div>
     </div>

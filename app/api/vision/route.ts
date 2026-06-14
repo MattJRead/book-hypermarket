@@ -19,8 +19,8 @@ export async function POST(request: Request) {
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     // The strict extraction command
-    const prompt = "Analyze this book cover. Extract the title and the author. Return ONLY the title and author as a single clean text string (e.g., 'The Hobbit, J.R.R. Tolkien'). Do not say hello, do not write a summary, do not use formatting.";
-
+// The aggressive extraction command
+    const prompt = "Analyze this book cover. Extract the title and the author. Prioritize text extraction aggressively, even if the image lighting is poor, blurry, dark, or distorted. Return ONLY the title and author as a single clean text string (e.g., 'The Hobbit, J.R.R. Tolkien'). Do not say hello, do not write a summary, do not use formatting.";
     const imageParts = [
       {
         inlineData: {
