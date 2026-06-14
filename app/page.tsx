@@ -151,7 +151,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
       <div className={`p-6 rounded-2xl border flex flex-col items-center text-center transition-all hover:scale-[1.02] shadow-sm h-full relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} ${isOwned ? 'ring-2 ring-emerald-500' : ''}`}>
         {isOwned && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none"></div>}
 
-        {/* 🔽 UPDATED: Added cursor-pointer, click handler, and hover effects to the cover art */}
         <div 
           onClick={() => setIsCoverModalOpen(true)}
           className={`w-32 h-48 shrink-0 rounded-md mb-4 shadow-lg flex flex-col items-center justify-center z-10 overflow-hidden relative border cursor-pointer transition-all hover:ring-2 hover:ring-sky-500 group ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-100'}`}
@@ -170,7 +169,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
             </button>
           )}
 
-          {/* Hover Overlay Icon for the cover */}
           <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center justify-center">
              <svg className="w-8 h-8 text-white drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
           </div>
@@ -285,7 +283,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
         </div>
       </div>
 
-      {/* 🔽 THE INJECTED COVER ART MODAL */}
       {isCoverModalOpen && (
         <div 
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
@@ -572,7 +569,7 @@ export default function Home() {
             {isScanning && (
               <BarcodeScanner 
                 onClose={() => setIsScanning(false)} 
-                onScan={(isbn) => {
+                onScanSuccess={(isbn) => {
                   setIsScanning(false);
                   executeSearch(isbn);
                 }} 

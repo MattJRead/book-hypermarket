@@ -1,57 +1,75 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { useEffect, useState } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 
-export default function BarcodeScanner({ onScan, onClose }: { onScan: (isbn: string) => void, onClose: () => void }) {
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+export default function BarcodeScanner({ 
+  onScanSuccess, 
+  onClose 
+}: { 
+  onScanSuccess: (isbn: string) => void, 
+  onClose: () => void 
+}) {
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    // Initialize the scanner targeting ISBN barcodes (EAN-13)
-    scannerRef.current = new Html5QrcodeScanner(
-      "barcode-reader",
-      { 
-        fps: 10, 
-        qrbox: { width: 300, height: 150 },
-        formatsToSupport: [ 1 ], // 1 = EAN_13, which is the global standard for ISBNs
-        rememberLastUsedCamera: true
-      },
-      false
-    );
+    // 1. Initialize the raw core engine (bypassing the clunky UI)
+    const html5QrCode = new Html5Qrcode("barcode-reader");
 
-    scannerRef.current.render(
+    // 2. Force start the rear camera automatically
+    html5QrCode.start(
+      { facingMode: "environment" }, // This strictly commands the phone to use the back camera
+      {
+        fps: 10, // Scans 10 frames per second
+        qrbox: { width: 250, height: 150 } // Creates a targeted horizontal box for ISBNs
+      },
       (decodedText) => {
-        // Stop scanning immediately once a target is acquired
-        if (scannerRef.current) {
-          scannerRef.current.clear();
-        }
-        onScan(decodedText);
+        // 3. When it catches a barcode, stop the camera and pass the numbers back
+        html5QrCode.stop().then(() => {
+          onScanSuccess(decodedText);
+        }).catch(console.error);
       },
       (errorMessage) => {
-        // Silently ignore background scan errors as it analyzes frames
+        // The engine constantly throws background errors when it doesn't see a barcode in the frame. We safely ignore these.
       }
-    );
+    ).catch((err) => {
+      setError('Camera failed to ignite. Please ensure browser permissions are granted.');
+      console.error(err);
+    });
 
-    // Cleanup when the user closes the camera
+    // 4. Critical Cleanup: Shut the camera off if the user closes the modal early
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch(error => console.error("Failed to clear scanner.", error));
+      if (html5QrCode.isScanning) {
+        html5QrCode.stop().catch(console.error);
       }
     };
-  }, [onScan]);
+  }, [onScanSuccess]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-950/90 backdrop-blur-md p-4">
-      <div className="w-full max-w-lg bg-gray-900 rounded-2xl border border-gray-700 shadow-2xl overflow-hidden flex flex-col">
-        <div className="flex justify-between items-center p-4 border-b border-gray-800">
-          <h3 className="text-white font-bold tracking-widest uppercase text-sm">Align Barcode in Frame</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm animate-in fade-in">
+      <div className="w-full max-w-md bg-gray-950 rounded-3xl overflow-hidden border border-gray-800 shadow-2xl relative flex flex-col">
+        
+        {/* Header */}
+        <div className="p-5 flex justify-between items-center border-b border-gray-900 bg-black">
+          <h3 className="text-sky-500 font-bold tracking-widest text-xs uppercase">Scan ISBN Barcode</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
         
-        {/* The target reticle and video feed will render inside this div */}
-        <div id="barcode-reader" className="w-full bg-black"></div>
+        {/* Camera Feed Container */}
+        <div className="relative w-full bg-black flex items-center justify-center overflow-hidden" style={{ minHeight: '300px' }}>
+          {error ? (
+             <p className="text-red-500 p-6 text-center text-sm font-mono">{error}</p>
+          ) : (
+             <div id="barcode-reader" className="w-full"></div>
+          )}
+        </div>
+        
+        {/* Footer Instructions */}
+        <div className="p-6 text-center text-xs text-gray-500 uppercase tracking-widest bg-black">
+          Align the barcode within the targeting frame
+        </div>
       </div>
     </div>
   );
