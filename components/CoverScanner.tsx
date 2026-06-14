@@ -12,14 +12,12 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
 
     setIsScanning(true);
 
-    // Compress and convert the image to raw data for the AI
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onloadend = async () => {
       const base64data = reader.result;
 
       try {
-        // Beam the image to our Gemini API route
         const response = await fetch('/api/vision', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -29,18 +27,20 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
         const data = await response.json();
 
         if (data.success && data.extractedText) {
-          // Send the AI's findings back to the storefront search bar
+          // 🔽 INJECTED ALERT: Let's see exactly what Gemini extracted
+          alert("Gemini AI Extracted: " + data.extractedText);
+          
           onScan(data.extractedText);
         } else {
           console.error("Vision API Error:", data.error);
-          alert("The AI could not read the cover. Please ensure the text is clear.");
+          alert("The AI could not read the cover. Error: " + (data.error || "Unknown"));
         }
       } catch (error) {
         console.error("Network error:", error);
+        alert("Network communication with the AI failed.");
       }
 
       setIsScanning(false);
-      // Reset the input so they can take another photo if needed
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
   };

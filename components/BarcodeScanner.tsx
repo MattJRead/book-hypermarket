@@ -16,20 +16,18 @@ export default function BarcodeScanner({
     // 1. Initialize the raw core engine (bypassing the clunky UI)
     const html5QrCode = new Html5Qrcode("barcode-reader");
 
-    // 2. Force start the rear camera with High Definition and Auto-Focus
+    // 2. Start the rear camera with High Definition, but let the phone handle focus
     html5QrCode.start(
       { 
         facingMode: "environment",
         width: { ideal: 1920 },
-        height: { ideal: 1080 },
-        advanced: [{ focusMode: "continuous" } as any] 
-      }, 
+        height: { ideal: 1080 }
+      },
       {
         fps: 10, 
         qrbox: { width: 250, height: 150 } 
       },
       (decodedText) => {
-        // 3. When it catches a barcode, stop the camera and pass the numbers back
         html5QrCode.stop().then(() => {
           onScanSuccess(decodedText);
         }).catch(console.error);
@@ -38,7 +36,7 @@ export default function BarcodeScanner({
         // Safely ignore background scanning errors
       }
     ).catch((err) => {
-      setError('Camera failed to ignite or auto-focus is unsupported.');
+      setError('Camera failed to ignite. Please ensure browser permissions are granted.');
       console.error(err);
     });
 

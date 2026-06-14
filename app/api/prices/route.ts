@@ -13,10 +13,18 @@ const fetchOptions = {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const isbn = searchParams.get('isbn');
-  const title = searchParams.get('title'); // 🎯 NEW: Accept the title for the fallback
+  const title = searchParams.get('title'); // 🎯 Accept the title for the fallback
 
-  if (!isbn) {
-    return NextResponse.json({ error: 'Missing ISBN' }, { status: 400 });
+  // 🔽 THE GRACEFUL FALLBACK
+  // If there is no ISBN, safely return "Check Site" text to avoid frontend crashes
+  if (!isbn || isbn === 'null' || isbn === 'undefined') {
+    return NextResponse.json({
+      waterstones: 'Check Site',
+      blackwells: 'Check Site',
+      amazon: 'Check Site',
+      ebay: 'Check Site',
+      wob: 'Check Site'
+    });
   }
 
   const encodedTitle = title ? encodeURIComponent(title) : '';
