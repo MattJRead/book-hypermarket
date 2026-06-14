@@ -27,8 +27,10 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
 
       // Check if the phone's hardware allows us to use the flashlight
       const track = stream.getVideoTracks()[0];
-      const capabilities = track.getCapabilities && track.getCapabilities();
-      if (capabilities && capabilities.torch) {
+      const capabilities = track.getCapabilities ? track.getCapabilities() : null;
+      
+      // 🔽 THE OVERRIDE: Tell TypeScript to safely ignore the strict dictionary check
+      if (capabilities && (capabilities as any).torch) {
         setHasTorch(true);
       }
     } catch (err) {
