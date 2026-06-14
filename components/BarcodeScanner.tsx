@@ -57,9 +57,15 @@ export default function BarcodeScanner({
         
         <div className="relative w-full flex-grow bg-black flex items-center justify-center overflow-hidden" style={{ minHeight: '50vh' }}>
           {error ? (
-             <div className="p-8 text-center">
-               <svg className="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-               <p className="text-red-400 text-sm font-mono leading-relaxed">{error}</p>
+             <div className="p-8 text-center flex flex-col items-center">
+               <svg className="w-12 h-12 text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+               <p className="text-red-400 text-sm font-mono mb-6">{error}</p>
+               <button 
+                onClick={() => window.location.reload()} 
+                className="px-6 py-2 bg-sky-600 rounded-full font-bold text-white text-sm"
+               >
+                 Refresh & Retry Camera
+               </button>
              </div>
           ) : (
              <div id="barcode-reader" className="w-full h-full [&>video]:object-cover [&>video]:h-full"></div>
