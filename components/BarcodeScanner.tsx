@@ -16,12 +16,10 @@ export default function BarcodeScanner({
     // 1. Initialize the raw core engine (bypassing the clunky UI)
     const html5QrCode = new Html5Qrcode("barcode-reader");
 
-    // 2. Start the rear camera with High Definition, but let the phone handle focus
+    // 2. Start the rear camera, letting the device choose the safest resolution
     html5QrCode.start(
       { 
-        facingMode: "environment",
-        width: { ideal: 1920 },
-        height: { ideal: 1080 }
+        facingMode: "environment" // Removed the strict width/height demands
       },
       {
         fps: 10, 

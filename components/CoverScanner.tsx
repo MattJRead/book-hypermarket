@@ -12,24 +12,37 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
 
     setIsScanning(true);
 
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onloadend = async () => {
-      const base64data = reader.result;
+    // 🔽 THE MEMORY-SAFE COMPRESSOR
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = async () => {
+      // 1. Create an invisible canvas
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 800; // Shrink the massive phone photo down to 800px wide
+      const scaleSize = MAX_WIDTH / img.width;
+      
+      canvas.width = MAX_WIDTH;
+      canvas.height = img.height * scaleSize;
+
+      // 2. Draw the resized image onto the canvas
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // 3. Extract a lightweight, highly compressed JPEG (70% quality)
+      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
 
       try {
         const response = await fetch('/api/vision', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageBase64: base64data })
+          body: JSON.stringify({ imageBase64: compressedBase64 })
         });
 
         const data = await response.json();
 
         if (data.success && data.extractedText) {
-          // 🔽 INJECTED ALERT: Let's see exactly what Gemini extracted
           alert("Gemini AI Extracted: " + data.extractedText);
-          
           onScan(data.extractedText);
         } else {
           console.error("Vision API Error:", data.error);
@@ -40,16 +53,17 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
         alert("Network communication with the AI failed.");
       }
 
+      // Cleanup memory
+      URL.revokeObjectURL(objectUrl);
       setIsScanning(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
+
+    img.src = objectUrl;
   };
 
   return (
     <>
-      {/* This hidden input is the secret weapon. 
-        "capture=environment" forces mobile devices to open the rear camera natively. 
-      */}
       <input
         type="file"
         accept="image/*"
