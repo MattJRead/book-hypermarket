@@ -14,7 +14,8 @@ export async function POST(request: Request) {
 
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    // 🔽 EXPLICIT 2.0 DECLARATION: This forces Vercel to use the modern API
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     const prompt = "Analyze this book cover. Extract the title and the author. Prioritize text extraction aggressively, even if the image lighting is poor, blurry, dark, or distorted. Return ONLY the title and author as a single clean text string (e.g., 'The Hobbit, J.R.R. Tolkien'). Do not say hello, do not write a summary, do not use formatting.";
 
@@ -35,10 +36,8 @@ export async function POST(request: Request) {
     
   } catch (error: any) {
     console.error('[CRITICAL AI FAILURE]:', error);
-    
-    // 🔽 DIAGNOSTIC OVERRIDE: Send the EXACT error message to the storefront popup
     return NextResponse.json({ 
-      error: error.message || 'Unknown Server Crash - Check Vercel Logs' 
+      error: error.message || 'Unknown Server Crash' 
     }, { status: 500 });
   }
 }

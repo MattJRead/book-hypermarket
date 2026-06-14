@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 
 export default function BarcodeScanner({ 
   onScanSuccess, 
@@ -39,10 +39,12 @@ export default function BarcodeScanner({
         html5QrCode.start(
           targetCameraId,
           {
-            fps: 10, 
-            qrbox: { width: 250, height: 150 } 
+            fps: 15, // Bumped up for faster capture
+            qrbox: { width: 280, height: 120 }, // Widened so the white "quiet zones" on the edges of the barcode can be read
+            formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.UPC_A ] // Strictly look for book barcodes
           },
           (decodedText) => {
+            // 4. Handle the successful scan
             if (isComponentMounted) {
                 html5QrCode.stop().then(() => {
                   onScanSuccess(decodedText);
@@ -50,7 +52,7 @@ export default function BarcodeScanner({
             }
           },
           (errorMessage) => {
-            // Ignore background frame errors
+            // Ignore background frame errors while it looks for a barcode
           }
         ).catch((err) => {
           if (isComponentMounted) setError('Camera failed to ignite. Please check browser permissions.');
