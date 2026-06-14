@@ -15,10 +15,13 @@ export default function BarcodeScanner({
   useEffect(() => {
     const html5QrCode = new Html5Qrcode("barcode-reader");
 
-    // We only ask for the environment camera. No strict resolution demands.
-    // This guarantees the browser will prompt for permissions.
+    // 2. Start the rear camera with explicit HD requests to force focus
     html5QrCode.start(
-      { facingMode: "environment" },
+      { 
+        facingMode: "environment",
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      },
       {
         fps: 10, 
         qrbox: { width: 250, height: 150 } 
@@ -29,7 +32,7 @@ export default function BarcodeScanner({
         }).catch(console.error);
       },
       (errorMessage) => {
-        // Ignore background errors
+        // Silently ignore background errors
       }
     ).catch((err) => {
       setError('Camera failed to ignite. Please tap the lock icon in your URL bar and allow camera access.');

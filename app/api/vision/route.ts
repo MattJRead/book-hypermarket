@@ -12,15 +12,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No image payload received.' }, { status: 400 });
     }
 
-    // Strip the data URL prefix so the AI gets pure, raw image data
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
 
-    // Summon the lightning-fast 1.5 Flash model specifically designed for images
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    // The strict extraction command
-// The aggressive extraction command
     const prompt = "Analyze this book cover. Extract the title and the author. Prioritize text extraction aggressively, even if the image lighting is poor, blurry, dark, or distorted. Return ONLY the title and author as a single clean text string (e.g., 'The Hobbit, J.R.R. Tolkien'). Do not say hello, do not write a summary, do not use formatting.";
+
     const imageParts = [
       {
         inlineData: {
@@ -30,16 +27,18 @@ export async function POST(request: Request) {
       }
     ];
 
-    // Fire the data into the neural network
     const result = await model.generateContent([prompt, ...imageParts]);
     const response = await result.response;
     const extractedText = response.text();
 
-    // Send the raw text back to your storefront's search bar
     return NextResponse.json({ success: true, extractedText: extractedText.trim() });
     
   } catch (error: any) {
-    console.error('[CRITICAL AI FAILURE]:', error.message);
-    return NextResponse.json({ error: 'Failed to analyze cover art' }, { status: 500 });
+    console.error('[CRITICAL AI FAILURE]:', error);
+    
+    // 🔽 DIAGNOSTIC OVERRIDE: Send the EXACT error message to the storefront popup
+    return NextResponse.json({ 
+      error: error.message || 'Unknown Server Crash - Check Vercel Logs' 
+    }, { status: 500 });
   }
 }
