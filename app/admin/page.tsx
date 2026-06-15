@@ -24,8 +24,13 @@ export default function AdminDashboard() {
   // --- BANNER FORGE STATE ---
   const [banners, setBanners] = useState<Banner[]>([]);
   const [editingBanner, setEditingBanner] = useState<Partial<Banner> | null>(null);
-  const [bannerSearchQuery, setBannerSearchQuery] = useState('');
   const [bannerStatus, setBannerStatus] = useState('');
+  
+  // New Global Search States for Banner Forge
+  const [bannerSearchQuery, setBannerSearchQuery] = useState('');
+  const [bannerApiResults, setBannerApiResults] = useState<Book[]>([]);
+  const [isBannerSearching, setIsBannerSearching] = useState(false);
+  const [hasPressedBannerEnter, setHasPressedBannerEnter] = useState(false);
 
   // --- BROADCAST STATE ---
   const [bcTitle, setBcTitle] = useState('');
@@ -125,14 +130,59 @@ export default function AdminDashboard() {
     }
   };
 
-  const toggleBannerIsbn = (isbn: string) => {
-    if (!editingBanner) return;
-    const currentIsbns = editingBanner.target_isbns || [];
-    if (currentIsbns.includes(isbn)) {
-      setEditingBanner({ ...editingBanner, target_isbns: currentIsbns.filter(i => i !== isbn) });
-    } else {
-      setEditingBanner({ ...editingBanner, target_isbns: [...currentIsbns, isbn] });
+  const executeBannerSearch = async () => {
+    if (!bannerSearchQuery.trim()) return;
+    setIsBannerSearching(true);
+    setHasPressedBannerEnter(true);
+    try {
+      const res = await fetch(`/api/live-search?q=${encodeURIComponent(bannerSearchQuery)}`);
+      const data = await res.json();
+      if (data.success && data.books) {
+        setBannerApiResults(data.books);
+      } else {
+        setBannerApiResults([]);
+      }
+    } catch (error) {
+      console.error("Global search failed", error);
     }
+    setIsBannerSearching(false);
+  };
+
+  const addBannerBook = async (book: Book) => {
+    if (!editingBanner) return;
+    const isbn = book.isbn13;
+    const currentIsbns = editingBanner.target_isbns || [];
+    
+    if (currentIsbns.includes(isbn)) return; // Prevent duplicates
+
+    // If the book doesn't exist in our local Supabase state yet, provision it immediately
+    if (!books.some(b => b.isbn13 === isbn)) {
+      setBannerStatus(`Downloading ${book.title} to vault...`);
+      try {
+        const res = await fetch('/api/save-book', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(book)
+        });
+        const savedBook = await res.json();
+        if (savedBook.id) {
+          setBooks(prev => [...prev, savedBook]);
+        }
+      } catch (e) {
+        console.error("Failed to provision book:", e);
+      }
+      setBannerStatus('');
+    }
+
+    setEditingBanner({ ...editingBanner, target_isbns: [...currentIsbns, isbn] });
+  };
+
+  const removeBannerIsbn = (isbn: string) => {
+    if (!editingBanner) return;
+    setEditingBanner({ 
+      ...editingBanner, 
+      target_isbns: (editingBanner.target_isbns || []).filter(i => i !== isbn) 
+    });
   };
 
   const deleteBanner = async (id: string) => {
@@ -185,8 +235,13 @@ export default function AdminDashboard() {
     }
   };
 
+  // --- Search Filters ---
   const filteredBooks = books.filter(b => b.title.toLowerCase().includes(searchQuery.toLowerCase()) || b.author.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5);
-  const bannerFilteredBooks = books.filter(b => b.title.toLowerCase().includes(bannerSearchQuery.toLowerCase()) || b.author.toLowerCase().includes(bannerSearchQuery.toLowerCase())).slice(0, 5);
+  
+  // Banner display logic: Show API results if they pressed Enter, otherwise show local Supabase filter
+  const displayBannerBooks = hasPressedBannerEnter 
+    ? bannerApiResults 
+    : books.filter(b => b.title.toLowerCase().includes(bannerSearchQuery.toLowerCase()) || b.author.toLowerCase().includes(bannerSearchQuery.toLowerCase())).slice(0, 10);
 
   const visits = analyticsData.filter(e => e.event_type === 'page_visit');
   const clicks = analyticsData.filter(e => e.event_type === 'affiliate_click');
@@ -419,18 +474,47 @@ export default function AdminDashboard() {
 
                   {/* Target Book Assigner */}
                   <div className="border border-gray-800 rounded-xl p-4 bg-black">
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-4">Attach Books to Banner</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-4 flex items-center">
+                      Attach Books to Banner
+                    </label>
                     <div className="flex flex-col md:flex-row gap-6">
                       
                       <div className="flex-1">
-                        <input type="text" placeholder="Search vault to attach..." value={bannerSearchQuery} onChange={(e) => setBannerSearchQuery(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2 text-sm focus:outline-none focus:border-sky-500 mb-3" />
+                        <input 
+                          type="text" 
+                          placeholder="Search vault or press Enter for global search..." 
+                          value={bannerSearchQuery} 
+                          onChange={(e) => {
+                            setBannerSearchQuery(e.target.value);
+                            setHasPressedBannerEnter(false);
+                          }} 
+                          onKeyDown={(e) => e.key === 'Enter' && executeBannerSearch()}
+                          className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2 text-sm focus:outline-none focus:border-sky-500 mb-2" 
+                        />
+                        {isBannerSearching && <div className="text-xs text-sky-400 animate-pulse mb-2">Scanning global network...</div>}
+                        
                         <div className="space-y-2 max-h-40 overflow-y-auto">
-                          {bannerSearchQuery && bannerFilteredBooks.map(book => (
-                            <div key={book.id} className="flex justify-between items-center p-2 bg-gray-900 rounded border border-gray-800">
-                              <span className="text-xs font-bold truncate pr-2">{book.title}</span>
-                              <button onClick={() => toggleBannerIsbn(book.isbn13)} className="text-xs font-bold bg-sky-900 hover:bg-sky-800 text-sky-300 px-2 py-1 rounded shrink-0">+ Add</button>
-                            </div>
-                          ))}
+                          {bannerSearchQuery && displayBannerBooks.map(book => {
+                            const isAdded = editingBanner.target_isbns?.includes(book.isbn13);
+                            return (
+                              <div key={book.id || book.isbn13} className="flex justify-between items-center p-2 bg-gray-900 rounded border border-gray-800">
+                                <div className="flex flex-col overflow-hidden pr-2">
+                                  <span className="text-xs font-bold truncate">{book.title}</span>
+                                  <span className="text-[10px] text-gray-500 truncate">{book.author}</span>
+                                </div>
+                                <button 
+                                  onClick={() => addBannerBook(book)} 
+                                  disabled={isAdded}
+                                  className={`text-xs font-bold px-2 py-1 rounded shrink-0 transition-colors ${isAdded ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-sky-900 hover:bg-sky-800 text-sky-300'}`}
+                                >
+                                  {isAdded ? 'Added' : '+ Add'}
+                                </button>
+                              </div>
+                            );
+                          })}
+                          {hasPressedBannerEnter && displayBannerBooks.length === 0 && !isBannerSearching && (
+                            <div className="text-xs text-gray-500 p-2">No results found globally.</div>
+                          )}
                         </div>
                       </div>
 
@@ -442,7 +526,7 @@ export default function AdminDashboard() {
                             return (
                               <div key={isbn} className="flex justify-between items-center p-2 bg-emerald-900/20 border border-emerald-900/50 rounded">
                                 <span className="text-xs font-bold text-emerald-100 truncate pr-2">{b ? b.title : `ISBN: ${isbn}`}</span>
-                                <button onClick={() => toggleBannerIsbn(isbn)} className="text-xs font-bold text-red-400 hover:text-red-300 shrink-0">Remove</button>
+                                <button onClick={() => removeBannerIsbn(isbn)} className="text-xs font-bold text-red-400 hover:text-red-300 shrink-0">Remove</button>
                               </div>
                             );
                           })}
