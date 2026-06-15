@@ -8,7 +8,6 @@ import FloatingMenu from '../components/FloatingMenu';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import NotificationBell from '../components/NotificationBell';
 import BarcodeScanner from '../components/BarcodeScanner';
-import CoverScanner from '../components/CoverScanner';
 
 type Book = {
   id: string;
@@ -107,7 +106,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
 
   const currentShop = shops.find(s => s.id === selectedShopId) || shops[0];
 
-  // 🔽 THE JUST-IN-TIME PROVISIONING PROTOCOL
+  // THE JUST-IN-TIME PROVISIONING PROTOCOL
   const ensureBookInDatabase = async () => {
     if (!realBookId.startsWith('ext_')) return realBookId; // Already saved
     
@@ -339,6 +338,81 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
 }
 
 // ==========================================
+// 1.5 THE FEATURED BANNER ENGINE
+// ==========================================
+function FeaturedBannerCarousel({ onSelectFeature, isDarkMode }: { onSelectFeature: (query: string) => void, isDarkMode: boolean }) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = direction === 'left' ? -400 : 400;
+      scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  // EDIT THIS ARRAY to change your banners whenever you want!
+  // 'targetQuery' can be an ISBN, an Author's name, or a Category.
+  const features = [
+    {
+      id: '1',
+      title: 'Popular Fiction',
+      subtitle: 'The stories everyone is talking about right now.',
+      bgClass: 'bg-gradient-to-br from-purple-600 to-indigo-900',
+      targetQuery: 'Fiction', 
+      iconColor: 'text-purple-300'
+    },
+    {
+      id: '2',
+      title: 'Big Books of Summer',
+      subtitle: 'Your next great escape awaits.',
+      bgClass: 'bg-gradient-to-br from-orange-500 to-rose-700',
+      targetQuery: 'Summer',
+      iconColor: 'text-orange-200'
+    },
+    {
+      id: '3',
+      title: 'Master Storytellers',
+      subtitle: 'Discover worlds crafted by the legends.',
+      bgClass: 'bg-gradient-to-br from-sky-600 to-blue-900',
+      targetQuery: 'Terry Pratchett', 
+      iconColor: 'text-sky-300'
+    }
+  ];
+
+  return (
+    <div className="mb-14 w-full relative group">
+      <div className="relative w-full max-w-[1400px] mx-auto">
+        <button onClick={() => scroll('left')} className={`absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-600' : 'bg-white text-gray-900 hover:bg-gray-100'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg></button>
+        <button onClick={() => scroll('right')} className={`absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-600' : 'bg-white text-gray-900 hover:bg-gray-100'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg></button>
+        
+        <div ref={scrollContainerRef} className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory px-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {features.map(feature => (
+            <div 
+              key={feature.id} 
+              onClick={() => onSelectFeature(feature.targetQuery)}
+              className={`snap-start shrink-0 w-[85vw] max-w-[400px] h-48 rounded-3xl p-6 md:p-8 flex items-center justify-between cursor-pointer transition-transform hover:scale-[1.02] hover:shadow-2xl shadow-lg relative overflow-hidden group ${feature.bgClass}`}
+            >
+              <div className="absolute -right-10 -top-10 w-48 h-48 bg-white opacity-10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+              
+              <div className="relative z-10 w-2/3 pr-4">
+                <h3 className="text-2xl md:text-3xl font-black text-white mb-2 leading-tight drop-shadow-md">{feature.title}</h3>
+                <p className="text-white/80 text-sm font-medium leading-snug">{feature.subtitle}</p>
+              </div>
+
+              <div className={`relative z-10 w-1/3 flex justify-end ${feature.iconColor}`}>
+                <svg className="w-20 h-20 drop-shadow-lg transform group-hover:-rotate-6 transition-transform duration-300" fill="currentColor" viewBox="0 0 24 24">
+                   <path d="M4 4h16v16H4V4zm2 2v12h12V6H6zm2 2h8v2H8V8zm0 4h8v2H8v-2z" />
+                </svg>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
 // 2. THE CATEGORY VAULT ENGINE
 // ==========================================
 function CategoryVault({ title, books, isDarkMode, colorClass, onViewAll, userId, userLibrary, userWishlist }: { title: string, books: Book[], isDarkMode: boolean, colorClass: string, onViewAll: () => void, userId: string | null, userLibrary: string[], userWishlist: string[] }) {
@@ -390,7 +464,6 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [hasPressedEnter, setHasPressedEnter] = useState(false);
   
-  // 🔽 NEW STATE: We will hold the exact results from the API here
   const [apiSearchResults, setApiSearchResults] = useState<Book[]>([]); 
   
   const [isScanning, setIsScanning] = useState(false);
@@ -454,7 +527,6 @@ export default function Home() {
 
   const getBooksForCategory = (categoryName: string) => books.filter(b => b.category === categoryName);
 
-  // 🔽 THE FIX: We keep local filtering for when they are just typing...
   const localSearchResults = books.filter((book) => {
     const queryLower = searchQuery.toLowerCase();
     const cleanQuery = queryLower.replace(/[- ]/g, '');
@@ -465,10 +537,9 @@ export default function Home() {
            (cleanIsbn !== '' && cleanIsbn.includes(cleanQuery));
   });
 
-  // 🔽 THE FIX: ...But if they pressed Enter or Scanned, we strictly trust the API!
   const displayResults = hasPressedEnter ? apiSearchResults : localSearchResults;
   
-  // 🚀 THE INFINITE SHELF PROTOCOL & SCANNER ENGINE
+  // THE INFINITE SHELF PROTOCOL & SCANNER ENGINE
   const executeSearch = async (queryToSearch: string) => {
     if (!queryToSearch.trim()) return;
     
@@ -481,7 +552,6 @@ export default function Home() {
       const data = await res.json();
       
       if (data.success && data.books) {
-        // Force the UI to show exactly what the API found
         setApiSearchResults(data.books); 
         
         if (data.books.length > 0) {
@@ -516,7 +586,6 @@ export default function Home() {
       if (data.success && data.books && data.books.length > 0) {
         if (data.books.length < 10) setHasMoreResults(false);
         
-        // Update both the background cache and the active screen
         setBooks(prevBooks => {
           const combined = [...prevBooks, ...data.books];
           return Array.from(new Map(combined.map(b => [b.isbn13, b])).values());
@@ -577,14 +646,9 @@ export default function Home() {
                   setHasPressedEnter(false); 
                 }} 
                 onKeyDown={handleLiveSearch} 
-                className={`w-full p-4 pr-24 rounded-xl border text-lg focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-xl ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} 
+                className={`w-full p-4 pr-16 rounded-xl border text-lg focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-xl ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} 
               />
               
-              <CoverScanner 
-                isDarkMode={isDarkMode} 
-                onScan={(extractedText) => { executeSearch(extractedText); }} 
-              />
-
               <button 
                 onClick={() => setIsScanning(true)}
                 className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors ${isDarkMode ? 'text-gray-400 hover:text-sky-400 hover:bg-gray-800' : 'text-gray-500 hover:text-sky-600 hover:bg-gray-200'}`}
@@ -648,6 +712,14 @@ export default function Home() {
               </div>
             ) : (
               <>
+                <FeaturedBannerCarousel 
+                  onSelectFeature={(query) => {
+                    executeSearch(query);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }} 
+                  isDarkMode={isDarkMode} 
+                />
+
                 {dynamicCategories.map(cat => {
                   const catBooks = getBooksForCategory(cat.name);
                   return <CategoryVault key={cat.name} title={cat.name} books={catBooks} isDarkMode={isDarkMode} colorClass={cat.color} onViewAll={() => setActiveCategoryView({ name: cat.name, books: catBooks })} userId={userId} userLibrary={userLibrary} userWishlist={userWishlist} />
