@@ -121,31 +121,24 @@ export default function AdminDashboard() {
 
     if (editingBanner.id) {
       const { data, error } = await supabase.from('storefront_banners').update(bannerPayload).eq('id', editingBanner.id).select().single();
-      if (error) setBannerStatus('Error updating banner.');
-      else { setBanners(banners.map(b => b.id === data.id ? data : b)); setBannerStatus('Banner updated!'); }
+      if (error) {
+        console.error("Supabase Error:", error);
+        setBannerStatus(`DB Error: ${error.message}`);
+      } else { 
+        setBanners(banners.map(b => b.id === data.id ? data : b)); 
+        setBannerStatus('Banner updated!'); 
+      }
     } else {
       const { data, error } = await supabase.from('storefront_banners').insert([bannerPayload]).select().single();
-      if (error) setBannerStatus('Error creating banner.');
-      else { setBanners([data, ...banners]); setEditingBanner(data); setBannerStatus('Banner forged!'); }
-    }
-  };
-
-  const executeBannerSearch = async () => {
-    if (!bannerSearchQuery.trim()) return;
-    setIsBannerSearching(true);
-    setHasPressedBannerEnter(true);
-    try {
-      const res = await fetch(`/api/live-search?q=${encodeURIComponent(bannerSearchQuery)}`);
-      const data = await res.json();
-      if (data.success && data.books) {
-        setBannerApiResults(data.books);
-      } else {
-        setBannerApiResults([]);
+      if (error) {
+        console.error("Supabase Error:", error);
+        setBannerStatus(`DB Error: ${error.message}`);
+      } else { 
+        setBanners([data, ...banners]); 
+        setEditingBanner(data); 
+        setBannerStatus('Banner forged!'); 
       }
-    } catch (error) {
-      console.error("Global search failed", error);
     }
-    setIsBannerSearching(false);
   };
 
   const addBannerBook = async (book: Book) => {
