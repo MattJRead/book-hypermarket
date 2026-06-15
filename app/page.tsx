@@ -659,9 +659,6 @@ export default function Home() {
         </>
       )}
 
-      {/* AWIN VERIFICATION TAG - REMOVE AFTER APPROVAL */}
-      <div className="w-full text-center py-4 text-xs opacity-30 font-mono">Hello Awin</div>
-      
       <FloatingMenu isDarkMode={isDarkMode} toggleTheme={() => setIsDarkMode(!isDarkMode)} />
       <SpeedInsights />
     </main>
