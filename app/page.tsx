@@ -451,9 +451,15 @@ export default function Home() {
   const getBooksForCategory = (categoryName: string) => books.filter(b => b.category === categoryName);
 
   const searchResults = books.filter((book) => {
-    return book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           book.isbn13?.includes(searchQuery);
+    const queryLower = searchQuery.toLowerCase();
+    
+    // 🔽 THE FIX: Strip hyphens and spaces so the raw barcode perfectly matches Google's formatting
+    const cleanQuery = queryLower.replace(/[- ]/g, '');
+    const cleanIsbn = (book.isbn13 || '').replace(/[- ]/g, '');
+
+    return book.title.toLowerCase().includes(queryLower) ||
+           book.author.toLowerCase().includes(queryLower) ||
+           (cleanIsbn !== '' && cleanIsbn.includes(cleanQuery));
   });
   
   // 🚀 THE INFINITE SHELF PROTOCOL & SCANNER ENGINE
