@@ -149,7 +149,7 @@ export default function AdminDashboard() {
   };
 
   const addBannerBook = async (book: Book) => {
-    if (!editingBanner) return;
+    if (!editingBanner || !book.isbn13) return; // Guard against missing ISBNs
     const isbn = book.isbn13;
     const currentIsbns = editingBanner.target_isbns || [];
     
@@ -479,37 +479,50 @@ export default function AdminDashboard() {
                     </label>
                     <div className="flex flex-col md:flex-row gap-6">
                       
-                      <div className="flex-1">
-                        <input 
-                          type="text" 
-                          placeholder="Search vault or press Enter for global search..." 
-                          value={bannerSearchQuery} 
-                          onChange={(e) => {
-                            setBannerSearchQuery(e.target.value);
-                            setHasPressedBannerEnter(false);
-                          }} 
-                          onKeyDown={(e) => e.key === 'Enter' && executeBannerSearch()}
-                          className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2 text-sm focus:outline-none focus:border-sky-500 mb-2" 
-                        />
+                      <div className="flex-1 relative">
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            placeholder="Search vault or press Enter for global search..." 
+                            value={bannerSearchQuery} 
+                            onChange={(e) => {
+                              setBannerSearchQuery(e.target.value);
+                              setHasPressedBannerEnter(false);
+                              if (e.target.value === '') setBannerApiResults([]); // Clear results on empty
+                            }} 
+                            onKeyDown={(e) => e.key === 'Enter' && executeBannerSearch()}
+                            className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 pr-10 text-sm focus:outline-none focus:border-sky-500 mb-2" 
+                          />
+                          {bannerSearchQuery && (
+                            <button 
+                              onClick={() => { setBannerSearchQuery(''); setBannerApiResults([]); setHasPressedBannerEnter(false); }}
+                              className="absolute right-3 top-3 text-gray-500 hover:text-white"
+                              title="Clear Search"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
                         {isBannerSearching && <div className="text-xs text-sky-400 animate-pulse mb-2">Scanning global network...</div>}
                         
-                        <div className="space-y-2 max-h-40 overflow-y-auto">
-                          {bannerSearchQuery && displayBannerBooks.map(book => {
+                        <div className="space-y-2 max-h-60 overflow-y-auto">
+                          {bannerSearchQuery && displayBannerBooks.map((book, index) => {
+                            if (!book.isbn13) return null; // CRITICAL FIX: Skip books without an ISBN so it doesn't crash the mapping
                             const isAdded = editingBanner.target_isbns?.includes(book.isbn13);
                             return (
-                              <div key={book.id || book.isbn13} className="flex justify-between items-center p-2 bg-gray-900 rounded border border-gray-800">
+                              <button 
+                                key={`${book.isbn13}-${index}`}
+                                onClick={() => addBannerBook(book)} 
+                                disabled={isAdded}
+                                className={`w-full text-left flex justify-between items-center p-3 rounded border transition-all ${isAdded ? 'bg-gray-800 border-gray-700 opacity-50 cursor-not-allowed' : 'bg-sky-900/20 border-sky-900 hover:bg-sky-900/40 hover:border-sky-500'}`}
+                              >
                                 <div className="flex flex-col overflow-hidden pr-2">
-                                  <span className="text-xs font-bold truncate">{book.title}</span>
-                                  <span className="text-[10px] text-gray-500 truncate">{book.author}</span>
+                                  <span className={`text-sm font-bold truncate ${isAdded ? 'text-gray-500' : 'text-sky-100'}`}>{book.title}</span>
+                                  <span className="text-xs text-gray-500 truncate">{book.author}</span>
                                 </div>
-                                <button 
-                                  onClick={() => addBannerBook(book)} 
-                                  disabled={isAdded}
-                                  className={`text-xs font-bold px-2 py-1 rounded shrink-0 transition-colors ${isAdded ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-sky-900 hover:bg-sky-800 text-sky-300'}`}
-                                >
-                                  {isAdded ? 'Added' : '+ Add'}
-                                </button>
-                              </div>
+                                {!isAdded && <span className="text-xs font-bold bg-sky-600 text-white px-2 py-1 rounded shrink-0">+ Add</span>}
+                                {isAdded && <span className="text-xs font-bold text-gray-500 px-2 py-1 shrink-0">Attached</span>}
+                              </button>
                             );
                           })}
                           {hasPressedBannerEnter && displayBannerBooks.length === 0 && !isBannerSearching && (
@@ -520,11 +533,11 @@ export default function AdminDashboard() {
 
                       <div className="flex-1 border-l border-gray-800 pl-6">
                         <h3 className="text-xs font-bold text-emerald-400 mb-3">Attached Books ({editingBanner.target_isbns?.length || 0})</h3>
-                        <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                           {editingBanner.target_isbns?.map(isbn => {
                             const b = books.find(book => book.isbn13 === isbn);
                             return (
-                              <div key={isbn} className="flex justify-between items-center p-2 bg-emerald-900/20 border border-emerald-900/50 rounded">
+                              <div key={isbn} className="flex justify-between items-center p-3 bg-emerald-900/20 border border-emerald-900/50 rounded">
                                 <span className="text-xs font-bold text-emerald-100 truncate pr-2">{b ? b.title : `ISBN: ${isbn}`}</span>
                                 <button onClick={() => removeBannerIsbn(isbn)} className="text-xs font-bold text-red-400 hover:text-red-300 shrink-0">Remove</button>
                               </div>
