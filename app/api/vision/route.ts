@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-// Initialize the Gemini Engine using your secure key
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+import Tesseract from 'tesseract.js';
 
 export async function POST(request: Request) {
   try {
@@ -12,32 +9,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No image payload received.' }, { status: 400 });
     }
 
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+    // Pass the image directly into the local Tesseract engine
+    const { data: { text } } = await Tesseract.recognize(
+      imageBase64,
+      'eng'
+    );
 
-    // 🔽 EXPLICIT 2.0 DECLARATION: This forces Vercel to use the modern API
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    // Clean up the raw text output to prevent the search bar from choking on line breaks
+    const cleanText = text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
 
-    const prompt = "Analyze this book cover. Extract the title and the author. Prioritize text extraction aggressively, even if the image lighting is poor, blurry, dark, or distorted. Return ONLY the title and author as a single clean text string (e.g., 'The Hobbit, J.R.R. Tolkien'). Do not say hello, do not write a summary, do not use formatting.";
+    if (!cleanText || cleanText.length < 3) {
+        return NextResponse.json({ error: 'Could not read text clearly. Try holding the camera steadier or improving lighting.' }, { status: 400 });
+    }
 
-    const imageParts = [
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType: 'image/jpeg'
-        }
-      }
-    ];
-
-    const result = await model.generateContent([prompt, ...imageParts]);
-    const response = await result.response;
-    const extractedText = response.text();
-
-    return NextResponse.json({ success: true, extractedText: extractedText.trim() });
+    return NextResponse.json({ success: true, extractedText: cleanText });
     
   } catch (error: any) {
-    console.error('[CRITICAL AI FAILURE]:', error);
+    console.error('[CRITICAL OCR FAILURE]:', error);
     return NextResponse.json({ 
-      error: error.message || 'Unknown Server Crash' 
+      error: error.message || 'Local OCR Engine Crash' 
     }, { status: 500 });
   }
 }

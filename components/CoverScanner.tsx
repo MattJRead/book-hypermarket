@@ -92,10 +92,10 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
         closeCamera();
         onScan(data.extractedText);
       } else {
-        alert(`AI Failure: ${data.error || 'Could not detect text.'}`);
+        alert(`Scanner Failure: ${data.error || 'Could not detect text. Try better lighting.'}`);
       }
     } catch (error) {
-      alert("Network timeout. The servers are unreachable.");
+      alert("Network timeout. The local engine is unreachable.");
     }
     setIsAnalyzing(false);
   };
@@ -122,7 +122,7 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
           <div className="w-full h-full flex flex-col relative bg-black">
             
             <div className="p-5 flex justify-between items-center border-b border-gray-900 bg-black shrink-0">
-              <h3 className="text-purple-500 font-bold tracking-widest text-xs uppercase">AI Cover Scanner</h3>
+              <h3 className="text-purple-500 font-bold tracking-widest text-xs uppercase">Optical Cover Scanner</h3>
               <button onClick={closeCamera} className="text-gray-500 hover:text-white transition-colors">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
@@ -144,7 +144,7 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
                 <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center backdrop-blur-sm z-10">
                   <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-6"></div>
                   <span className="text-purple-400 font-mono text-sm tracking-widest uppercase animate-pulse drop-shadow-md text-center px-4">
-                    [ Interrogating Gemini... ]
+                    [ Analyzing Cover Art... ]
                   </span>
                 </div>
               )}
