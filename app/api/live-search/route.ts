@@ -37,15 +37,22 @@ export async function GET(request: Request) {
 
     // 3. EXTERNAL GOOGLE SEARCH (Read-Only)
     const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
-    const googleQuery = isIsbn ? `isbn:${cleanedQuery}` : encodeURIComponent(query);
-    const fetchUrl = `https://www.googleapis.com/books/v1/volumes?q=${googleQuery}&startIndex=${offset}&maxResults=10&key=${apiKey}`;
+    let googleQuery = isIsbn ? `isbn:${cleanedQuery}` : encodeURIComponent(query);
+    let fetchUrl = `https://www.googleapis.com/books/v1/volumes?q=${googleQuery}&startIndex=${offset}&maxResults=10&key=${apiKey}`;
     
-    const googleRes = await fetch(fetchUrl);
-    const googleData = await googleRes.json();
+    let googleRes = await fetch(fetchUrl);
+    let googleData = await googleRes.json();
+
+    // 🔽 THE FALLBACK: If Google's strict ISBN filter fails, try a raw keyword search
+    if (isIsbn && (!googleData.items || googleData.items.length === 0)) {
+      console.log('[FALLBACK] Strict ISBN failed, attempting raw numeric keyword search...');
+      fetchUrl = `https://www.googleapis.com/books/v1/volumes?q=${cleanedQuery}&startIndex=${offset}&maxResults=10&key=${apiKey}`;
+      googleRes = await fetch(fetchUrl);
+      googleData = await googleRes.json();
+    }
 
     if (googleData.items && googleData.items.length > 0) {
       const newBooks = googleData.items.map((item: any) => ({
-        // Tag temporary books with 'ext_' so the frontend knows they aren't in your DB yet
         id: `ext_${Math.random().toString(36).substring(2, 9)}`, 
         title: item.volumeInfo.title || 'Unknown Title',
         author: item.volumeInfo.authors?.join(', ') || 'Unknown Author',
@@ -61,7 +68,6 @@ export async function GET(request: Request) {
       }
     }
 
-    // Zero Database Writes - Send directly to the user
     return NextResponse.json({ success: true, books: displayBooks });
 
   } catch (error: any) {
