@@ -65,7 +65,6 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
     if (!videoRef.current) return;
     setIsAnalyzing(true);
 
-    // Create a temporary canvas to capture the frame
     const canvas = document.createElement('canvas');
     const MAX_WIDTH = 800;
     const scaleSize = MAX_WIDTH / videoRef.current.videoWidth;
@@ -76,7 +75,6 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
     const ctx = canvas.getContext('2d');
     
     if (ctx) {
-      // 🔽 INJECTION: Force high contrast and grayscale so the OCR can read the text easier
       ctx.filter = 'brightness(1.2) contrast(1.2) grayscale(100%)';
       ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
     }
@@ -84,19 +82,25 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
     const base64Image = canvas.toDataURL('image/jpeg', 0.8);
 
     try {
-      // 🔽 THE FIX: Run Tesseract locally in the browser, bypassing the server completely
       const { data: { text } } = await Tesseract.recognize(
         base64Image,
         'eng'
       );
 
-      const cleanText = text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+      // 🔽 THE GARBAGE FILTER INJECTION
+      const sanitizedText = text.replace(/[^a-zA-Z0-9\s]/g, ' ');
+      
+      const finalKeywords = sanitizedText
+        .split(/\s+/)
+        .filter(word => word.length >= 3)
+        .join(' ')
+        .trim();
 
-      if (cleanText && cleanText.length >= 3) {
+      if (finalKeywords && finalKeywords.length >= 3) {
         closeCamera();
-        onScan(cleanText);
+        onScan(finalKeywords);
       } else {
-        alert("Scanner Failure: Could not read text clearly. Try better lighting.");
+        alert("Scanner Failure: The artwork confused the lens. Try holding it steadier or use the barcode scanner.");
       }
     } catch (error) {
       console.error(error);
@@ -127,7 +131,6 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
         <div style={{ zIndex: 2147483647, isolation: 'isolate' }} className="fixed inset-0 flex items-center justify-center bg-black animate-in fade-in">
           <div className="w-full h-full flex flex-col relative bg-black">
             
-            {/* 🔽 THE FIX: Moved the 'X' to the left side so the Notification Bell doesn't cover it */}
             <div className="p-5 flex flex-row-reverse justify-between items-center border-b border-gray-900 bg-black shrink-0">
               <h3 className="text-purple-500 font-bold tracking-widest text-xs uppercase text-right">Optical Cover Scanner</h3>
               <button onClick={closeCamera} className="text-gray-500 hover:text-white transition-colors">
@@ -160,7 +163,6 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
               )}
             </div>
             
-            {/* 🔽 THE FIX: Added pb-24 padding to push the button far above the Floating Menu */}
             <div className="p-8 pb-24 bg-black flex flex-col items-center justify-center gap-4 border-t border-gray-900 shrink-0">
               <button 
                 onClick={takeSnapshot}
