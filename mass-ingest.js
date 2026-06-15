@@ -5,14 +5,20 @@ const queries = [
   "expected releases 2026 fiction",
   "highly anticipated books 2026",
   "pre order fantasy books",
-  "pre order thriller novels"
+  "pre order thriller novels",
+  "pre order science fiction books",
+  "pre order romance novels",
+  "Signed first edition books",
+  "limited edition books",
+  "collector's edition books",
+  "Teen and Young Adult novels"
 ];
 
 // Increased dig depth: 15 pages = 600 books per niche above
 const pagesPerQuery = 15; 
 
-// A 3-second breather between requests to prevent server crashes and API bans
-const delayMs = 3000; 
+// A 2-second breather between requests to prevent server crashes and API bans
+const delayMs = 2000; 
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
