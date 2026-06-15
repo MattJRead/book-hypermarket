@@ -22,7 +22,7 @@ type Book = {
 // ==========================================
 // 1. THE BOOK CARD ENGINE
 // ==========================================
-function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishlisted }: { book: Book, isDarkMode: boolean, userId: string | null, initiallyOwned: boolean, initiallyWishlisted: boolean }) {
+function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishlisted, onAuthorClick }: { book: Book, isDarkMode: boolean, userId: string | null, initiallyOwned: boolean, initiallyWishlisted: boolean, onAuthorClick?: (author: string) => void }) {
   const [prices, setPrices] = useState<{ waterstones: string, blackwells: string, amazon: string, ebay: string, wob: string } | null>(null);
   const [isLoadingPrice, setIsLoadingPrice] = useState(true);
   
@@ -40,7 +40,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
 
   const [isCoverModalOpen, setIsCoverModalOpen] = useState(false);
   
-  // Track the real database ID so we can swap the temporary Google ID smoothly
   const [realBookId, setRealBookId] = useState(book.id);
 
   useEffect(() => {
@@ -106,9 +105,8 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
 
   const currentShop = shops.find(s => s.id === selectedShopId) || shops[0];
 
-  // THE JUST-IN-TIME PROVISIONING PROTOCOL
   const ensureBookInDatabase = async () => {
-    if (!realBookId.startsWith('ext_')) return realBookId; // Already saved
+    if (!realBookId.startsWith('ext_')) return realBookId; 
     
     try {
       const res = await fetch('/api/save-book', {
@@ -222,9 +220,17 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
         <h3 className="font-bold text-lg mb-1 leading-tight line-clamp-2 break-words w-full z-10" title={book.title}>
           {book.title}
         </h3>
-        <p className={`text-sm mb-2 line-clamp-1 break-words w-full z-10 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} title={book.author}>
+        
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onAuthorClick) onAuthorClick(book.author);
+          }}
+          className={`text-sm mb-2 line-clamp-1 break-words w-full z-10 hover:underline hover:text-sky-500 transition-colors cursor-pointer ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} 
+          title={`Search for more books by ${book.author}`}
+        >
           {book.author}
-        </p>
+        </button>
 
         <div className="flex flex-col items-center gap-1 mb-4 w-full z-10">
           <span className={`text-xs font-mono px-2 py-0.5 rounded-md ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
@@ -279,7 +285,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
                 target="_blank" 
                 rel="noopener noreferrer" 
                 onClick={() => {
-                  ensureBookInDatabase(); // Silently save when user shops
+                  ensureBookInDatabase(); 
                   fetch('/api/track', {
                     method: 'POST',
                     body: JSON.stringify({
@@ -340,7 +346,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
 // ==========================================
 // 1.5 THE FEATURED BANNER ENGINE
 // ==========================================
-function FeaturedBannerCarousel({ onSelectFeature, isDarkMode }: { onSelectFeature: (query: string) => void, isDarkMode: boolean }) {
+function FeaturedBannerCarousel({ onSelectFeature, isDarkMode }: { onSelectFeature: (query: string | string[]) => void, isDarkMode: boolean }) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -350,15 +356,13 @@ function FeaturedBannerCarousel({ onSelectFeature, isDarkMode }: { onSelectFeatu
     }
   };
 
-  // EDIT THIS ARRAY to change your banners whenever you want!
-  // 'targetQuery' can be an ISBN, an Author's name, or a Category.
   const features = [
     {
       id: '1',
       title: 'Popular Fiction',
       subtitle: 'The stories everyone is talking about right now.',
       bgClass: 'bg-gradient-to-br from-purple-600 to-indigo-900',
-      targetQuery: 'Fiction', 
+      targetQueries: ['Fiction'], 
       iconColor: 'text-purple-300'
     },
     {
@@ -366,7 +370,7 @@ function FeaturedBannerCarousel({ onSelectFeature, isDarkMode }: { onSelectFeatu
       title: 'Big Books of Summer',
       subtitle: 'Your next great escape awaits.',
       bgClass: 'bg-gradient-to-br from-orange-500 to-rose-700',
-      targetQuery: 'Summer',
+      targetQueries: ['Summer'],
       iconColor: 'text-orange-200'
     },
     {
@@ -374,7 +378,7 @@ function FeaturedBannerCarousel({ onSelectFeature, isDarkMode }: { onSelectFeatu
       title: 'Master Storytellers',
       subtitle: 'Discover worlds crafted by the legends.',
       bgClass: 'bg-gradient-to-br from-sky-600 to-blue-900',
-      targetQuery: 'Terry Pratchett', 
+      targetQueries: ['Terry Pratchett', 'Tolkien', 'Neil Gaiman', 'Ursula K. Le Guin', 'George R.R. Martin'], 
       iconColor: 'text-sky-300'
     }
   ];
@@ -389,7 +393,7 @@ function FeaturedBannerCarousel({ onSelectFeature, isDarkMode }: { onSelectFeatu
           {features.map(feature => (
             <div 
               key={feature.id} 
-              onClick={() => onSelectFeature(feature.targetQuery)}
+              onClick={() => onSelectFeature(feature.targetQueries)}
               className={`snap-start shrink-0 w-[85vw] max-w-[400px] h-48 rounded-3xl p-6 md:p-8 flex items-center justify-between cursor-pointer transition-transform hover:scale-[1.02] hover:shadow-2xl shadow-lg relative overflow-hidden group ${feature.bgClass}`}
             >
               <div className="absolute -right-10 -top-10 w-48 h-48 bg-white opacity-10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
@@ -415,7 +419,7 @@ function FeaturedBannerCarousel({ onSelectFeature, isDarkMode }: { onSelectFeatu
 // ==========================================
 // 2. THE CATEGORY VAULT ENGINE
 // ==========================================
-function CategoryVault({ title, books, isDarkMode, colorClass, onViewAll, userId, userLibrary, userWishlist }: { title: string, books: Book[], isDarkMode: boolean, colorClass: string, onViewAll: () => void, userId: string | null, userLibrary: string[], userWishlist: string[] }) {
+function CategoryVault({ title, books, isDarkMode, colorClass, onViewAll, userId, userLibrary, userWishlist, onAuthorClick }: { title: string, books: Book[], isDarkMode: boolean, colorClass: string, onViewAll: () => void, userId: string | null, userLibrary: string[], userWishlist: string[], onAuthorClick: (author: string) => void }) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -445,7 +449,7 @@ function CategoryVault({ title, books, isDarkMode, colorClass, onViewAll, userId
         <div ref={scrollContainerRef} className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory px-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {books.map(book => (
             <div key={book.id} className="snap-start shrink-0 w-72">
-              <BookCard book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} />
+              <BookCard book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} onAuthorClick={onAuthorClick} />
             </div>
           ))}
         </div>
@@ -540,24 +544,38 @@ export default function Home() {
   const displayResults = hasPressedEnter ? apiSearchResults : localSearchResults;
   
   // THE INFINITE SHELF PROTOCOL & SCANNER ENGINE
-  const executeSearch = async (queryToSearch: string) => {
-    if (!queryToSearch.trim()) return;
+  const executeSearch = async (queryToSearch: string | string[]) => {
+    if (!queryToSearch || (Array.isArray(queryToSearch) && queryToSearch.length === 0) || (typeof queryToSearch === 'string' && !queryToSearch.trim())) return;
     
     setHasPressedEnter(true); 
-    setSearchQuery(queryToSearch); 
+    
+    const displayQuery = Array.isArray(queryToSearch) ? queryToSearch.join(', ') : queryToSearch;
+    setSearchQuery(displayQuery); 
     setIsLoading(true); 
     
     try {
-      const res = await fetch(`/api/live-search?q=${encodeURIComponent(queryToSearch)}`);
-      const data = await res.json();
+      const queries = Array.isArray(queryToSearch) ? queryToSearch : [queryToSearch];
       
-      if (data.success && data.books) {
-        setApiSearchResults(data.books); 
-        
-        if (data.books.length > 0) {
-          const brandNewBooks = data.books.filter((newBook: Book) => !books.some(b => b.isbn13 === newBook.isbn13));
-          setBooks(prevBooks => [...brandNewBooks, ...prevBooks]);
+      const fetchPromises = queries.map(q => 
+        fetch(`/api/live-search?q=${encodeURIComponent(q)}`).then(res => res.json())
+      );
+      
+      const resultsArray = await Promise.all(fetchPromises);
+      
+      let combinedBooks: Book[] = [];
+      resultsArray.forEach(data => {
+        if (data.success && data.books) {
+          combinedBooks = [...combinedBooks, ...data.books];
         }
+      });
+      
+      const uniqueBooks = Array.from(new Map(combinedBooks.map(b => [b.isbn13, b])).values());
+      
+      if (uniqueBooks.length > 0) {
+        setApiSearchResults(uniqueBooks); 
+        
+        const brandNewBooks = uniqueBooks.filter(newBook => !books.some(b => b.isbn13 === newBook.isbn13));
+        setBooks(prevBooks => [...brandNewBooks, ...prevBooks]);
       } else {
         setApiSearchResults([]);
       }
@@ -604,6 +622,12 @@ export default function Home() {
     setIsFetchingMore(false);
   };
 
+  // NEW HELPER: Triggers when an author is clicked anywhere
+  const handleAuthorClick = (authorName: string) => {
+    executeSearch(authorName);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
   return (
     <main className={`min-h-screen flex flex-col py-8 pb-32 transition-colors duration-300 overflow-hidden ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
       
@@ -630,7 +654,7 @@ export default function Home() {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {activeCategoryView.books.map(book => <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} />)}
+            {activeCategoryView.books.map(book => <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} onAuthorClick={handleAuthorClick} />)}
           </div>
         </div>
       ) : (
@@ -688,7 +712,7 @@ export default function Home() {
                       </div>
                     )
                   ) : (
-                    displayResults.map(book => <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} />)
+                    displayResults.map(book => <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} onAuthorClick={handleAuthorClick} />)
                   )}
                 </div>
                 
@@ -722,9 +746,9 @@ export default function Home() {
 
                 {dynamicCategories.map(cat => {
                   const catBooks = getBooksForCategory(cat.name);
-                  return <CategoryVault key={cat.name} title={cat.name} books={catBooks} isDarkMode={isDarkMode} colorClass={cat.color} onViewAll={() => setActiveCategoryView({ name: cat.name, books: catBooks })} userId={userId} userLibrary={userLibrary} userWishlist={userWishlist} />
+                  return <CategoryVault key={cat.name} title={cat.name} books={catBooks} isDarkMode={isDarkMode} colorClass={cat.color} onViewAll={() => setActiveCategoryView({ name: cat.name, books: catBooks })} userId={userId} userLibrary={userLibrary} userWishlist={userWishlist} onAuthorClick={handleAuthorClick} />
                 })}
-                <CategoryVault title="All Inventory" books={books} isDarkMode={isDarkMode} colorClass="border-gray-500" onViewAll={() => setActiveCategoryView({ name: 'All Inventory', books: books })} userId={userId} userLibrary={userLibrary} userWishlist={userWishlist} />
+                <CategoryVault title="All Inventory" books={books} isDarkMode={isDarkMode} colorClass="border-gray-500" onViewAll={() => setActiveCategoryView({ name: 'All Inventory', books: books })} userId={userId} userLibrary={userLibrary} userWishlist={userWishlist} onAuthorClick={handleAuthorClick} />
               </>
             )}
           </div>
