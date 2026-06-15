@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Tesseract from 'tesseract.js';
 
 export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boolean, onScan: (text: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -64,6 +65,7 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
     if (!videoRef.current) return;
     setIsAnalyzing(true);
 
+    // Create a temporary canvas to capture the frame
     const canvas = document.createElement('canvas');
     const MAX_WIDTH = 800;
     const scaleSize = MAX_WIDTH / videoRef.current.videoWidth;
@@ -74,28 +76,31 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
     const ctx = canvas.getContext('2d');
     
     if (ctx) {
-      ctx.filter = 'brightness(1.2) contrast(1.1)';
+      // 🔽 INJECTION: Force high contrast and grayscale so the OCR can read the text easier
+      ctx.filter = 'brightness(1.2) contrast(1.2) grayscale(100%)';
       ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
     }
     
     const base64Image = canvas.toDataURL('image/jpeg', 0.8);
 
     try {
-      const response = await fetch('/api/vision', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64Image })
-      });
-      const data = await response.json();
-      
-      if (data.success && data.extractedText) {
+      // 🔽 THE FIX: Run Tesseract locally in the browser, bypassing the server completely
+      const { data: { text } } = await Tesseract.recognize(
+        base64Image,
+        'eng'
+      );
+
+      const cleanText = text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+
+      if (cleanText && cleanText.length >= 3) {
         closeCamera();
-        onScan(data.extractedText);
+        onScan(cleanText);
       } else {
-        alert(`Scanner Failure: ${data.error || 'Could not detect text. Try better lighting.'}`);
+        alert("Scanner Failure: Could not read text clearly. Try better lighting.");
       }
     } catch (error) {
-      alert("Network timeout. The local engine is unreachable.");
+      console.error(error);
+      alert("Local Engine crashed. Please try again.");
     }
     setIsAnalyzing(false);
   };
@@ -113,6 +118,7 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
       <button
         onClick={openCamera}
         className={`absolute right-14 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors flex items-center gap-2 ${isDarkMode ? 'text-gray-400 hover:text-purple-400 hover:bg-gray-800' : 'text-gray-500 hover:text-purple-600 hover:bg-gray-200'}`}
+        title="Scan Cover Art"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
       </button>
@@ -121,8 +127,9 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
         <div style={{ zIndex: 2147483647, isolation: 'isolate' }} className="fixed inset-0 flex items-center justify-center bg-black animate-in fade-in">
           <div className="w-full h-full flex flex-col relative bg-black">
             
-            <div className="p-5 flex justify-between items-center border-b border-gray-900 bg-black shrink-0">
-              <h3 className="text-purple-500 font-bold tracking-widest text-xs uppercase">Optical Cover Scanner</h3>
+            {/* 🔽 THE FIX: Moved the 'X' to the left side so the Notification Bell doesn't cover it */}
+            <div className="p-5 flex flex-row-reverse justify-between items-center border-b border-gray-900 bg-black shrink-0">
+              <h3 className="text-purple-500 font-bold tracking-widest text-xs uppercase text-right">Optical Cover Scanner</h3>
               <button onClick={closeCamera} className="text-gray-500 hover:text-white transition-colors">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
@@ -146,15 +153,19 @@ export default function CoverScanner({ isDarkMode, onScan }: { isDarkMode: boole
                   <span className="text-purple-400 font-mono text-sm tracking-widest uppercase animate-pulse drop-shadow-md text-center px-4">
                     [ Analyzing Cover Art... ]
                   </span>
+                  <span className="text-gray-500 font-mono text-[10px] uppercase mt-2 text-center px-4">
+                    (This takes a few seconds on mobile)
+                  </span>
                 </div>
               )}
             </div>
             
-            <div className="p-8 bg-black flex flex-col items-center justify-center gap-4 border-t border-gray-900 shrink-0">
+            {/* 🔽 THE FIX: Added pb-24 padding to push the button far above the Floating Menu */}
+            <div className="p-8 pb-24 bg-black flex flex-col items-center justify-center gap-4 border-t border-gray-900 shrink-0">
               <button 
                 onClick={takeSnapshot}
                 disabled={isAnalyzing}
-                className="w-24 h-24 rounded-full bg-purple-600 border-4 border-gray-900 hover:bg-purple-500 transition-colors shadow-[0_0_30px_rgba(168,85,247,0.4)] disabled:opacity-50 ring-2 ring-purple-400"
+                className="w-24 h-24 rounded-full bg-purple-600 border-4 border-gray-900 hover:bg-purple-500 transition-colors shadow-[0_0_30px_rgba(168,85,247,0.4)] disabled:opacity-50 ring-2 ring-purple-400 flex-shrink-0"
               ></button>
               <span className="text-xs text-gray-600 uppercase tracking-widest font-bold mt-2">Tap to Scan Cover</span>
             </div>
