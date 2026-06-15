@@ -17,8 +17,8 @@ const queries = [
 // Increased dig depth: 15 pages = 600 books per niche above
 const pagesPerQuery = 15; 
 
-// A 2-second breather between requests to prevent server crashes and API bans
-const delayMs = 2000; 
+// A 3-second breather between requests to prevent server crashes and API bans
+const delayMs = 3000; 
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));

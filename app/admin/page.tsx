@@ -5,11 +5,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
 
-type Book = { id: string; title: string; author: string; category: string; cover_image_url?: string };
+type Book = { id: string; title: string; author: string; category: string; cover_image_url?: string; isbn13: string };
 type UserAccount = { id: string; email: string; created_at: string; last_sign_in: string };
+type Banner = { id: string; title: string; subtitle: string; background_image_url: string; text_color: string; landing_page_text: string; target_isbns: string[]; is_published: boolean; };
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'book_info' | 'broadcast' | 'analytics' | 'accounts'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'book_info' | 'banner_forge' | 'broadcast' | 'accounts'>('analytics');
   const [adminSecret, setAdminSecret] = useState(''); 
 
   // --- BOOK INFO STATE ---
@@ -19,6 +20,12 @@ export default function AdminDashboard() {
   const [editCategory, setEditCategory] = useState('');
   const [editCoverUrl, setEditCoverUrl] = useState('');
   const [bookStatus, setBookStatus] = useState('');
+
+  // --- BANNER FORGE STATE ---
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [editingBanner, setEditingBanner] = useState<Partial<Banner> | null>(null);
+  const [bannerSearchQuery, setBannerSearchQuery] = useState('');
+  const [bannerStatus, setBannerStatus] = useState('');
 
   // --- BROADCAST STATE ---
   const [bcTitle, setBcTitle] = useState('');
@@ -35,13 +42,16 @@ export default function AdminDashboard() {
   const [analyticsData, setAnalyticsData] = useState<any[]>([]);
   const [analyticsStatus, setAnalyticsStatus] = useState('Initializing tracker...');
 
-  // 1. Load Books on Mount
+  // 1. Load Data on Mount
   useEffect(() => {
-    async function loadBooks() {
-      const { data } = await supabase.from('books').select('id, title, author, category, cover_image_url').order('title');
-      if (data) setBooks(data);
+    async function loadVaultData() {
+      const { data: bookData } = await supabase.from('books').select('id, title, author, category, cover_image_url, isbn13').order('title');
+      if (bookData) setBooks(bookData);
+
+      const { data: bannerData } = await supabase.from('storefront_banners').select('*').order('created_at', { ascending: false });
+      if (bannerData) setBanners(bannerData);
     }
-    loadBooks();
+    loadVaultData();
   }, []);
 
   // 2. Load Analytics when tab is active
@@ -65,7 +75,7 @@ export default function AdminDashboard() {
     fetchAnalytics();
   }, [activeTab]);
 
-  // Book Info Actions
+  // --- Actions: Books ---
   const handleSelectBook = (book: Book) => {
     setSelectedBook(book);
     setEditCategory(book.category || 'General');
@@ -89,7 +99,50 @@ export default function AdminDashboard() {
     }
   };
 
-  // Broadcast Actions (Currently Offline/Missing Backend)
+  // --- Actions: Banners ---
+  const handleSaveBanner = async () => {
+    if (!editingBanner?.title) return setBannerStatus('Title is required.');
+    setBannerStatus('Forging banner...');
+    
+    const bannerPayload = {
+      title: editingBanner.title,
+      subtitle: editingBanner.subtitle || '',
+      background_image_url: editingBanner.background_image_url || '',
+      text_color: editingBanner.text_color || 'text-white',
+      landing_page_text: editingBanner.landing_page_text || '',
+      target_isbns: editingBanner.target_isbns || [],
+      is_published: editingBanner.is_published || false
+    };
+
+    if (editingBanner.id) {
+      const { data, error } = await supabase.from('storefront_banners').update(bannerPayload).eq('id', editingBanner.id).select().single();
+      if (error) setBannerStatus('Error updating banner.');
+      else { setBanners(banners.map(b => b.id === data.id ? data : b)); setBannerStatus('Banner updated!'); }
+    } else {
+      const { data, error } = await supabase.from('storefront_banners').insert([bannerPayload]).select().single();
+      if (error) setBannerStatus('Error creating banner.');
+      else { setBanners([data, ...banners]); setEditingBanner(data); setBannerStatus('Banner forged!'); }
+    }
+  };
+
+  const toggleBannerIsbn = (isbn: string) => {
+    if (!editingBanner) return;
+    const currentIsbns = editingBanner.target_isbns || [];
+    if (currentIsbns.includes(isbn)) {
+      setEditingBanner({ ...editingBanner, target_isbns: currentIsbns.filter(i => i !== isbn) });
+    } else {
+      setEditingBanner({ ...editingBanner, target_isbns: [...currentIsbns, isbn] });
+    }
+  };
+
+  const deleteBanner = async (id: string) => {
+    if(!confirm('Destroy this banner permanently?')) return;
+    await supabase.from('storefront_banners').delete().eq('id', id);
+    setBanners(banners.filter(b => b.id !== id));
+    if (editingBanner?.id === id) setEditingBanner(null);
+  };
+
+  // --- Actions: Broadcast ---
   const handleBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
     setBcStatus({ loading: true, message: 'Deploying...', isError: false });
@@ -111,7 +164,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // Load Accounts Action (Currently Offline/Missing Backend)
+  // --- Actions: Accounts ---
   const fetchAccounts = async () => {
     setAccountsStatus('Fetching registry...');
     try {
@@ -133,14 +186,14 @@ export default function AdminDashboard() {
   };
 
   const filteredBooks = books.filter(b => b.title.toLowerCase().includes(searchQuery.toLowerCase()) || b.author.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5);
+  const bannerFilteredBooks = books.filter(b => b.title.toLowerCase().includes(bannerSearchQuery.toLowerCase()) || b.author.toLowerCase().includes(bannerSearchQuery.toLowerCase())).slice(0, 5);
 
-  // Analytics Math
   const visits = analyticsData.filter(e => e.event_type === 'page_visit');
   const clicks = analyticsData.filter(e => e.event_type === 'affiliate_click');
 
   return (
     <main className="min-h-screen bg-gray-950 text-white flex flex-col items-center py-12 px-6">
-      <div className="w-full max-w-5xl">
+      <div className="w-full max-w-6xl">
         
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
           <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center">
@@ -152,18 +205,19 @@ export default function AdminDashboard() {
           </Link>
         </div>
 
-        {/* 📑 INVISIBLE TABS NAVIGATION */}
-        <div className="flex gap-8 border-b border-gray-800 mb-8">
+        {/* 📑 TABS NAVIGATION */}
+        <div className="flex gap-8 border-b border-gray-800 mb-8 overflow-x-auto pb-1">
           {[
             { id: 'analytics', label: 'Analytics' },
+            { id: 'banner_forge', label: 'Banner Forge' },
             { id: 'book_info', label: 'Book Info' },
-            { id: 'accounts', label: 'Accounts (Online)' },
-            { id: 'broadcast', label: 'Broadcast (Online)' }
+            { id: 'accounts', label: 'Accounts' },
+            { id: 'broadcast', label: 'Broadcast' }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`pb-3 text-sm font-bold tracking-wide transition-colors relative ${activeTab === tab.id ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`pb-3 text-sm font-bold tracking-wide transition-colors relative whitespace-nowrap ${activeTab === tab.id ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
             >
               {tab.label}
               {activeTab === tab.id && <span className="absolute bottom-0 left-0 w-full h-[2px] bg-sky-500"></span>}
@@ -172,7 +226,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* =========================================
-            TAB: ANALYTICS (NEW!)
+            TAB: ANALYTICS
             ========================================= */}
         {activeTab === 'analytics' && (
           <div className="animate-in fade-in duration-300">
@@ -295,7 +349,129 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-{/* =========================================
+
+        {/* =========================================
+            TAB: BANNER FORGE
+            ========================================= */}
+        {activeTab === 'banner_forge' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-300">
+            {/* LEFT: Banner List */}
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 lg:col-span-1">
+              <button onClick={() => { setEditingBanner({ title: '', subtitle: '', text_color: 'text-white', target_isbns: [], is_published: false }); setBannerStatus(''); }} className="w-full mb-6 py-3 bg-sky-600 hover:bg-sky-500 rounded-lg font-bold text-sm transition-colors shadow-lg">
+                + Forge New Banner
+              </button>
+              <h2 className="text-sm font-bold mb-4 text-gray-500 uppercase tracking-wider">Existing Banners</h2>
+              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                {banners.map(banner => (
+                  <div key={banner.id} className={`p-4 rounded-xl border cursor-pointer transition-colors ${editingBanner?.id === banner.id ? 'bg-sky-900/20 border-sky-500' : 'bg-gray-950 border-gray-800 hover:border-gray-600'}`} onClick={() => setEditingBanner(banner)}>
+                    <div className="flex justify-between items-start mb-1">
+                      <h3 className="font-bold truncate pr-2">{banner.title}</h3>
+                      <span className={`shrink-0 w-2 h-2 rounded-full mt-1.5 ${banner.is_published ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-gray-600'}`}></span>
+                    </div>
+                    <p className="text-xs text-gray-500">{banner.target_isbns?.length || 0} books attached</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* RIGHT: Banner Editor */}
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 lg:col-span-2 relative overflow-hidden">
+              {!editingBanner ? (
+                <div className="flex items-center justify-center h-full text-gray-500 italic">Select a banner to edit, or forge a new one.</div>
+              ) : (
+                <div className="flex flex-col gap-6">
+                  <div className="flex justify-between items-center border-b border-gray-800 pb-4">
+                    <h2 className="text-xl font-bold text-sky-400">{editingBanner.id ? 'Edit Banner' : 'Forge New Banner'}</h2>
+                    {editingBanner.id && <button onClick={() => deleteBanner(editingBanner.id!)} className="text-xs font-bold text-red-500 hover:text-red-400">Destroy Banner</button>}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Title</label>
+                      <input type="text" value={editingBanner.title || ''} onChange={e => setEditingBanner({...editingBanner, title: e.target.value})} className="w-full bg-black border border-gray-800 rounded-lg p-3 text-sm focus:border-sky-500 focus:outline-none" placeholder="e.g. Summer Blockbusters" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Subtitle</label>
+                      <input type="text" value={editingBanner.subtitle || ''} onChange={e => setEditingBanner({...editingBanner, subtitle: e.target.value})} className="w-full bg-black border border-gray-800 rounded-lg p-3 text-sm focus:border-sky-500 focus:outline-none" placeholder="e.g. Your next great escape awaits." />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Background Image URL</label>
+                      <input type="text" value={editingBanner.background_image_url || ''} onChange={e => setEditingBanner({...editingBanner, background_image_url: e.target.value})} className="w-full bg-black border border-gray-800 rounded-lg p-3 text-sm focus:border-sky-500 focus:outline-none" placeholder="https://..." />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Text Color</label>
+                      <select value={editingBanner.text_color || 'text-white'} onChange={e => setEditingBanner({...editingBanner, text_color: e.target.value})} className="w-full bg-black border border-gray-800 rounded-lg p-3 text-sm focus:border-sky-500 focus:outline-none">
+                        <option value="text-white">White</option>
+                        <option value="text-gray-900">Black / Dark</option>
+                        <option value="text-sky-300">Sky Blue</option>
+                        <option value="text-emerald-300">Emerald Green</option>
+                        <option value="text-purple-300">Royal Purple</option>
+                        <option value="text-yellow-300">Gold</option>
+                        <option value="text-red-300">Crimson</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Landing Page Intro Text</label>
+                    <textarea rows={3} value={editingBanner.landing_page_text || ''} onChange={e => setEditingBanner({...editingBanner, landing_page_text: e.target.value})} className="w-full bg-black border border-gray-800 rounded-lg p-3 text-sm focus:border-sky-500 focus:outline-none resize-none" placeholder="The text users see at the top of the page after clicking this banner..." />
+                  </div>
+
+                  {/* Target Book Assigner */}
+                  <div className="border border-gray-800 rounded-xl p-4 bg-black">
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-4">Attach Books to Banner</label>
+                    <div className="flex flex-col md:flex-row gap-6">
+                      
+                      <div className="flex-1">
+                        <input type="text" placeholder="Search vault to attach..." value={bannerSearchQuery} onChange={(e) => setBannerSearchQuery(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2 text-sm focus:outline-none focus:border-sky-500 mb-3" />
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {bannerSearchQuery && bannerFilteredBooks.map(book => (
+                            <div key={book.id} className="flex justify-between items-center p-2 bg-gray-900 rounded border border-gray-800">
+                              <span className="text-xs font-bold truncate pr-2">{book.title}</span>
+                              <button onClick={() => toggleBannerIsbn(book.isbn13)} className="text-xs font-bold bg-sky-900 hover:bg-sky-800 text-sky-300 px-2 py-1 rounded shrink-0">+ Add</button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex-1 border-l border-gray-800 pl-6">
+                        <h3 className="text-xs font-bold text-emerald-400 mb-3">Attached Books ({editingBanner.target_isbns?.length || 0})</h3>
+                        <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                          {editingBanner.target_isbns?.map(isbn => {
+                            const b = books.find(book => book.isbn13 === isbn);
+                            return (
+                              <div key={isbn} className="flex justify-between items-center p-2 bg-emerald-900/20 border border-emerald-900/50 rounded">
+                                <span className="text-xs font-bold text-emerald-100 truncate pr-2">{b ? b.title : `ISBN: ${isbn}`}</span>
+                                <button onClick={() => toggleBannerIsbn(isbn)} className="text-xs font-bold text-red-400 hover:text-red-300 shrink-0">Remove</button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-800">
+                    <label className="flex items-center cursor-pointer">
+                      <div className="relative">
+                        <input type="checkbox" className="sr-only" checked={editingBanner.is_published || false} onChange={e => setEditingBanner({...editingBanner, is_published: e.target.checked})} />
+                        <div className={`block w-14 h-8 rounded-full transition-colors ${editingBanner.is_published ? 'bg-emerald-500' : 'bg-gray-800'}`}></div>
+                        <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${editingBanner.is_published ? 'translate-x-6' : ''}`}></div>
+                      </div>
+                      <span className={`ml-3 text-sm font-bold ${editingBanner.is_published ? 'text-emerald-400' : 'text-gray-500'}`}>{editingBanner.is_published ? 'LIVE ON STOREFRONT' : 'Draft Mode (Hidden)'}</span>
+                    </label>
+
+                    <button onClick={handleSaveBanner} className="px-8 py-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg transition-colors shadow-lg">Save Banner</button>
+                  </div>
+                  {bannerStatus && <div className="text-right text-xs font-mono text-emerald-400">{bannerStatus}</div>}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* =========================================
             TAB: BROADCAST (ONLINE STATE)
             ========================================= */}
         {activeTab === 'broadcast' && (
