@@ -39,8 +39,10 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     book.cover_image_url === 'UNAVAILABLE' ? 'error' : 'loading'
   );
 
-  // 🔽 NEW STATE FOR THE COVER ART MODAL
   const [isCoverModalOpen, setIsCoverModalOpen] = useState(false);
+  
+  // Track the real database ID so we can swap the temporary Google ID smoothly
+  const [realBookId, setRealBookId] = useState(book.id);
 
   useEffect(() => {
     setIsOwned(initiallyOwned);
@@ -51,13 +53,11 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     if (!raw) return 'Check Site';
     if (raw === 'Out of Stock') return 'Out of Stock';
     if (raw === 'Check Site') return 'Check Site';
-    
     const match = raw.match(/[£$€][\d.]+/);
     return match ? match[0] : 'Check Site';
   };
 
   const titleSearchQuery = encodeURIComponent(book.title);
-  
   const waterstonesLink = `https://www.waterstones.com/books/search/term/${titleSearchQuery}`;
   const blackwellsLink = `https://blackwells.co.uk/bookshop/search/?keyword=${titleSearchQuery}`;
   const amazonLink = `https://www.amazon.co.uk/s?k=${titleSearchQuery}&tag=bookhypermarket-21`;
@@ -88,9 +88,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
         shopRankings.sort((a, b) => a.price - b.price);
 
         const bestShop = shopRankings.find(s => s.price !== Infinity);
-        if (bestShop) {
-          setSelectedShopId(bestShop.id);
-        }
+        if (bestShop) setSelectedShopId(bestShop.id);
       } catch (error) {
         console.error("Failed to fetch prices");
       }
@@ -109,16 +107,39 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
 
   const currentShop = shops.find(s => s.id === selectedShopId) || shops[0];
 
+  // 🔽 THE JUST-IN-TIME PROVISIONING PROTOCOL
+  const ensureBookInDatabase = async () => {
+    if (!realBookId.startsWith('ext_')) return realBookId; // Already saved
+    
+    try {
+      const res = await fetch('/api/save-book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(book)
+      });
+      const data = await res.json();
+      if (data.id) {
+        setRealBookId(data.id);
+        return data.id;
+      }
+    } catch (e) {
+      console.error("Failed to provision book:", e);
+    }
+    return realBookId;
+  };
+
   const toggleLibrary = async () => {
     if (!userId) return;
     setIsUpdating(true);
+    const dbBookId = await ensureBookInDatabase();
+    
     const newStatus = !isOwned;
     setIsOwned(newStatus); 
     try {
       if (newStatus) {
-        await supabase.from('user_libraries').insert({ user_id: userId, book_id: book.id });
+        await supabase.from('user_libraries').insert({ user_id: userId, book_id: dbBookId });
       } else {
-        await supabase.from('user_libraries').delete().match({ user_id: userId, book_id: book.id });
+        await supabase.from('user_libraries').delete().match({ user_id: userId, book_id: dbBookId });
       }
     } catch (error) {
       setIsOwned(!newStatus); 
@@ -131,14 +152,15 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     e.stopPropagation();
     if (!userId) return;
     setIsWishlistUpdating(true);
+    const dbBookId = await ensureBookInDatabase();
+    
     const newStatus = !isWishlisted;
     setIsWishlisted(newStatus); 
-
     try {
       if (newStatus) {
-        await supabase.from('user_wishlists').insert({ user_id: userId, book_id: book.id });
+        await supabase.from('user_wishlists').insert({ user_id: userId, book_id: dbBookId });
       } else {
-        await supabase.from('user_wishlists').delete().match({ user_id: userId, book_id: book.id });
+        await supabase.from('user_wishlists').delete().match({ user_id: userId, book_id: dbBookId });
       }
     } catch (error) {
       setIsWishlisted(!newStatus); 
@@ -209,11 +231,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
           <span className={`text-xs font-mono px-2 py-0.5 rounded-md ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
             ISBN: {book.isbn13}
           </span>
-          <div className="flex gap-1 mt-1 flex-wrap justify-center">
-            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${isDarkMode ? 'border-gray-700 text-gray-300' : 'border-gray-300 text-gray-600'}`}>
-              {book.format || 'Standard Edition'}
-            </span>
-          </div>
         </div>
         
         <div className="mt-auto w-full pt-4 border-t border-gray-800/30 z-10 flex flex-col gap-3">
@@ -263,6 +280,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
                 target="_blank" 
                 rel="noopener noreferrer" 
                 onClick={() => {
+                  ensureBookInDatabase(); // Silently save when user shops
                   fetch('/api/track', {
                     method: 'POST',
                     body: JSON.stringify({
@@ -370,6 +388,7 @@ export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [hasPressedEnter, setHasPressedEnter] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [searchOffset, setSearchOffset] = useState(0);
   const [hasMoreResults, setHasMoreResults] = useState(true);
@@ -380,7 +399,6 @@ export default function Home() {
   const [userLibrary, setUserLibrary] = useState<string[]>([]);
   const [userWishlist, setUserWishlist] = useState<string[]>([]);
 
-  // THE GLOBAL VISIT TRACKER
   useEffect(() => {
     fetch('/api/track', {
       method: 'POST',
@@ -402,23 +420,11 @@ export default function Home() {
         if (session?.user) {
           setUserId(session.user.id);
           
-          const { data: libraryData } = await supabase
-            .from('user_libraries')
-            .select('book_id')
-            .eq('user_id', session.user.id);
-            
-          if (libraryData) {
-            setUserLibrary(libraryData.map(row => row.book_id));
-          }
+          const { data: libraryData } = await supabase.from('user_libraries').select('book_id').eq('user_id', session.user.id);
+          if (libraryData) setUserLibrary(libraryData.map(row => row.book_id));
 
-          const { data: wishlistData } = await supabase
-            .from('user_wishlists')
-            .select('book_id')
-            .eq('user_id', session.user.id);
-
-          if (wishlistData) {
-            setUserWishlist(wishlistData.map(row => row.book_id));
-          }
+          const { data: wishlistData } = await supabase.from('user_wishlists').select('book_id').eq('user_id', session.user.id);
+          if (wishlistData) setUserWishlist(wishlistData.map(row => row.book_id));
         }
       } catch (err) {
         console.error("Critical Vault Error: ", err);
@@ -437,34 +443,33 @@ export default function Home() {
   };
 
   const uniqueCategories = Array.from(new Set(books.map(b => b.category).filter(c => c && c !== 'General')));
-
   const dynamicCategories = uniqueCategories.map(catName => ({
     name: catName,
     color: coreColors[catName] || 'border-sky-500'
   }));
 
-  const getBooksForCategory = (categoryName: string) => {
-    return books.filter(b => b.category === categoryName);
-  };
+  const getBooksForCategory = (categoryName: string) => books.filter(b => b.category === categoryName);
 
   const searchResults = books.filter((book) => {
     return book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           book.author.toLowerCase().includes(searchQuery.toLowerCase());
+           book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           book.isbn13?.includes(searchQuery);
   });
   
   // 🚀 THE INFINITE SHELF PROTOCOL & SCANNER ENGINE
   const executeSearch = async (queryToSearch: string) => {
     if (!queryToSearch.trim()) return;
     
-    setSearchQuery(queryToSearch); // Update the text box visually
+    setHasPressedEnter(true); // Always force external check on Enter or Barcode
+    setSearchQuery(queryToSearch); 
     setIsLoading(true); 
     
     try {
       const res = await fetch(`/api/live-search?q=${encodeURIComponent(queryToSearch)}`);
       const data = await res.json();
       
-      if (data.success && data.source === 'google_ingested' && data.books.length > 0) {
-        const brandNewBooks = data.books.filter((newBook: Book) => !books.some(b => b.id === newBook.id));
+      if (data.success && data.books && data.books.length > 0) {
+        const brandNewBooks = data.books.filter((newBook: Book) => !books.some(b => b.isbn13 === newBook.isbn13));
         setBooks(prevBooks => [...brandNewBooks, ...prevBooks]);
       }
     } catch (error) {
@@ -491,10 +496,9 @@ export default function Home() {
       
       if (data.success && data.books && data.books.length > 0) {
         if (data.books.length < 10) setHasMoreResults(false);
-        
         setBooks(prevBooks => {
           const combined = [...prevBooks, ...data.books];
-          return Array.from(new Map(combined.map(b => [b.id, b])).values());
+          return Array.from(new Map(combined.map(b => [b.isbn13, b])).values());
         });
       } else {
         setHasMoreResults(false); 
@@ -510,7 +514,7 @@ export default function Home() {
       
       <NotificationBell userId={userId} isDarkMode={isDarkMode} />
       <header className="flex justify-center items-center mb-12 w-full relative">
-        <button onClick={() => { setActiveCategoryView(null); setSearchQuery(""); }} className="hover:opacity-80 transition-opacity">
+        <button onClick={() => { setActiveCategoryView(null); setSearchQuery(""); setHasPressedEnter(false); }} className="hover:opacity-80 transition-opacity">
           <h1 className="flex items-baseline font-extrabold tracking-tighter">
             <span className="text-4xl lowercase">book</span>
             <span className="relative mx-1 text-5xl text-sky-400 italic inline-block px-1">
@@ -542,20 +546,19 @@ export default function Home() {
                 type="text" 
                 placeholder="Search entire vault... (Press Enter to scour global databases)" 
                 value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setHasPressedEnter(false); // Reset the 3-state loop visually
+                }} 
                 onKeyDown={handleLiveSearch} 
                 className={`w-full p-4 pr-24 rounded-xl border text-lg focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-xl ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} 
               />
               
-              {/* Path B: The AI Cover OCR Scanner */}
               <CoverScanner 
                 isDarkMode={isDarkMode} 
-                onScan={(extractedText) => {
-                  executeSearch(extractedText);
-                }} 
+                onScan={(extractedText) => { executeSearch(extractedText); }} 
               />
 
-              {/* Path A: The Barcode Sniper */}
               <button 
                 onClick={() => setIsScanning(true)}
                 className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors ${isDarkMode ? 'text-gray-400 hover:text-sky-400 hover:bg-gray-800' : 'text-gray-500 hover:text-sky-600 hover:bg-gray-200'}`}
@@ -565,7 +568,6 @@ export default function Home() {
               </button>
             </div>
             
-            {/* The Barcode Scanner Modal */}
             {isScanning && (
               <BarcodeScanner 
                 onClose={() => setIsScanning(false)} 
@@ -584,13 +586,23 @@ export default function Home() {
               <div className="flex flex-col items-center pb-12 w-full">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto px-6 w-full">
                   {searchResults.length === 0 ? (
-                    <p className="col-span-full text-center text-gray-500">No results found in the vault.</p>
+                    hasPressedEnter ? (
+                      <div className="col-span-full flex flex-col items-center justify-center p-12 opacity-70">
+                        <svg className="w-16 h-16 mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <p className="text-xl font-bold">No results found anywhere.</p>
+                        <p className="text-sm font-mono mt-2">Try adjusting your spelling or checking the ISBN.</p>
+                      </div>
+                    ) : (
+                      <div className="col-span-full flex flex-col items-center justify-center p-12">
+                         <p className="text-sky-500 font-bold animate-pulse text-lg tracking-wide">[ Press Enter to search external vaults... ]</p>
+                      </div>
+                    )
                   ) : (
                     searchResults.map(book => <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} />)
                   )}
                 </div>
                 
-                {searchResults.length > 0 && (
+                {searchResults.length > 0 && hasPressedEnter && (
                   <div className="mt-12">
                     {hasMoreResults ? (
                       <button 
@@ -621,7 +633,6 @@ export default function Home() {
         </>
       )}
 
-      {/* THE GLOBAL MENU INJECTION */}
       <FloatingMenu isDarkMode={isDarkMode} toggleTheme={() => setIsDarkMode(!isDarkMode)} />
       <SpeedInsights />
     </main>

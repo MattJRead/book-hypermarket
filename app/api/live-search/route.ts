@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 30; // Dropped to 30s to prevent the UI from "freezing"
+export const maxDuration = 30;
 
 export async function GET(request: Request) {
   const supabaseAdmin = createClient(
@@ -10,7 +10,6 @@ export async function GET(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // 🔽 INJECTION 1: Grab the offset from the URL
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q');
   const offset = searchParams.get('offset') || '0'; 
@@ -18,73 +17,51 @@ export async function GET(request: Request) {
   if (!query) return NextResponse.json({ error: 'No query provided.' }, { status: 400 });
 
   try {
-    // 1. Fetch from Google First (The Global Haul)
-    const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
-    
-    // 🔽 INJECTION 2: Add startIndex and change maxResults to 10
-    const fetchUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&startIndex=${offset}&maxResults=10&key=${apiKey}`;
-    
-    const googleRes = await fetch(fetchUrl);
-    const googleData = await googleRes.json();
+    let displayBooks: any[] = [];
+    const numericOffset = parseInt(offset, 10);
 
-    let newBooks: any[] = [];
+    // 1. THE MATH CHECK: Is this an ISBN barcode scan?
+    const cleanedQuery = query.replace(/[- ]/g, '');
+    const isIsbn = /^\d{10}$|^\d{13}$/.test(cleanedQuery);
 
-    // 2. Format the Google Books
-    if (googleData.items && googleData.items.length > 0) {
-      newBooks = googleData.items.map((item: any) => ({
-        title: item.volumeInfo.title || 'Unknown Title',
-        author: item.volumeInfo.authors?.join(', ') || 'Unknown Author',
-        category: item.volumeInfo.categories?.[0] || 'General',
-        isbn13: item.volumeInfo.industryIdentifiers?.find((i: any) => i.type === 'ISBN_13')?.identifier || null,
-        cover_image_url: item.volumeInfo.imageLinks?.thumbnail || 'UNAVAILABLE'
-      }));
-
-      // 3. Attempt Vault Injection (If it fails, we don't care, we still show the books!)
-      try {
-        const titles = newBooks.map((b: any) => b.title);
-        const { data: existingBooks } = await supabaseAdmin.from('books').select('title').in('title', titles);
-        const existingTitles = existingBooks?.map(e => e.title) || [];
-        const safeBooks = newBooks.filter((b: any) => !existingTitles.includes(b.title));
-        
-        if (safeBooks.length > 0) {
-          await supabaseAdmin.from('books').insert(safeBooks);
-        }
-      } catch (dbError) {
-        console.warn('[VAULT WARNING] Background save failed, but proceeding to display books.');
-      }
-    }
-
-    // 4. Fetch whatever we already have in the Vault
-    let vaultBooks: any[] = [];
-    try {
-      // 🔽 INJECTION 3: Calculate the numeric offset for Supabase pagination
-      const numericOffset = parseInt(offset, 10);
-      
+    // 2. INTERNAL VAULT SEARCH (Only runs if it is NOT a barcode)
+    if (!isIsbn) {
       const { data } = await supabaseAdmin
         .from('books')
         .select('id, title, author, category, cover_image_url, isbn13')
         .or(`title.ilike.%${query}%,author.ilike.%${query}%`)
-        .range(numericOffset, numericOffset + 9); // This replaces .limit(20) to fetch the next 10 items
+        .range(numericOffset, numericOffset + 9); 
         
-      if (data) vaultBooks = data;
-    } catch (dbFetchError) {
-      console.warn('[VAULT WARNING] Vault read failed.');
+      if (data) displayBooks = [...data];
     }
 
-    // 5. THE MASTER MERGE: Combine Vault books + Brand new Google books
-    const displayBooks = [...vaultBooks];
+    // 3. EXTERNAL GOOGLE SEARCH (Read-Only)
+    const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+    const googleQuery = isIsbn ? `isbn:${cleanedQuery}` : encodeURIComponent(query);
+    const fetchUrl = `https://www.googleapis.com/books/v1/volumes?q=${googleQuery}&startIndex=${offset}&maxResults=10&key=${apiKey}`;
     
-    for (const nb of newBooks) {
-      // If the book isn't already in our display list, add it with a temporary ID for the screen
-      if (!displayBooks.find(b => b.title === nb.title)) {
-        displayBooks.push({
-          id: Math.random().toString(), 
-          ...nb
-        });
+    const googleRes = await fetch(fetchUrl);
+    const googleData = await googleRes.json();
+
+    if (googleData.items && googleData.items.length > 0) {
+      const newBooks = googleData.items.map((item: any) => ({
+        // Tag temporary books with 'ext_' so the frontend knows they aren't in your DB yet
+        id: `ext_${Math.random().toString(36).substring(2, 9)}`, 
+        title: item.volumeInfo.title || 'Unknown Title',
+        author: item.volumeInfo.authors?.join(', ') || 'Unknown Author',
+        category: item.volumeInfo.categories?.[0] || 'General',
+        isbn13: item.volumeInfo.industryIdentifiers?.find((i: any) => i.type === 'ISBN_13' || i.type === 'ISBN_10')?.identifier || cleanedQuery,
+        cover_image_url: item.volumeInfo.imageLinks?.thumbnail || 'UNAVAILABLE'
+      }));
+
+      for (const nb of newBooks) {
+        if (!displayBooks.find(b => b.title === nb.title || b.isbn13 === nb.isbn13)) {
+          displayBooks.push(nb);
+        }
       }
     }
 
-    // Send everything straight to the storefront
+    // Zero Database Writes - Send directly to the user
     return NextResponse.json({ success: true, books: displayBooks });
 
   } catch (error: any) {
