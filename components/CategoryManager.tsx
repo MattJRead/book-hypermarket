@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase'; // Adjust this path if your supabase client is elsewhere
+import { supabase } from '../lib/supabase';
 import Image from 'next/image';
 
 type Book = {
@@ -16,16 +16,30 @@ export default function CategoryManager() {
   const [targetCategory, setTargetCategory] = useState<string>('Bestsellers');
   const [booksInCategory, setBooksInCategory] = useState<Book[]>([]);
   
+  // 🔽 NEW STATE: Holds all existing categories in the database
+  const [existingCategories, setExistingCategories] = useState<string[]>([]);
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Book[]>([]);
   
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
-  // 1. Fetch books currently residing in the target category
+  // 🔽 NEW FUNCTION: Fetch all unique categories on load
+  useEffect(() => {
+    const fetchAllCategories = async () => {
+      const { data } = await supabase.from('books').select('category');
+      if (data) {
+        const unique = Array.from(new Set(data.map(b => b.category).filter(Boolean)));
+        setExistingCategories(unique.sort());
+      }
+    };
+    fetchAllCategories();
+  }, []);
+
   const fetchCategoryBooks = async () => {
     setIsLoading(true);
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('books')
       .select('id, title, author, category, cover_image_url')
       .eq('category', targetCategory)
@@ -39,15 +53,14 @@ export default function CategoryManager() {
     if (targetCategory) fetchCategoryBooks();
   }, [targetCategory]);
 
-  // 2. Search the entire vault for books to add
   const handleSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchQuery.trim() !== '') {
       setIsSearching(true);
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('books')
         .select('id, title, author, category, cover_image_url')
         .ilike('title', `%${searchQuery}%`)
-        .neq('category', targetCategory) // Don't show books already in this category
+        .neq('category', targetCategory) 
         .limit(10);
 
       if (data) setSearchResults(data);
@@ -55,12 +68,10 @@ export default function CategoryManager() {
     }
   };
 
-  // 3. The Transfer Engine: Move a book into the target category
   const moveBookToCategory = async (bookId: string, newCategory: string) => {
-    // Optimistic UI update for immediate feedback
     setSearchResults(prev => prev.filter(b => b.id !== bookId));
     
-    const { data: updatedBook, error } = await supabase
+    const { data: updatedBook } = await supabase
       .from('books')
       .update({ category: newCategory })
       .eq('id', bookId)
@@ -69,6 +80,10 @@ export default function CategoryManager() {
 
     if (updatedBook) {
       setBooksInCategory(prev => [...prev, updatedBook]);
+      // Instantly add to our dropdown memory if it's a brand new category
+      if (!existingCategories.includes(newCategory)) {
+        setExistingCategories(prev => [...prev, newCategory].sort());
+      }
     }
   };
 
@@ -76,17 +91,24 @@ export default function CategoryManager() {
     <div className="p-6 bg-gray-900 text-white rounded-xl border border-gray-800 w-full max-w-6xl mx-auto">
       <h2 className="text-2xl font-extrabold mb-6 text-sky-400">Category Curation Engine</h2>
       
-      {/* 🎯 TARGET CATEGORY SELECTOR */}
       <div className="mb-8 p-4 bg-gray-800 rounded-lg border border-gray-700">
-        <label className="block text-sm font-bold text-gray-400 mb-2">Target Category (Type to create a new one)</label>
+        <label className="block text-sm font-bold text-gray-400 mb-2">Target Category (Select existing or type a new one)</label>
         <div className="flex gap-4">
+          {/* 🔽 THE FIX: The text box is now linked to a dynamic datalist */}
           <input 
             type="text" 
+            list="category-options"
             value={targetCategory}
             onChange={(e) => setTargetCategory(e.target.value)}
             className="flex-grow p-3 rounded-lg bg-gray-950 border border-gray-600 focus:border-sky-500 focus:outline-none text-lg font-bold"
-            placeholder="e.g., Hypermarket Favorites"
+            placeholder="e.g., Comic Books and Graphic Novels"
           />
+          <datalist id="category-options">
+            {existingCategories.map(cat => (
+              <option key={cat} value={cat} />
+            ))}
+          </datalist>
+
           <button 
             onClick={fetchCategoryBooks}
             className="px-6 py-3 bg-sky-600 hover:bg-sky-500 rounded-lg font-bold transition-colors"
@@ -98,7 +120,7 @@ export default function CategoryManager() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         
-        {/* 📚 LEFT COLUMN: BOOKS CURRENTLY IN CATEGORY */}
+        {/* LEFT COLUMN: BOOKS CURRENTLY IN CATEGORY */}
         <div className="border border-gray-700 rounded-lg p-4 bg-gray-950">
           <h3 className="text-xl font-bold mb-4 border-b border-gray-800 pb-2 flex justify-between">
             <span>Books in: <span className="text-sky-400">{targetCategory}</span></span>
@@ -137,7 +159,7 @@ export default function CategoryManager() {
           </div>
         </div>
 
-        {/* 🔍 RIGHT COLUMN: SEARCH & INJECT */}
+        {/* RIGHT COLUMN: SEARCH & INJECT */}
         <div className="border border-gray-700 rounded-lg p-4 bg-gray-950">
           <h3 className="text-xl font-bold mb-4 border-b border-gray-800 pb-2">
             Add to Category
