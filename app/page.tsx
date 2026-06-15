@@ -389,6 +389,10 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [hasPressedEnter, setHasPressedEnter] = useState(false);
+  
+  // 🔽 NEW STATE: We will hold the exact results from the API here
+  const [apiSearchResults, setApiSearchResults] = useState<Book[]>([]); 
+  
   const [isScanning, setIsScanning] = useState(false);
   const [searchOffset, setSearchOffset] = useState(0);
   const [hasMoreResults, setHasMoreResults] = useState(true);
@@ -450,10 +454,9 @@ export default function Home() {
 
   const getBooksForCategory = (categoryName: string) => books.filter(b => b.category === categoryName);
 
-  const searchResults = books.filter((book) => {
+  // 🔽 THE FIX: We keep local filtering for when they are just typing...
+  const localSearchResults = books.filter((book) => {
     const queryLower = searchQuery.toLowerCase();
-    
-    // 🔽 THE FIX: Strip hyphens and spaces so the raw barcode perfectly matches Google's formatting
     const cleanQuery = queryLower.replace(/[- ]/g, '');
     const cleanIsbn = (book.isbn13 || '').replace(/[- ]/g, '');
 
@@ -461,12 +464,15 @@ export default function Home() {
            book.author.toLowerCase().includes(queryLower) ||
            (cleanIsbn !== '' && cleanIsbn.includes(cleanQuery));
   });
+
+  // 🔽 THE FIX: ...But if they pressed Enter or Scanned, we strictly trust the API!
+  const displayResults = hasPressedEnter ? apiSearchResults : localSearchResults;
   
   // 🚀 THE INFINITE SHELF PROTOCOL & SCANNER ENGINE
   const executeSearch = async (queryToSearch: string) => {
     if (!queryToSearch.trim()) return;
     
-    setHasPressedEnter(true); // Always force external check on Enter or Barcode
+    setHasPressedEnter(true); 
     setSearchQuery(queryToSearch); 
     setIsLoading(true); 
     
@@ -474,9 +480,16 @@ export default function Home() {
       const res = await fetch(`/api/live-search?q=${encodeURIComponent(queryToSearch)}`);
       const data = await res.json();
       
-      if (data.success && data.books && data.books.length > 0) {
-        const brandNewBooks = data.books.filter((newBook: Book) => !books.some(b => b.isbn13 === newBook.isbn13));
-        setBooks(prevBooks => [...brandNewBooks, ...prevBooks]);
+      if (data.success && data.books) {
+        // Force the UI to show exactly what the API found
+        setApiSearchResults(data.books); 
+        
+        if (data.books.length > 0) {
+          const brandNewBooks = data.books.filter((newBook: Book) => !books.some(b => b.isbn13 === newBook.isbn13));
+          setBooks(prevBooks => [...brandNewBooks, ...prevBooks]);
+        }
+      } else {
+        setApiSearchResults([]);
       }
     } catch (error) {
       console.error("Vault breach failed", error);
@@ -502,8 +515,15 @@ export default function Home() {
       
       if (data.success && data.books && data.books.length > 0) {
         if (data.books.length < 10) setHasMoreResults(false);
+        
+        // Update both the background cache and the active screen
         setBooks(prevBooks => {
           const combined = [...prevBooks, ...data.books];
+          return Array.from(new Map(combined.map(b => [b.isbn13, b])).values());
+        });
+
+        setApiSearchResults(prev => {
+          const combined = [...prev, ...data.books];
           return Array.from(new Map(combined.map(b => [b.isbn13, b])).values());
         });
       } else {
@@ -520,7 +540,7 @@ export default function Home() {
       
       <NotificationBell userId={userId} isDarkMode={isDarkMode} />
       <header className="flex justify-center items-center mb-12 w-full relative">
-        <button onClick={() => { setActiveCategoryView(null); setSearchQuery(""); setHasPressedEnter(false); }} className="hover:opacity-80 transition-opacity">
+        <button onClick={() => { setActiveCategoryView(null); setSearchQuery(""); setHasPressedEnter(false); setApiSearchResults([]); }} className="hover:opacity-80 transition-opacity">
           <h1 className="flex items-baseline font-extrabold tracking-tighter">
             <span className="text-4xl lowercase">book</span>
             <span className="relative mx-1 text-5xl text-sky-400 italic inline-block px-1">
@@ -554,7 +574,7 @@ export default function Home() {
                 value={searchQuery} 
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  setHasPressedEnter(false); // Reset the 3-state loop visually
+                  setHasPressedEnter(false); 
                 }} 
                 onKeyDown={handleLiveSearch} 
                 className={`w-full p-4 pr-24 rounded-xl border text-lg focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-xl ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} 
@@ -591,7 +611,7 @@ export default function Home() {
             ) : searchQuery ? (
               <div className="flex flex-col items-center pb-12 w-full">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto px-6 w-full">
-                  {searchResults.length === 0 ? (
+                  {displayResults.length === 0 ? (
                     hasPressedEnter ? (
                       <div className="col-span-full flex flex-col items-center justify-center p-12 opacity-70">
                         <svg className="w-16 h-16 mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -604,11 +624,11 @@ export default function Home() {
                       </div>
                     )
                   ) : (
-                    searchResults.map(book => <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} />)
+                    displayResults.map(book => <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} />)
                   )}
                 </div>
                 
-                {searchResults.length > 0 && hasPressedEnter && (
+                {displayResults.length > 0 && hasPressedEnter && (
                   <div className="mt-12">
                     {hasMoreResults ? (
                       <button 
