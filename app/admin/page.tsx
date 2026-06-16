@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase';
 
 type Book = { id: string; title: string; author: string; category: string; cover_image_url?: string; isbn13: string };
 type UserAccount = { id: string; email: string; created_at: string; last_sign_in: string };
-type Banner = { id: string; title: string; subtitle: string; background_image_url: string; text_color: string; landing_page_text: string; target_isbns: string[]; is_published: boolean; };
+type Banner = { id: string; title: string; subtitle: string; background_image_url: string; text_color: string; landing_page_text: string; target_isbns: string[]; is_published: boolean; slot_position: number; };
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'analytics' | 'book_info' | 'banner_forge' | 'broadcast' | 'accounts'>('analytics');
@@ -113,10 +113,11 @@ export default function AdminDashboard() {
       title: editingBanner.title,
       subtitle: editingBanner.subtitle || '',
       background_image_url: editingBanner.background_image_url || '',
-      text_color: editingBanner.text_color || 'text-white',
+      text_color: editingBanner.text_color || '#ffffff',
       landing_page_text: editingBanner.landing_page_text || '',
       target_isbns: editingBanner.target_isbns || [],
-      is_published: editingBanner.is_published || false
+      is_published: editingBanner.is_published || false,
+      slot_position: editingBanner.slot_position || 1
     };
 
     if (editingBanner.id) {
@@ -139,6 +140,24 @@ export default function AdminDashboard() {
         setBannerStatus('Banner forged!'); 
       }
     }
+  };
+
+  const executeBannerSearch = async () => {
+    if (!bannerSearchQuery.trim()) return;
+    setIsBannerSearching(true);
+    setHasPressedBannerEnter(true);
+    try {
+      const res = await fetch(`/api/live-search?q=${encodeURIComponent(bannerSearchQuery)}`);
+      const data = await res.json();
+      if (data.success && data.books) {
+        setBannerApiResults(data.books);
+      } else {
+        setBannerApiResults([]);
+      }
+    } catch (error) {
+      console.error("Global search failed", error);
+    }
+    setIsBannerSearching(false);
   };
 
   const addBannerBook = async (book: Book) => {
@@ -405,7 +424,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-300">
             {/* LEFT: Banner List */}
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 lg:col-span-1">
-              <button onClick={() => { setEditingBanner({ title: '', subtitle: '', text_color: 'text-white', target_isbns: [], is_published: false }); setBannerStatus(''); }} className="w-full mb-6 py-3 bg-sky-600 hover:bg-sky-500 rounded-lg font-bold text-sm transition-colors shadow-lg">
+              <button onClick={() => { setEditingBanner({ title: '', subtitle: '', text_color: '#ffffff', target_isbns: [], is_published: false, slot_position: 1 }); setBannerStatus(''); }} className="w-full mb-6 py-3 bg-sky-600 hover:bg-sky-500 rounded-lg font-bold text-sm transition-colors shadow-lg">
                 + Forge New Banner
               </button>
               <h2 className="text-sm font-bold mb-4 text-gray-500 uppercase tracking-wider">Existing Banners</h2>
@@ -446,16 +465,30 @@ export default function AdminDashboard() {
                       <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Background Image URL</label>
                       <input type="text" value={editingBanner.background_image_url || ''} onChange={e => setEditingBanner({...editingBanner, background_image_url: e.target.value})} className="w-full bg-black border border-gray-800 rounded-lg p-3 text-sm focus:border-sky-500 focus:outline-none" placeholder="https://..." />
                     </div>
+                    
+                    {/* UPGRADED NATIVE COLOR PICKER */}
                     <div>
                       <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Text Color</label>
-                      <select value={editingBanner.text_color || 'text-white'} onChange={e => setEditingBanner({...editingBanner, text_color: e.target.value})} className="w-full bg-black border border-gray-800 rounded-lg p-3 text-sm focus:border-sky-500 focus:outline-none">
-                        <option value="text-white">White</option>
-                        <option value="text-gray-900">Black / Dark</option>
-                        <option value="text-sky-300">Sky Blue</option>
-                        <option value="text-emerald-300">Emerald Green</option>
-                        <option value="text-purple-300">Royal Purple</option>
-                        <option value="text-yellow-300">Gold</option>
-                        <option value="text-red-300">Crimson</option>
+                      <div className="flex items-center gap-3 bg-black border border-gray-800 rounded-lg px-3 py-1.5 focus-within:border-sky-500 transition-colors">
+                        <input 
+                          type="color" 
+                          value={editingBanner.text_color?.startsWith('#') ? editingBanner.text_color : '#ffffff'} 
+                          onChange={e => setEditingBanner({...editingBanner, text_color: e.target.value})} 
+                          className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0" 
+                        />
+                        <span className="text-sm font-mono text-gray-400 uppercase tracking-widest flex-1">
+                          {editingBanner.text_color?.startsWith('#') ? editingBanner.text_color : '#ffffff'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Display Slot</label>
+                      <select value={editingBanner.slot_position || 1} onChange={e => setEditingBanner({...editingBanner, slot_position: parseInt(e.target.value)})} className="w-full bg-black border border-gray-800 rounded-lg p-3 text-sm focus:border-sky-500 focus:outline-none">
+                        <option value={1}>Slot 1 (Top of Page)</option>
+                        <option value={2}>Slot 2 (After 2nd Category)</option>
+                        <option value={3}>Slot 3 (After 4th Category)</option>
+                        <option value={4}>Slot 4 (After 6th Category)</option>
                       </select>
                     </div>
                   </div>

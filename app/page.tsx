@@ -10,10 +10,10 @@ import NotificationBell from '../components/NotificationBell';
 import BarcodeScanner from '../components/BarcodeScanner';
 
 type Book = { id: string; title: string; author: string; isbn13: string; category: string; cover_image_url?: string; format?: string; };
-type Banner = { id: string; title: string; subtitle: string; background_image_url: string; text_color: string; landing_page_text: string; target_isbns: string[]; };
+type Banner = { id: string; title: string; subtitle: string; background_image_url: string; text_color: string; landing_page_text: string; target_isbns: string[]; slot_position: number; };
 
 // ==========================================
-// 1. THE BOOK CARD ENGINE (Unchanged for brevity, kept perfectly intact)
+// 1. THE BOOK CARD ENGINE
 // ==========================================
 function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishlisted, onAuthorClick }: { book: Book, isDarkMode: boolean, userId: string | null, initiallyOwned: boolean, initiallyWishlisted: boolean, onAuthorClick?: (author: string) => void }) {
   const [prices, setPrices] = useState<{ waterstones: string, blackwells: string, amazon: string, ebay: string, wob: string } | null>(null);
@@ -227,7 +227,11 @@ function FeaturedBannerCarousel({ banners, onSelectBanner, isDarkMode }: { banne
                 ></div>
               )}
               
-              <div className={`relative z-10 w-full pr-4 drop-shadow-md ${banner.text_color || 'text-white'}`}>
+              {/* UPGRADED: Perfectly paints your exact custom hex color over the banner */}
+              <div 
+                className={`relative z-10 w-full pr-4 drop-shadow-md ${!banner.text_color?.startsWith('#') ? (banner.text_color || 'text-white') : ''}`}
+                style={banner.text_color?.startsWith('#') ? { color: banner.text_color } : undefined}
+              >
                 <h3 className="text-2xl md:text-3xl font-black mb-2 leading-tight drop-shadow-xl">{banner.title}</h3>
                 <p className="text-sm font-medium leading-snug opacity-90 drop-shadow-lg">{banner.subtitle}</p>
               </div>
@@ -492,18 +496,40 @@ export default function Home() {
               </div>
             ) : (
               <>
+                {/* SLOT 1: Top of the Page */}
                 <FeaturedBannerCarousel 
-                  banners={banners}
+                  banners={banners.filter(b => b.slot_position === 1 || !b.slot_position)}
                   onSelectBanner={(banner) => {
                     setActiveBannerView(banner);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }} 
                   isDarkMode={isDarkMode} 
                 />
-                {dynamicCategories.map(cat => {
+
+                {dynamicCategories.map((cat, index) => {
                   const catBooks = getBooksForCategory(cat.name);
-                  return <CategoryVault key={cat.name} title={cat.name} books={catBooks} isDarkMode={isDarkMode} colorClass={cat.color} onViewAll={() => setActiveCategoryView({ name: cat.name, books: catBooks })} userId={userId} userLibrary={userLibrary} userWishlist={userWishlist} onAuthorClick={handleAuthorClick} />
+                  return (
+                    <div key={cat.name}>
+                      <CategoryVault title={cat.name} books={catBooks} isDarkMode={isDarkMode} colorClass={cat.color} onViewAll={() => setActiveCategoryView({ name: cat.name, books: catBooks })} userId={userId} userLibrary={userLibrary} userWishlist={userWishlist} onAuthorClick={handleAuthorClick} />
+                      
+                      {/* SLOT 2: Injected after the 2nd Category */}
+                      {index === 1 && (
+                        <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 2)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); }} isDarkMode={isDarkMode} />
+                      )}
+
+                      {/* SLOT 3: Injected after the 4th Category */}
+                      {index === 3 && (
+                        <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 3)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); }} isDarkMode={isDarkMode} />
+                      )}
+
+                      {/* SLOT 4: Injected after the 6th Category */}
+                      {index === 5 && (
+                        <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 4)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); }} isDarkMode={isDarkMode} />
+                      )}
+                    </div>
+                  )
                 })}
+
                 <CategoryVault title="All Inventory" books={books} isDarkMode={isDarkMode} colorClass="border-gray-500" onViewAll={() => setActiveCategoryView({ name: 'All Inventory', books: books })} userId={userId} userLibrary={userLibrary} userWishlist={userWishlist} onAuthorClick={handleAuthorClick} />
               </>
             )}
