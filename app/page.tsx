@@ -227,7 +227,6 @@ function FeaturedBannerCarousel({ banners, onSelectBanner, isDarkMode }: { banne
                 ></div>
               )}
               
-              {/* UPGRADED: Perfectly paints your exact custom hex color over the banner */}
               <div 
                 className={`relative z-10 w-full pr-4 drop-shadow-md ${!banner.text_color?.startsWith('#') ? (banner.text_color || 'text-white') : ''}`}
                 style={banner.text_color?.startsWith('#') ? { color: banner.text_color } : undefined}
@@ -399,6 +398,29 @@ export default function Home() {
   const handleClearViews = () => {
     setActiveCategoryView(null); setActiveBannerView(null); setSearchQuery(""); setHasPressedEnter(false); setApiSearchResults([]);
   };
+
+  // ENGINE UPGRADE: Silently fetch any missing banner books
+  const loadBannerBooks = async (isbns: string[]) => {
+    const cleanIsbns = isbns.map(i => i.replace(/[- ]/g, ''));
+    const missingIsbns = cleanIsbns.filter(isbn => !books.some(b => (b.isbn13 || '').replace(/[- ]/g, '') === isbn));
+    
+    if (missingIsbns.length === 0) return; 
+    
+    setIsLoading(true);
+    try {
+      const fetchPromises = missingIsbns.map(isbn => fetch(`/api/live-search?q=${encodeURIComponent(isbn)}`).then(res => res.json()));
+      const resultsArray = await Promise.all(fetchPromises);
+      let newBooks: Book[] = [];
+      resultsArray.forEach(data => { if (data.success && data.books && data.books.length > 0) newBooks.push(data.books[0]); });
+      
+      if (newBooks.length > 0) {
+        setBooks(prevBooks => [...newBooks, ...prevBooks]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch missing banner books", error);
+    }
+    setIsLoading(false);
+  };
   
   return (
     <main className={`min-h-screen flex flex-col py-8 pb-32 transition-colors duration-300 overflow-hidden ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
@@ -431,8 +453,11 @@ export default function Home() {
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {books.filter(b => activeBannerView.target_isbns.includes(b.isbn13)).map(book => (
-              <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} onAuthorClick={handleAuthorClick} />
+            {/* HYPHEN-PROOF MATCHER */}
+            {books
+              .filter(b => b.isbn13 && activeBannerView.target_isbns.map(i => i.replace(/[- ]/g, '')).includes(b.isbn13.replace(/[- ]/g, '')))
+              .map(book => (
+                <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} onAuthorClick={handleAuthorClick} />
             ))}
           </div>
         </div>
@@ -502,6 +527,7 @@ export default function Home() {
                   onSelectBanner={(banner) => {
                     setActiveBannerView(banner);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
+                    loadBannerBooks(banner.target_isbns);
                   }} 
                   isDarkMode={isDarkMode} 
                 />
@@ -514,17 +540,17 @@ export default function Home() {
                       
                       {/* SLOT 2: Injected after the 2nd Category */}
                       {index === 1 && (
-                        <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 2)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); }} isDarkMode={isDarkMode} />
+                        <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 2)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />
                       )}
 
                       {/* SLOT 3: Injected after the 4th Category */}
                       {index === 3 && (
-                        <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 3)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); }} isDarkMode={isDarkMode} />
+                        <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 3)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />
                       )}
 
                       {/* SLOT 4: Injected after the 6th Category */}
                       {index === 5 && (
-                        <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 4)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); }} isDarkMode={isDarkMode} />
+                        <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 4)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />
                       )}
                     </div>
                   )
