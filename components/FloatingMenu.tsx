@@ -52,6 +52,9 @@ export default function FloatingMenu({ isDarkMode = true, toggleTheme }: { isDar
           )}
 
           {/* GLOBAL LINKS */}
+          <Link href="/partners" className={`px-6 py-4 font-bold text-center border-b transition-colors ${isDarkMode ? 'border-gray-800 text-white hover:bg-gray-800' : 'border-gray-100 text-gray-900 hover:bg-gray-50'}`}>
+            Partners
+          </Link>
           <Link href="/retailers" className={`px-6 py-4 font-bold text-center border-b transition-colors ${isDarkMode ? 'border-gray-800 text-white hover:bg-gray-800' : 'border-gray-100 text-gray-900 hover:bg-gray-50'}`}>
             For Retailers
           </Link>
