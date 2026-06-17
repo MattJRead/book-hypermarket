@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 // Your Official Affiliates Database
 const partners = [
@@ -11,7 +12,8 @@ const partners = [
     description: 'The perfect reading companion. Premium, award-winning savory snacks to elevate your next reading session.',
     affiliateLink: 'https://www.awin1.com/cread.php?awinmid=126437&awinaffid=2934999&clickref=Partners+Page&ued=https%3A%2F%2Fmorishsnacks.co.uk%2F%3Fsrsltid%3DAfmBOoo5gY2rYiCdOv5nQnAL8aRhbxSrzMQvXnjE8UQuqbZbWOrWHhlh',
     color: 'from-amber-500 to-orange-600',
-    buttonText: 'Shop Morish Snacks'
+    buttonText: 'Shop Morish Snacks',
+    logoPath: '/logos/morish.png' // Update extension if you downloaded a .svg or .jpg
   },
   {
     id: 'amazon',
@@ -19,7 +21,8 @@ const partners = [
     description: 'Our global fulfillment partner. Access millions of titles with lightning fast delivery across the world.',
     affiliateLink: 'https://www.amazon.co.uk/?tag=bookhypermarket-21', 
     color: 'from-sky-500 to-blue-600',
-    buttonText: 'Shop on Amazon'
+    buttonText: 'Shop on Amazon',
+    logoPath: '/logos/amazon.png'
   },
   {
     id: 'ebay',
@@ -27,7 +30,8 @@ const partners = [
     description: 'The ultimate vault for rare, vintage, and second hand editions. Discover hidden literary gems.',
     affiliateLink: 'https://ebay.us/jQjfSJ', 
     color: 'from-red-500 to-rose-600',
-    buttonText: 'Hunt on eBay'
+    buttonText: 'Hunt on eBay',
+    logoPath: '/logos/ebay.png'
   }
 ];
 
@@ -61,9 +65,14 @@ export default function PartnersPage() {
               {/* Dynamic Top Glow Line */}
               <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${partner.color}`}></div>
               
-              {/* Logo Box Placeholder */}
-              <div className="w-24 h-24 bg-black border border-gray-800 rounded-2xl mb-6 flex items-center justify-center shadow-inner relative overflow-hidden">
-                <span className="text-xs text-gray-600 font-mono">LOGO</span>
+              {/* Logo Box */}
+              <div className="w-24 h-24 bg-black border border-gray-800 rounded-2xl mb-6 flex items-center justify-center shadow-inner relative overflow-hidden p-2">
+                <Image 
+                  src={partner.logoPath} 
+                  alt={`${partner.name} Logo`} 
+                  fill
+                  style={{ objectFit: 'contain', padding: '0.5rem' }}
+                />
               </div>
 
               <h2 className="text-2xl font-bold mb-3 text-white">{partner.name}</h2>
