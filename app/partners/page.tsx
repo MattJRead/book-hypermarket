@@ -14,7 +14,7 @@ const partners = [
     items: [
       { id: 'm-main', title: 'Morish Snacks Store', description: 'Shop the full award-winning range.', link: 'https://tidd.ly/3SzzUYy', isMain: true },
       { id: 'm-1', title: 'Seaweed Snacks', description: 'A savory, plant-based treat for your reading sessions.', link: 'https://tidd.ly/4fVPnfh', isMain: false },
-     { id: 'm-2', title: 'Gift Cards', description: 'For birthdays, thank-yous, holidays, or just because, a MORiSH voucher is the perfect gift for any moment. Let them choose their faves from a mouth-watering range of Snacks With Benefits.', link: 'https://tidd.ly/4vWOBTZ', isMain: false },
+      { id: 'm-2', title: 'Beef & Pork Snacks', description: 'Protein-packed savory snacks for long reading nights.', link: 'https://tidd.ly/3SP0JIi', isMain: false },
       { id: 'm-3', title: 'Shop All Morish', description: 'Explore every delicious flavor and snack option.', link: 'https://tidd.ly/3SP0JIi', isMain: false }
     ]
   },
@@ -48,13 +48,13 @@ const partners = [
     id: 'scholastic',
     name: 'Scholastic',
     description: 'The global leader in children\'s publishing and educational materials.',
-    logoPath: '/logos/scholastic.svg',
+    logoPath: '/logos/scholastic.png',
     color: 'from-red-600 to-red-800', 
     items: [
       { id: 's-main', title: 'Scholastic Home Page', description: 'Explore the full catalog of beloved titles.', link: 'https://tidd.ly/3QUpTEV', isMain: true },
       { id: 's-1', title: 'Children\'s Books', description: 'Discover the magic with stunning box sets.', link: 'https://tidd.ly/4uFR1Fv', isMain: false },
       { id: 's-2', title: 'Learning Home', description: 'Curriculum-aligned learning materials.', link: 'https://tidd.ly/4oHoSN8', isMain: false },
-     { id: 's-3', title: 'Sale', description: 'Amazing Books Starting At Just £1!', link: 'https://tidd.ly/4aSs96f', isMain: false }
+      { id: 's-3', title: 'YA Bestsellers', description: 'Gripping Young Adult thrillers and fantasies.', link: 'https://tidd.ly/4uFR1Fv', isMain: false }
     ]
   }
 ];
@@ -116,7 +116,7 @@ export default function PartnersPage() {
 
               {/* Scroll Container */}
               <div 
-                ref={el => scrollRefs.current[partner.id] = el}
+                ref={(el) => { scrollRefs.current[partner.id] = el; }}
                 className="flex overflow-x-auto gap-6 px-8 md:px-[calc((100vw-1280px)/2+32px)] scrollbar-hide snap-x snap-mandatory"
                 style={{ scrollPadding: '2rem' }}
               >
