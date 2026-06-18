@@ -19,16 +19,16 @@ const partners = [
     ]
   },
   {
-    id: 'amazon',
-    name: 'Amazon',
-    description: 'Our global fulfillment partner. Access millions of titles and accessories.',
-    logoPath: '/logos/amazon.png',
-    color: 'from-sky-500 to-blue-600',
+    id: 'scholastic',
+    name: 'Scholastic',
+    description: 'The global leader in children\'s publishing and educational materials.',
+    logoPath: '/logos/scholastic.svg',
+    color: 'from-red-600 to-red-800', 
     items: [
-      { id: 'a-main', title: 'Amazon Books', description: 'Search millions of titles with lightning fast delivery.', link: 'https://www.amazon.co.uk/?tag=bookhypermarket-21', isMain: true },
-      { id: 'a-1', title: 'Kindle E-Readers', description: 'Carry your entire library wherever you go.', link: 'https://amzn.to/44mJeBD', isMain: false },
-      { id: 'a-2', title: 'Reading Lights', description: 'Perfect illumination for reading in bed.', link: 'https://amzn.to/4oxCKsW', isMain: false },
-      { id: 'a-3', title: 'Bookshelves', description: 'Organize and display your library beautifully.', link: 'https://amzn.to/4xBMJlk', isMain: false }
+      { id: 's-main', title: 'Scholastic Home Page', description: 'Explore the full catalog of beloved titles.', link: 'https://tidd.ly/3QUpTEV', isMain: true },
+      { id: 's-1', title: 'Children\'s Books', description: 'Discover the magic with stunning box sets.', link: 'https://tidd.ly/4uFR1Fv', isMain: false },
+      { id: 's-2', title: 'Learning Home', description: 'Curriculum-aligned learning materials.', link: 'https://tidd.ly/4oHoSN8', isMain: false },
+      { id: 's-3', title: 'Sale', description: 'Amazing Books Starting At Just £1!', link: 'https://tidd.ly/4aSs96f', isMain: false }
     ]
   },
   {
@@ -45,16 +45,16 @@ const partners = [
     ]
   },
   {
-    id: 'scholastic',
-    name: 'Scholastic',
-    description: 'The global leader in children\'s publishing and educational materials.',
-    logoPath: '/logos/scholastic.svg',
-    color: 'from-red-600 to-red-800', 
+    id: 'amazon',
+    name: 'Amazon',
+    description: 'Our global fulfillment partner. Access millions of titles and accessories.',
+    logoPath: '/logos/amazon.png',
+    color: 'from-sky-500 to-blue-600',
     items: [
-      { id: 's-main', title: 'Scholastic Home Page', description: 'Explore the full catalog of beloved titles.', link: 'https://tidd.ly/3QUpTEV', isMain: true },
-      { id: 's-1', title: 'Children\'s Books', description: 'Discover the magic with stunning box sets.', link: 'https://tidd.ly/4uFR1Fv', isMain: false },
-      { id: 's-2', title: 'Learning Home', description: 'Curriculum-aligned learning materials.', link: 'https://tidd.ly/4oHoSN8', isMain: false },
-      { id: 's-3', title: 'Sale', description: 'Amazing Books Starting At Just £1!', link: 'https://tidd.ly/4aSs96f', isMain: false }
+      { id: 'a-main', title: 'Amazon Books', description: 'Search millions of titles with lightning fast delivery.', link: 'https://www.amazon.co.uk/?tag=bookhypermarket-21', isMain: true },
+      { id: 'a-1', title: 'Kindle E-Readers', description: 'Carry your entire library wherever you go.', link: 'https://amzn.to/44mJeBD', isMain: false },
+      { id: 'a-2', title: 'Reading Lights', description: 'Perfect illumination for reading in bed.', link: 'https://amzn.to/4oxCKsW', isMain: false },
+      { id: 'a-3', title: 'Bookshelves', description: 'Organize and display your library beautifully.', link: 'https://amzn.to/4xBMJlk', isMain: false }
     ]
   }
 ];
