@@ -133,6 +133,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     safeCategory.includes('juvenile') ||
     safeCategory.includes('teen') ||
     safeCategory.includes('picture book') ||
+    safeCategory.includes('Board book') ||
     safeCategory.includes('home learning');
 
   useEffect(() => {
