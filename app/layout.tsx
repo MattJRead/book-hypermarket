@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,11 +33,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
       >
-        <Script 
-          src="https://s.skimresources.com/js/YOUR_SKIMLINKS_ID.skimlinks.js" 
-          strategy="afterInteractive" 
-        />
-        {children}
+        <ThemeProvider>
+          <Script 
+            src="https://s.skimresources.com/js/YOUR_SKIMLINKS_ID.skimlinks.js" 
+            strategy="afterInteractive" 
+          />
+          {children}
+        </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
