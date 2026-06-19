@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import FloatingMenu from '@/components/FloatingMenu'; // Ensure this path matches your project structure
 
 const partners = [
   {
@@ -55,51 +56,46 @@ const partners = [
       { id: 'a-1', title: 'Kindle E-Readers', description: 'Carry your entire library wherever you go.', link: 'https://amzn.to/44mJeBD', isMain: false },
       { id: 'a-2', title: 'Reading Lights', description: 'Perfect illumination for reading in bed.', link: 'https://amzn.to/4oxCKsW', isMain: false },
       { id: 'a-3', title: 'Bookshelves', description: 'Organize and display your library beautifully.', link: 'https://amzn.to/4xBMJlk', isMain: false }
-    ]
+  ]
   }
 ];
 
-function CarouselRow({ partner }: { partner: typeof partners[0] }) {
-  const [index, setIndex] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(true);
-  const total = partner.items.length;
+function PartnerRow({ partner }: { partner: typeof partners[0] }) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [activeDot, setActiveDot] = useState(0);
 
-  const handleNext = () => {
-    if (!isAnimating) setIsAnimating(true);
-    setIndex(prev => prev + 1);
-  };
-
-  const handlePrev = () => {
-    if (index === 0) {
-      // Instantly jump to the end clone to allow backward looping
-      setIsAnimating(false);
-      setIndex(total);
-      setTimeout(() => {
-        setIsAnimating(true);
-        setIndex(total - 1);
-      }, 50);
-    } else {
-      if (!isAnimating) setIsAnimating(true);
-      setIndex(prev => prev - 1);
+  const scroll = (direction: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (el) {
+      const scrollAmount = 324; // Card width + gap
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      
+      if (direction === 'right') {
+        if (el.scrollLeft >= maxScroll - 10) {
+          // If at the end, rewind to start
+          el.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+      } else {
+        if (el.scrollLeft <= 0) {
+          // If at the start, jump to end
+          el.scrollTo({ left: maxScroll, behavior: 'smooth' });
+        } else {
+          el.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        }
+      }
     }
   };
 
-  useEffect(() => {
-    // Seamlessly jump back to the start when the forward clone is reached
-    if (index === total) {
-      const timer = setTimeout(() => {
-        setIsAnimating(false);
-        setIndex(0);
-      }, 500); // 500ms matches the CSS transition duration
-      return () => clearTimeout(timer);
+  const handleScrollEvent = () => {
+    const el = scrollRef.current;
+    if (el) {
+      const progress = el.scrollLeft / (el.scrollWidth - el.clientWidth);
+      const newDot = Math.round(progress * (partner.items.length - 1));
+      setActiveDot(newDot || 0);
     }
-  }, [index, total]);
-
-  // Modulo math ensures the progress rectangles highlight correctly
-  const activeDot = index % total;
-
-  // Render items twice to create the infinite scrolling track
-  const extendedItems = [...partner.items, ...partner.items];
+  };
 
   return (
     <div className="w-full max-w-[1000px] group/section flex flex-col items-center">
@@ -117,41 +113,40 @@ function CarouselRow({ partner }: { partner: typeof partners[0] }) {
 
       <div className="relative w-full max-w-[1000px] px-6">
         <button 
-          onClick={handlePrev}
+          onClick={() => scroll('left')}
           className="absolute left-0 top-[40%] -translate-y-1/2 z-20 w-12 h-20 bg-black border border-gray-700 rounded-xl items-center justify-center hidden md:flex hover:bg-gray-800 transition-all active:scale-95 shadow-[0_0_15px_rgba(0,0,0,0.8)]"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
         </button>
 
         <button 
-          onClick={handleNext}
+          onClick={() => scroll('right')}
           className="absolute right-0 top-[40%] -translate-y-1/2 z-20 w-12 h-20 bg-black border border-gray-700 rounded-xl items-center justify-center hidden md:flex hover:bg-gray-800 transition-all active:scale-95 shadow-[0_0_15px_rgba(0,0,0,0.8)]"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
         </button>
 
-        <div className="overflow-hidden w-full max-w-[948px] mx-auto py-4 px-2">
-          <div 
-            className={`flex gap-6 ${isAnimating ? 'transition-transform duration-500 ease-in-out' : ''}`}
-            // 324px exactly matches the 300px card + 24px gap
-            style={{ transform: `translateX(-${index * 324}px)` }}
-          >
-            {extendedItems.map((item, i) => (
-              <div key={`${item.id}-${i}`} className={`shrink-0 w-[300px] rounded-[1.5rem] p-6 flex flex-col relative overflow-hidden transition-all duration-300 hover:ring-2 hover:ring-gray-700 shadow-xl ${item.isMain ? 'bg-gray-900 border border-gray-700' : 'bg-gray-900/40 border border-gray-800'}`}>
-                {item.isMain && <div className={`absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r ${partner.color}`} />}
-                <div className="flex-grow">
-                  <h3 className={`text-xl font-bold mb-3 ${item.isMain ? 'text-white' : 'text-gray-300'}`}>{item.title}</h3>
-                  <p className="text-gray-500 text-sm font-medium leading-relaxed mb-8">{item.description}</p>
-                </div>
-                <a href={item.link} target="_blank" rel="noopener noreferrer" className={`w-full py-3 rounded-xl font-bold text-sm text-center text-white transition-all ${item.isMain ? `bg-gradient-to-r ${partner.color} shadow-lg shadow-orange-500/10` : 'bg-gray-800 hover:bg-gray-700'}`}>
-                  {item.isMain ? 'Visit Official Store' : 'Shop Product'}
-                </a>
+        <div 
+          ref={scrollRef}
+          onScroll={handleScrollEvent}
+          className="flex overflow-x-auto gap-6 mx-auto w-full max-w-[948px] scrollbar-hide snap-x snap-mandatory py-4"
+        >
+          {partner.items.map(item => (
+            <div key={item.id} className={`snap-start shrink-0 w-[280px] md:w-[300px] rounded-[1.5rem] p-6 flex flex-col relative overflow-hidden transition-all duration-300 hover:ring-2 hover:ring-gray-700 shadow-xl ${item.isMain ? 'bg-gray-900 border border-gray-700' : 'bg-gray-900/40 border border-gray-800'}`}>
+              {item.isMain && <div className={`absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r ${partner.color}`} />}
+              <div className="flex-grow">
+                <h3 className={`text-xl font-bold mb-3 ${item.isMain ? 'text-white' : 'text-gray-300'}`}>{item.title}</h3>
+                <p className="text-gray-500 text-sm font-medium leading-relaxed mb-8">{item.description}</p>
               </div>
-            ))}
-          </div>
+              <a href={item.link} target="_blank" rel="noopener noreferrer" className={`w-full py-3 rounded-xl font-bold text-sm text-center text-white transition-all ${item.isMain ? `bg-gradient-to-r ${partner.color} shadow-lg shadow-orange-500/10` : 'bg-gray-800 hover:bg-gray-700'}`}>
+                {item.isMain ? 'Visit Official Store' : 'Shop Product'}
+              </a>
+            </div>
+          ))}
         </div>
 
-        <div className="flex gap-2 justify-center mt-6">
+        {/* Progress Rectangles */}
+        <div className="flex gap-2 justify-center mt-4">
           {partner.items.map((_, i) => (
             <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === activeDot ? 'bg-sky-500 w-12' : 'bg-gray-800 w-8'}`} />
           ))}
@@ -162,67 +157,31 @@ function CarouselRow({ partner }: { partner: typeof partners[0] }) {
 }
 
 export default function PartnersPage() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
   return (
-    <>
-      <style>{`
-        @keyframes bookOpen {
-          0% { transform: scale(1) rotate(0deg); }
-          50% { transform: scale(1.1) rotate(-5deg); }
-          100% { transform: scale(1) rotate(0deg); }
-        }
-        .open-state .animate-book {
-          animation: bookOpen 0.6s ease-in-out;
-        }
-      `}</style>
+    <main className="min-h-screen flex flex-col py-12 bg-gray-950 text-white selection:bg-sky-500/30 overflow-x-hidden">
+      <div className="max-w-[1000px] mx-auto w-full px-4">
+        <Link href="/" className="inline-flex items-center px-6 py-2 rounded-xl text-sm font-bold bg-gray-900 border border-gray-800 hover:border-gray-600 transition-all mb-12 group">
+          <svg className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> Back to Storefront
+        </Link>
 
-      <main className="min-h-screen flex flex-col py-12 bg-gray-950 text-white selection:bg-sky-500/30 overflow-x-hidden relative">
-        <div className="max-w-[1000px] mx-auto w-full px-4">
-          <Link href="/" className="inline-flex items-center px-6 py-2 rounded-xl text-sm font-bold bg-gray-900 border border-gray-800 hover:border-gray-600 transition-all mb-12 group">
-            <svg className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> Back to Storefront
-          </Link>
-
-          <div className="text-center mb-20">
-            <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 bg-gradient-to-b from-white to-gray-500 bg-clip-text text-transparent">Trusted Partners</h1>
-            <p className="text-lg md:text-xl max-w-2xl mx-auto text-gray-400 font-medium">Premium brands and essential services curated for the modern reader.</p>
-          </div>
+        <div className="text-center mb-20">
+          <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 bg-gradient-to-b from-white to-gray-500 bg-clip-text text-transparent">Trusted Partners</h1>
+          <p className="text-lg md:text-xl max-w-2xl mx-auto text-gray-400 font-medium">Premium brands and essential services curated for the modern reader.</p>
         </div>
+      </div>
 
-        <div className="flex flex-col gap-24 items-center">
-          {partners.map(partner => (
-            <CarouselRow key={partner.id} partner={partner} />
-          ))}
-        </div>
-      </main>
+      <div className="flex flex-col gap-24 items-center mb-32">
+        {partners.map(partner => (
+          <PartnerRow key={partner.id} partner={partner} />
+        ))}
+      </div>
 
-      <button 
-        onClick={() => setIsMenuOpen(true)}
-        className={`fixed bottom-8 right-8 z-50 p-5 rounded-2xl bg-sky-500 text-white shadow-[0_10px_30px_rgba(14,165,233,0.4)] transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center ${isMenuOpen ? 'open-state' : ''}`}
-      >
-        <svg className="w-8 h-8 animate-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
-          <path d="M6.5 2L6.5 22"></path>
-        </svg>
-      </button>
+      <FloatingMenu />
 
-      {isMenuOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setIsMenuOpen(false)}>
-          <div className="w-full max-w-sm p-8 rounded-[2rem] bg-gray-900 border border-gray-800 shadow-2xl animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-8 pb-6 border-b border-gray-800">
-              <h2 className="text-2xl font-bold text-white">Navigation</h2>
-              <button onClick={() => setIsMenuOpen(false)} className="p-2 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <div className="flex flex-col gap-4 text-lg font-medium">
-              <Link href="/bookshelf" className="p-4 rounded-xl bg-gray-800/50 hover:bg-gray-800 text-sky-400 transition-colors">My Bookshelf</Link>
-              <Link href="/wishlist" className="p-4 rounded-xl bg-gray-800/50 hover:bg-gray-800 text-emerald-400 transition-colors">My Wishlist</Link>
-              <Link href="/about" className="p-4 rounded-xl bg-gray-800/50 hover:bg-gray-800 text-gray-300 transition-colors">About Us</Link>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      `}} />
+    </main>
   );
 }
