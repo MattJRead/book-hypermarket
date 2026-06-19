@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import FloatingMenu from '../../components/FloatingMenu';
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { useTheme } from '@/components/ThemeProvider';
 
 export default function AboutPage() {
   return (

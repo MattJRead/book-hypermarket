@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
 import FloatingMenu from '../../components/FloatingMenu';
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { useTheme } from '@/components/ThemeProvider';
 
 type Book = {
   id: string;

@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { useTheme } from '@/components/ThemeProvider';
 
 type Book = {
   id: string;
