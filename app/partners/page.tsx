@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -59,95 +59,170 @@ const partners = [
   }
 ];
 
-export default function PartnersPage() {
-  const scrollRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+function CarouselRow({ partner }: { partner: typeof partners[0] }) {
+  const [index, setIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(true);
+  const total = partner.items.length;
 
-  const scroll = (id: string, direction: 'left' | 'right') => {
-    const el = scrollRefs.current[id];
-    if (el) {
-      // Exactly one card width (300px) plus the gap (24px)
-      const scrollAmount = 324;
-      el.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+  const handleNext = () => {
+    if (!isAnimating) setIsAnimating(true);
+    setIndex(prev => prev + 1);
+  };
+
+  const handlePrev = () => {
+    if (index === 0) {
+      // Instantly jump to the end clone to allow backward looping
+      setIsAnimating(false);
+      setIndex(total);
+      setTimeout(() => {
+        setIsAnimating(true);
+        setIndex(total - 1);
+      }, 50);
+    } else {
+      if (!isAnimating) setIsAnimating(true);
+      setIndex(prev => prev - 1);
     }
   };
 
-  return (
-    <main className="min-h-screen flex flex-col py-12 bg-gray-950 text-white selection:bg-sky-500/30 overflow-x-hidden">
-      <div className="max-w-[1000px] mx-auto w-full px-4">
-        <Link href="/" className="inline-flex items-center px-6 py-2 rounded-xl text-sm font-bold bg-gray-900 border border-gray-800 hover:border-gray-600 transition-all mb-12 group">
-          <svg className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> Back to Storefront
-        </Link>
+  useEffect(() => {
+    // Seamlessly jump back to the start when the forward clone is reached
+    if (index === total) {
+      const timer = setTimeout(() => {
+        setIsAnimating(false);
+        setIndex(0);
+      }, 500); // 500ms matches the CSS transition duration
+      return () => clearTimeout(timer);
+    }
+  }, [index, total]);
 
-        <div className="text-center mb-20">
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 bg-gradient-to-b from-white to-gray-500 bg-clip-text text-transparent">Trusted Partners</h1>
-          <p className="text-lg md:text-xl max-w-2xl mx-auto text-gray-400 font-medium">Premium brands and essential services curated for the modern reader.</p>
+  // Modulo math ensures the progress rectangles highlight correctly
+  const activeDot = index % total;
+
+  // Render items twice to create the infinite scrolling track
+  const extendedItems = [...partner.items, ...partner.items];
+
+  return (
+    <div className="w-full max-w-[1000px] group/section flex flex-col items-center">
+      <div className="w-full max-w-[948px] px-2 mb-8">
+        <div className="flex items-center gap-6">
+          <div className="w-16 h-16 bg-black border border-gray-800 rounded-2xl flex items-center justify-center shadow-2xl relative overflow-hidden p-3 shrink-0">
+            <Image src={partner.logoPath} alt={partner.name} fill style={{ objectFit: 'contain', padding: '0.4rem' }} />
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold text-white tracking-tight">{partner.name}</h2>
+            <p className="text-gray-500 font-medium">{partner.description}</p>
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-24 items-center">
-        {partners.map(partner => (
-          <div key={partner.id} className="w-full max-w-[1000px] group/section flex flex-col items-center">
-            
-            {/* Header section tightly aligned to the left of the center block */}
-            <div className="w-full max-w-[948px] px-2 mb-8">
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 bg-black border border-gray-800 rounded-2xl flex items-center justify-center shadow-2xl relative overflow-hidden p-3 shrink-0">
-                  <Image src={partner.logoPath} alt={partner.name} fill style={{ objectFit: 'contain', padding: '0.4rem' }} />
+      <div className="relative w-full max-w-[1000px] px-6">
+        <button 
+          onClick={handlePrev}
+          className="absolute left-0 top-[40%] -translate-y-1/2 z-20 w-12 h-20 bg-black border border-gray-700 rounded-xl items-center justify-center hidden md:flex hover:bg-gray-800 transition-all active:scale-95 shadow-[0_0_15px_rgba(0,0,0,0.8)]"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
+        </button>
+
+        <button 
+          onClick={handleNext}
+          className="absolute right-0 top-[40%] -translate-y-1/2 z-20 w-12 h-20 bg-black border border-gray-700 rounded-xl items-center justify-center hidden md:flex hover:bg-gray-800 transition-all active:scale-95 shadow-[0_0_15px_rgba(0,0,0,0.8)]"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
+        </button>
+
+        <div className="overflow-hidden w-full max-w-[948px] mx-auto py-4 px-2">
+          <div 
+            className={`flex gap-6 ${isAnimating ? 'transition-transform duration-500 ease-in-out' : ''}`}
+            // 324px exactly matches the 300px card + 24px gap
+            style={{ transform: `translateX(-${index * 324}px)` }}
+          >
+            {extendedItems.map((item, i) => (
+              <div key={`${item.id}-${i}`} className={`shrink-0 w-[300px] rounded-[1.5rem] p-6 flex flex-col relative overflow-hidden transition-all duration-300 hover:ring-2 hover:ring-gray-700 shadow-xl ${item.isMain ? 'bg-gray-900 border border-gray-700' : 'bg-gray-900/40 border border-gray-800'}`}>
+                {item.isMain && <div className={`absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r ${partner.color}`} />}
+                <div className="flex-grow">
+                  <h3 className={`text-xl font-bold mb-3 ${item.isMain ? 'text-white' : 'text-gray-300'}`}>{item.title}</h3>
+                  <p className="text-gray-500 text-sm font-medium leading-relaxed mb-8">{item.description}</p>
                 </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-white tracking-tight">{partner.name}</h2>
-                  <p className="text-gray-500 font-medium">{partner.description}</p>
-                </div>
+                <a href={item.link} target="_blank" rel="noopener noreferrer" className={`w-full py-3 rounded-xl font-bold text-sm text-center text-white transition-all ${item.isMain ? `bg-gradient-to-r ${partner.color} shadow-lg shadow-orange-500/10` : 'bg-gray-800 hover:bg-gray-700'}`}>
+                  {item.isMain ? 'Visit Official Store' : 'Shop Product'}
+                </a>
               </div>
-            </div>
-
-            {/* Carousel Container restricted to 948px (3 cards exactly) */}
-            <div className="relative w-full max-w-[1000px] px-6">
-              
-              <button 
-                onClick={() => scroll(partner.id, 'left')}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-20 bg-black border border-gray-700 rounded-xl items-center justify-center hidden md:flex hover:bg-gray-800 transition-all active:scale-95 shadow-[0_0_15px_rgba(0,0,0,0.8)]"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
-              </button>
-
-              <button 
-                onClick={() => scroll(partner.id, 'right')}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-20 bg-black border border-gray-700 rounded-xl items-center justify-center hidden md:flex hover:bg-gray-800 transition-all active:scale-95 shadow-[0_0_15px_rgba(0,0,0,0.8)]"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
-              </button>
-
-              {/* The Viewport */}
-              <div 
-                ref={(el) => { scrollRefs.current[partner.id] = el; }}
-                className="flex overflow-x-auto gap-6 mx-auto w-full max-w-[948px] scrollbar-hide snap-x snap-mandatory py-4"
-              >
-                {partner.items.map(item => (
-                  <div key={item.id} className={`snap-start shrink-0 w-[280px] md:w-[300px] rounded-[1.5rem] p-6 flex flex-col relative overflow-hidden transition-all duration-300 hover:ring-2 hover:ring-gray-700 shadow-xl ${item.isMain ? 'bg-gray-900 border border-gray-700' : 'bg-gray-900/40 border border-gray-800'}`}>
-                    {item.isMain && <div className={`absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r ${partner.color}`} />}
-                    
-                    <div className="flex-grow">
-                      <h3 className={`text-xl font-bold mb-3 ${item.isMain ? 'text-white' : 'text-gray-300'}`}>{item.title}</h3>
-                      <p className="text-gray-500 text-sm font-medium leading-relaxed mb-8">{item.description}</p>
-                    </div>
-
-                    <a href={item.link} target="_blank" rel="noopener noreferrer" className={`w-full py-3 rounded-xl font-bold text-sm text-center text-white transition-all ${item.isMain ? `bg-gradient-to-r ${partner.color} shadow-lg shadow-orange-500/10` : 'bg-gray-800 hover:bg-gray-700'}`}>
-                      {item.isMain ? 'Visit Official Store' : 'Shop Product'}
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
-
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-      `}} />
-    </main>
+        <div className="flex gap-2 justify-center mt-6">
+          {partner.items.map((_, i) => (
+            <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === activeDot ? 'bg-sky-500 w-12' : 'bg-gray-800 w-8'}`} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function PartnersPage() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  return (
+    <>
+      <style>{`
+        @keyframes bookOpen {
+          0% { transform: scale(1) rotate(0deg); }
+          50% { transform: scale(1.1) rotate(-5deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        .open-state .animate-book {
+          animation: bookOpen 0.6s ease-in-out;
+        }
+      `}</style>
+
+      <main className="min-h-screen flex flex-col py-12 bg-gray-950 text-white selection:bg-sky-500/30 overflow-x-hidden relative">
+        <div className="max-w-[1000px] mx-auto w-full px-4">
+          <Link href="/" className="inline-flex items-center px-6 py-2 rounded-xl text-sm font-bold bg-gray-900 border border-gray-800 hover:border-gray-600 transition-all mb-12 group">
+            <svg className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> Back to Storefront
+          </Link>
+
+          <div className="text-center mb-20">
+            <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 bg-gradient-to-b from-white to-gray-500 bg-clip-text text-transparent">Trusted Partners</h1>
+            <p className="text-lg md:text-xl max-w-2xl mx-auto text-gray-400 font-medium">Premium brands and essential services curated for the modern reader.</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-24 items-center">
+          {partners.map(partner => (
+            <CarouselRow key={partner.id} partner={partner} />
+          ))}
+        </div>
+      </main>
+
+      <button 
+        onClick={() => setIsMenuOpen(true)}
+        className={`fixed bottom-8 right-8 z-50 p-5 rounded-2xl bg-sky-500 text-white shadow-[0_10px_30px_rgba(14,165,233,0.4)] transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center ${isMenuOpen ? 'open-state' : ''}`}
+      >
+        <svg className="w-8 h-8 animate-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
+          <path d="M6.5 2L6.5 22"></path>
+        </svg>
+      </button>
+
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setIsMenuOpen(false)}>
+          <div className="w-full max-w-sm p-8 rounded-[2rem] bg-gray-900 border border-gray-800 shadow-2xl animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-8 pb-6 border-b border-gray-800">
+              <h2 className="text-2xl font-bold text-white">Navigation</h2>
+              <button onClick={() => setIsMenuOpen(false)} className="p-2 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="flex flex-col gap-4 text-lg font-medium">
+              <Link href="/bookshelf" className="p-4 rounded-xl bg-gray-800/50 hover:bg-gray-800 text-sky-400 transition-colors">My Bookshelf</Link>
+              <Link href="/wishlist" className="p-4 rounded-xl bg-gray-800/50 hover:bg-gray-800 text-emerald-400 transition-colors">My Wishlist</Link>
+              <Link href="/about" className="p-4 rounded-xl bg-gray-800/50 hover:bg-gray-800 text-gray-300 transition-colors">About Us</Link>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
