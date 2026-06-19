@@ -17,10 +17,10 @@ type Banner = { id: string; title: string; subtitle: string; background_image_ur
 // THE SCHOLASTIC SPOTLIGHT DATA & ENGINE
 // ==========================================
 const scholasticSpotlight = [
-  { id: 's-main', title: 'Books For Ages 0-6', description: 'The Newest and Best Books for 0-6 year olds, chosen by experts.', link: 'https://tidd.ly/4ezEfm2', color: 'bg-red-500' },
-  { id: 's-1', title: 'Books For Ages 7-11', description: 'The Newest and Best Books for 7-11 year olds, chosen by experts.', link: 'https://tidd.ly/44nvOW0', color: 'bg-sky-500' },
-  { id: 's-2', title: 'Books For Ages 11+', description: 'The Best Young Adult Fiction and Non-Fiction, chosen by experts.', link: 'https://tidd.ly/4eNVaCB', color: 'bg-amber-500' },
-  { id: 's-3', title: 'Award-Winning Authors', description: 'Explore Award-Winning Authors on Scholastic.', link: 'https://tidd.ly/4vXgqeQ', color: 'bg-red-700' }
+  { id: 's-1', title: 'Books For Ages 0-6', description: 'The Newest and Best Books for 0-6 year olds, chosen by experts.', link: 'https://tidd.ly/4ezEfm2', color: 'bg-red-500' },
+  { id: 's-2', title: 'Books For Ages 7-11', description: 'The Newest and Best Books for 7-11 year olds, chosen by experts.', link: 'https://tidd.ly/44nvOW0', color: 'bg-sky-500' },
+  { id: 's-3', title: 'Books For Ages 11+', description: 'The Best Young Adult Fiction and Non-Fiction, chosen by experts.', link: 'https://tidd.ly/4eNVaCB', color: 'bg-amber-500' },
+  { id: 's-main', title: 'Award-Winning Authors', description: 'Explore Award-Winning Authors on Scholastic.', link: 'https://tidd.ly/4vXgqeQ', color: 'bg-red-700' }
   { id: 's-4', title: 'Award-Winning Books', description: 'Explore Award-Winning Books on Scholastic.', link: 'https://tidd.ly/4oz5IJ2', color: 'bg-red-700' }
 ];
 
