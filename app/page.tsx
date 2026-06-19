@@ -112,11 +112,23 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
   };
 
   const titleSearchQuery = encodeURIComponent(book.title);
+  
+  // Base Store Links
   const waterstonesLink = `https://www.waterstones.com/books/search/term/${titleSearchQuery}`;
   const blackwellsLink = `https://blackwells.co.uk/bookshop/search/?keyword=${titleSearchQuery}`;
   const amazonLink = `https://www.amazon.co.uk/s?k=${titleSearchQuery}&tag=bookhypermarket-21`;
   const ebayLink = `https://www.ebay.co.uk/sch/i.html?_nkw=${titleSearchQuery}&mkcid=1&mkrid=710-53481-19255-0&siteid=3&campid=5339156569&toolid=10001&mkevt=1`;
   const wobLink = `https://www.wob.com/en-gb/category/all?search=${titleSearchQuery}`;
+
+  // 1. THE SCHOLASTIC TRIGGER
+  const safeCategory = (book.category || '').toLowerCase();
+  const isKidsBook = 
+    safeCategory.includes('learning') || 
+    safeCategory.includes('educational') || 
+    safeCategory.includes('children') || 
+    safeCategory.includes('kid') || 
+    safeCategory.includes('young adult') ||
+    safeCategory.includes('ya ');
 
   useEffect(() => {
     async function fetchPrices() {
@@ -145,6 +157,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     fetchPrices();
   }, [book.isbn13, book.title]);
 
+  // 2. THE AWIN PAYLOAD CONSTRUCTION
   const shops = [
     { id: 'waterstones', name: 'Waterstones', url: waterstonesLink, displayPrice: formatPrice(prices?.waterstones) },
     { id: 'blackwells', name: 'Blackwells', url: blackwellsLink, displayPrice: formatPrice(prices?.blackwells) },
@@ -152,6 +165,21 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     { id: 'ebay', name: 'eBay', url: ebayLink, displayPrice: formatPrice(prices?.ebay) },
     { id: 'wob', name: 'World of Books', url: wobLink, displayPrice: formatPrice(prices?.wob) },
   ];
+
+  // Inject Scholastic dynamically with your exact Awin credentials
+  if (isKidsBook) {
+    const myAwinPublisherId = "2934999"; 
+    const scholasticAwinMerchantId = "2957"; 
+    const rawScholasticUrl = `https://shop.scholastic.co.uk/search/search?search%5Bquery%5D=${titleSearchQuery}`;
+    const awinTrackingLink = `https://www.awin1.com/cread.php?awinmid=${scholasticAwinMerchantId}&awinaffid=${myAwinPublisherId}&p=${encodeURIComponent(rawScholasticUrl)}`;
+
+    shops.push({
+      id: 'scholastic',
+      name: 'Scholastic',
+      url: awinTrackingLink,
+      displayPrice: 'Check Site'
+    });
+  }
 
   const currentShop = shops.find(s => s.id === selectedShopId) || shops[0];
 
@@ -236,7 +264,8 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg></div>
               </div>
-              <a href={currentShop.url} target="_blank" rel="noopener noreferrer" onClick={() => { ensureBookInDatabase(); fetch('/api/track', { method: 'POST', body: JSON.stringify({ event_type: 'affiliate_click', details: { shop: currentShop.id, book_title: book.title, target_url: currentShop.url } }) }); }} className="flex items-center justify-center shrink-0 bg-sky-600 hover:bg-sky-500 text-white p-2.5 rounded-lg transition-colors shadow-md w-10 h-10" title="Go to Store">
+              
+              <a href={currentShop.url} target="_blank" rel="noopener noreferrer" onClick={() => { ensureBookInDatabase(); fetch('/api/track', { method: 'POST', body: JSON.stringify({ event_type: 'affiliate_click', details: { shop: currentShop.id, book_title: book.title, target_url: currentShop.url } }) }); }} className={`flex items-center justify-center shrink-0 p-2.5 rounded-lg transition-colors shadow-md w-10 h-10 text-white ${currentShop.id === 'scholastic' ? 'bg-red-600 hover:bg-red-500' : 'bg-sky-600 hover:bg-sky-500'}`} title="Go to Store">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
               </a>
             </div>
