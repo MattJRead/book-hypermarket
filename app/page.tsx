@@ -14,7 +14,7 @@ type Book = { id: string; title: string; author: string; isbn13: string; categor
 type Banner = { id: string; title: string; subtitle: string; background_image_url: string; text_color: string; landing_page_text: string; target_isbns: string[]; slot_position: number; };
 
 // ==========================================
-// THE SCHOLASTIC SPOTLIGHT DATA
+// THE SCHOLASTIC SPOTLIGHT DATA & ENGINE
 // ==========================================
 const scholasticSpotlight = [
   { id: 's-1', title: 'Children\'s Books', description: 'Discover the magic with stunning box sets and illustrated editions.', link: 'https://tidd.ly/4uFR1Fv', color: 'bg-red-500' },
@@ -22,6 +22,68 @@ const scholasticSpotlight = [
   { id: 's-3', title: 'Amazing Book Sale', description: 'Incredible titles starting at just £1!', link: 'https://tidd.ly/4aSs96f', color: 'bg-amber-500' },
   { id: 's-main', title: 'Scholastic Hub', description: 'Explore the full catalog of beloved titles.', link: 'https://tidd.ly/3QUpTEV', color: 'bg-red-700' }
 ];
+
+function ScholasticCarousel({ isDarkMode }: { isDarkMode: boolean }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = direction === 'left' ? -300 : 300;
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <div className="w-full max-w-[1000px] mx-auto mt-8 mb-12 px-4 relative group">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+            <span className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-red-600/20">S</span>
+            Scholastic Spotlight
+          </h2>
+          <p className={`mt-1 font-medium ${!isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            The global leader in children's publishing.
+          </p>
+        </div>
+        <a href="https://tidd.ly/3QUpTEV" target="_blank" rel="noopener noreferrer" className="hidden md:flex text-sm font-bold text-red-500 hover:text-red-400 transition-colors items-center">
+          View All <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+        </a>
+      </div>
+      
+      <div className="relative w-full">
+        {/* Floating Arrows */}
+        <button onClick={() => scroll('left')} className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 -ml-4 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-600' : 'bg-white text-gray-900 hover:bg-gray-100 border border-gray-200'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg></button>
+        <button onClick={() => scroll('right')} className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 -mr-4 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-600' : 'bg-white text-gray-900 hover:bg-gray-100 border border-gray-200'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg></button>
+
+        {/* Scroll Container with hidden scrollbar */}
+        <div ref={scrollRef} className="flex overflow-x-auto gap-6 snap-x snap-mandatory py-4 px-2 -mx-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {scholasticSpotlight.map((item) => (
+            <a 
+              key={item.id} 
+              href={item.link} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className={`snap-start shrink-0 w-[260px] md:w-[280px] rounded-2xl p-6 flex flex-col relative overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-xl border group ${!isDarkMode ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-900 border-gray-800'}`}
+            >
+              <div className={`absolute top-0 left-0 w-full h-1 ${item.color}`} />
+              
+              <h3 className={`text-xl font-bold mb-2 transition-colors ${!isDarkMode ? 'text-gray-900 group-hover:text-red-600' : 'text-white group-hover:text-red-400'}`}>
+                {item.title}
+              </h3>
+              <p className={`text-sm flex-grow leading-relaxed ${!isDarkMode ? 'text-gray-600' : 'text-gray-500'}`}>
+                {item.description}
+              </p>
+              
+              <div className={`mt-6 text-sm font-bold flex items-center transition-colors ${!isDarkMode ? 'text-gray-400 group-hover:text-gray-900' : 'text-gray-400 group-hover:text-white'}`}>
+                Shop Now <svg className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ==========================================
 // 1. THE BOOK CARD ENGINE
@@ -303,8 +365,9 @@ export default function Home() {
   // Connect the local boolean to the new global brain so the existing BookCards render correctly
   const isDarkMode = theme === 'dark' || theme === 'true-dark';
 
+  // Upgraded Theme Styles featuring the beautiful Cream variation for Soft Light
   const themeStyles = {
-    'light': 'bg-gray-50 text-gray-900',
+    'light': 'bg-[#fdfbf7] text-[#2d2a26]', 
     'true-light': 'bg-white text-black',
     'dark': 'bg-gray-950 text-white',
     'true-dark': 'bg-black text-white'
@@ -499,7 +562,7 @@ export default function Home() {
         <>
           <div className="w-full mb-12 flex flex-col items-center gap-6 px-4">
             <div className="w-full max-w-2xl relative z-20">
-              <input type="text" placeholder="Search entire vault... (Press Enter to scour global databases)" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setHasPressedEnter(false); }} onKeyDown={handleLiveSearch} className={`w-full p-4 pr-16 rounded-xl border text-lg focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-xl ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
+              <input type="text" placeholder="Search entire vault... (Press Enter to scour global databases)" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setHasPressedEnter(false); }} onKeyDown={handleLiveSearch} className={`w-full p-4 pr-16 rounded-xl border text-lg focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-xl ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
               <button onClick={() => setIsScanning(true)} className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors ${isDarkMode ? 'text-gray-400 hover:text-sky-400 hover:bg-gray-800' : 'text-gray-500 hover:text-sky-600 hover:bg-gray-200'}`} title="Scan Barcode"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H5v3a1 1 0 01-2 0V4zm14-1a1 1 0 011 1v3a1 1 0 01-2 0V5h-3a1 1 0 010-2h4zM3 20a1 1 0 001 1h4a1 1 0 000-2H5v-3a1 1 0 00-2 0v4zm14 1a1 1 0 001-1v-3a1 1 0 00-2 0v3h-3a1 1 0 000 2h4z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h8v4H8z" /></svg></button>
             </div>
             {isScanning && ( <BarcodeScanner onClose={() => setIsScanning(false)} onScanSuccess={(isbn) => { setIsScanning(false); executeSearch(isbn); }} /> )}
@@ -552,50 +615,8 @@ export default function Home() {
                   isDarkMode={isDarkMode} 
                 />
 
-                {/* --- SCHOLASTIC SPOTLIGHT CAROUSEL --- */}
-                <div className="w-full max-w-[1000px] mx-auto mt-8 mb-12 px-4">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h2 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-                        <span className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-red-600/20">S</span>
-                        Scholastic Spotlight
-                      </h2>
-                      <p className={`mt-1 font-medium ${!isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                        The global leader in children's publishing.
-                      </p>
-                    </div>
-                    <a href="https://tidd.ly/3QUpTEV" target="_blank" rel="noopener noreferrer" className="hidden md:flex text-sm font-bold text-red-500 hover:text-red-400 transition-colors items-center">
-                      View All <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-                    </a>
-                  </div>
-                  
-                  <div className="flex overflow-x-auto gap-6 scrollbar-hide snap-x snap-mandatory py-4">
-                    {scholasticSpotlight.map((item) => (
-                      <a 
-                        key={item.id} 
-                        href={item.link} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className={`snap-start shrink-0 w-[260px] md:w-[280px] rounded-2xl p-6 flex flex-col relative overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-xl border group ${!isDarkMode ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-900 border-gray-800'}`}
-                      >
-                        {/* Dynamic Color Top Border */}
-                        <div className={`absolute top-0 left-0 w-full h-1 ${item.color}`} />
-                        
-                        <h3 className={`text-xl font-bold mb-2 transition-colors ${!isDarkMode ? 'text-gray-900 group-hover:text-red-600' : 'text-white group-hover:text-red-400'}`}>
-                          {item.title}
-                        </h3>
-                        <p className={`text-sm flex-grow leading-relaxed ${!isDarkMode ? 'text-gray-600' : 'text-gray-500'}`}>
-                          {item.description}
-                        </p>
-                        
-                        <div className={`mt-6 text-sm font-bold flex items-center transition-colors ${!isDarkMode ? 'text-gray-400 group-hover:text-gray-900' : 'text-gray-400 group-hover:text-white'}`}>
-                          Shop Now <svg className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                        </div>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-                {/* --- END SCHOLASTIC SPOTLIGHT --- */}
+                {/* THE SCHOLASTIC SPOTLIGHT CAROUSEL INJECTION */}
+                <ScholasticCarousel isDarkMode={isDarkMode} />
 
                 {dynamicCategories.map((cat, index) => {
                   const catBooks = getBooksForCategory(cat.name);
@@ -632,4 +653,4 @@ export default function Home() {
       <SpeedInsights />
     </main>
   );
-} 
+}
