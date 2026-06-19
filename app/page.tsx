@@ -21,6 +21,7 @@ const scholasticSpotlight = [
   { id: 's-2', title: 'Books For Ages 7-11', description: 'The Newest and Best Books for 7-11 year olds, chosen by experts.', link: 'https://tidd.ly/44nvOW0', color: 'bg-red-500' },
   { id: 's-3', title: 'Books For Ages 11+', description: 'The Best Young Adult Fiction and Non-Fiction, chosen by experts.', link: 'https://tidd.ly/4eNVaCB', color: 'bg-red-500' },
   { id: 's-4', title: 'Award-Winning Books', description: 'Explore Award-Winning Books on Scholastic.', link: 'https://tidd.ly/4oz5IJ2', color: 'bg-red-700' },
+  { id: 's-5', title: 'Get 20% OFF across the Scholastic Shop', description: 'Get 20% off across the Scholastic Shop. Minimum spend £30. Use Code: READ20. Offer ends at 11.59pm on 30th June 2026.', link: 'https://tidd.ly/3Sna3mC', color: 'bg-red-700' },
   { id: 's-main', title: 'Award-Winning Authors', description: 'Explore Award-Winning Authors on Scholastic.', link: 'https://tidd.ly/4vXgqeQ', color: 'bg-red-700' }
 ];
 
@@ -120,7 +121,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
   const ebayLink = `https://www.ebay.co.uk/sch/i.html?_nkw=${titleSearchQuery}&mkcid=1&mkrid=710-53481-19255-0&siteid=3&campid=5339156569&toolid=10001&mkevt=1`;
   const wobLink = `https://www.wob.com/en-gb/category/all?search=${titleSearchQuery}`;
 
-  // 1. THE SCHOLASTIC TRIGGER
+  // 1. THE SCHOLASTIC TRIGGER (UPGRADED)
   const safeCategory = (book.category || '').toLowerCase();
   const isKidsBook = 
     safeCategory.includes('learning') || 
@@ -128,7 +129,11 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     safeCategory.includes('children') || 
     safeCategory.includes('kid') || 
     safeCategory.includes('young adult') ||
-    safeCategory.includes('ya ');
+    safeCategory.includes('ya ') ||
+    safeCategory.includes('juvenile') ||
+    safeCategory.includes('teen') ||
+    safeCategory.includes('picture book') ||
+    safeCategory.includes('home learning');
 
   useEffect(() => {
     async function fetchPrices() {
