@@ -5,8 +5,7 @@ import { useTheme } from '@/components/ThemeProvider';
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-gray-950 text-white flex flex-col items-center py-16 px-6 relative overflow-hidden">
-      
+    <main className="min-h-screen flex flex-col py-12">      
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-sky-500/10 rounded-full blur-[120px] pointer-events-none"></div>
 
       <Link href="/" className="absolute top-8 left-8 text-sky-400 hover:text-sky-300 font-bold tracking-wide flex items-center gap-2 z-10">

@@ -176,8 +176,8 @@ export default function PartnersPage() {
   }[theme];
 
   return (
-    <main className={`min-h-screen flex flex-col py-12 selection:bg-sky-500/30 overflow-x-hidden transition-colors duration-500 ${themeStyles}`}>
-      <div className="max-w-[1000px] mx-auto w-full px-4">
+     <main className="min-h-screen flex flex-col py-12">
+        <div className="max-w-[1000px] mx-auto w-full px-4">
         <Link href="/" className={`inline-flex items-center px-6 py-2 rounded-xl text-sm font-bold border transition-all mb-12 group ${isDarkUI ? 'bg-gray-900 border-gray-800 hover:border-gray-600 text-white' : 'bg-white border-gray-300 hover:bg-gray-100 text-gray-900'}`}>
           <svg className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> Back to Storefront
         </Link>

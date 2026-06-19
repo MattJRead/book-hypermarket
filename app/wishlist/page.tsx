@@ -43,8 +43,7 @@ export default function Wishlist() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white flex flex-col py-8 pb-32">
-      
+    <main className="min-h-screen flex flex-col py-12">      
       <header className="flex flex-col justify-center items-center mb-12 w-full max-w-7xl mx-auto px-6 relative">
         <div className="w-full flex justify-start mb-6">
           <Link href="/" className="px-6 py-2 rounded-full font-bold flex items-center transition-all hover:-translate-x-1 bg-gray-800 text-white hover:bg-gray-700">

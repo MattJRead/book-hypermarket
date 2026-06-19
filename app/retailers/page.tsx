@@ -45,8 +45,8 @@ export default function RetailersPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white flex flex-col items-center py-16 px-6">
-      <Link href="/" className="absolute top-8 left-8 text-sky-400 hover:text-sky-300 font-bold tracking-wide flex items-center gap-2">
+     <main className="min-h-screen flex flex-col py-12">
+        <Link href="/" className="absolute top-8 left-8 text-sky-400 hover:text-sky-300 font-bold tracking-wide flex items-center gap-2">
         <span>←</span> Return to Storefront
       </Link>
 

@@ -269,8 +269,8 @@ export default function AdminDashboard() {
   const clicks = analyticsData.filter(e => e.event_type === 'affiliate_click');
 
   return (
-    <main className={`min-h-screen flex flex-col items-center py-12 px-6 transition-colors duration-500 ${themeStyles}`}>
-      <div className="w-full max-w-6xl">
+      <main className="min-h-screen flex flex-col py-12">
+        <div className="w-full max-w-6xl">
         
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
           <h1 className={`text-3xl font-extrabold tracking-tight flex items-center ${isDarkUI ? 'text-white' : 'text-gray-900'}`}>
