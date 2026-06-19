@@ -8,9 +8,20 @@ import FloatingMenu from '../components/FloatingMenu';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import NotificationBell from '../components/NotificationBell';
 import BarcodeScanner from '../components/BarcodeScanner';
+import { useTheme } from '../components/ThemeProvider';
 
 type Book = { id: string; title: string; author: string; isbn13: string; category: string; cover_image_url?: string; format?: string; };
 type Banner = { id: string; title: string; subtitle: string; background_image_url: string; text_color: string; landing_page_text: string; target_isbns: string[]; slot_position: number; };
+
+// ==========================================
+// THE SCHOLASTIC SPOTLIGHT DATA
+// ==========================================
+const scholasticSpotlight = [
+  { id: 's-1', title: 'Children\'s Books', description: 'Discover the magic with stunning box sets and illustrated editions.', link: 'https://tidd.ly/4uFR1Fv', color: 'bg-red-500' },
+  { id: 's-2', title: 'Learning Home', description: 'Curriculum-aligned learning materials for all reading levels.', link: 'https://tidd.ly/4oHoSN8', color: 'bg-sky-500' },
+  { id: 's-3', title: 'Amazing Book Sale', description: 'Incredible titles starting at just £1!', link: 'https://tidd.ly/4aSs96f', color: 'bg-amber-500' },
+  { id: 's-main', title: 'Scholastic Hub', description: 'Explore the full catalog of beloved titles.', link: 'https://tidd.ly/3QUpTEV', color: 'bg-red-700' }
+];
 
 // ==========================================
 // 1. THE BOOK CARD ENGINE
@@ -287,7 +298,18 @@ function CategoryVault({ title, books, isDarkMode, colorClass, onViewAll, userId
 // 3. THE MAIN PAGE (Storefront HQ)
 // ==========================================
 export default function Home() {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const { theme } = useTheme();
+  
+  // Connect the local boolean to the new global brain so the existing BookCards render correctly
+  const isDarkMode = theme === 'dark' || theme === 'true-dark';
+
+  const themeStyles = {
+    'light': 'bg-gray-50 text-gray-900',
+    'true-light': 'bg-white text-black',
+    'dark': 'bg-gray-950 text-white',
+    'true-dark': 'bg-black text-white'
+  }[theme];
+
   const [books, setBooks] = useState<Book[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -399,7 +421,6 @@ export default function Home() {
     setActiveCategoryView(null); setActiveBannerView(null); setSearchQuery(""); setHasPressedEnter(false); setApiSearchResults([]);
   };
 
-  // ENGINE UPGRADE: Silently fetch any missing banner books
   const loadBannerBooks = async (isbns: string[]) => {
     const cleanIsbns = isbns.map(i => i.replace(/[- ]/g, ''));
     const missingIsbns = cleanIsbns.filter(isbn => !books.some(b => (b.isbn13 || '').replace(/[- ]/g, '') === isbn));
@@ -423,7 +444,7 @@ export default function Home() {
   };
   
   return (
-    <main className={`min-h-screen flex flex-col py-8 pb-32 transition-colors duration-300 overflow-hidden ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
+    <main className={`min-h-screen flex flex-col py-8 pb-32 transition-colors duration-500 overflow-hidden ${themeStyles}`}>
       <NotificationBell userId={userId} isDarkMode={isDarkMode} />
       <header className="flex justify-center items-center mb-12 w-full relative">
         <button onClick={handleClearViews} className="hover:opacity-80 transition-opacity">
@@ -453,7 +474,6 @@ export default function Home() {
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* HYPHEN-PROOF MATCHER */}
             {books
               .filter(b => b.isbn13 && activeBannerView.target_isbns.map(i => i.replace(/[- ]/g, '')).includes(b.isbn13.replace(/[- ]/g, '')))
               .map(book => (
@@ -532,6 +552,51 @@ export default function Home() {
                   isDarkMode={isDarkMode} 
                 />
 
+                {/* --- SCHOLASTIC SPOTLIGHT CAROUSEL --- */}
+                <div className="w-full max-w-[1000px] mx-auto mt-8 mb-12 px-4">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+                        <span className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-red-600/20">S</span>
+                        Scholastic Spotlight
+                      </h2>
+                      <p className={`mt-1 font-medium ${!isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        The global leader in children's publishing.
+                      </p>
+                    </div>
+                    <a href="https://tidd.ly/3QUpTEV" target="_blank" rel="noopener noreferrer" className="hidden md:flex text-sm font-bold text-red-500 hover:text-red-400 transition-colors items-center">
+                      View All <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                    </a>
+                  </div>
+                  
+                  <div className="flex overflow-x-auto gap-6 scrollbar-hide snap-x snap-mandatory py-4">
+                    {scholasticSpotlight.map((item) => (
+                      <a 
+                        key={item.id} 
+                        href={item.link} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className={`snap-start shrink-0 w-[260px] md:w-[280px] rounded-2xl p-6 flex flex-col relative overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-xl border group ${!isDarkMode ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-900 border-gray-800'}`}
+                      >
+                        {/* Dynamic Color Top Border */}
+                        <div className={`absolute top-0 left-0 w-full h-1 ${item.color}`} />
+                        
+                        <h3 className={`text-xl font-bold mb-2 transition-colors ${!isDarkMode ? 'text-gray-900 group-hover:text-red-600' : 'text-white group-hover:text-red-400'}`}>
+                          {item.title}
+                        </h3>
+                        <p className={`text-sm flex-grow leading-relaxed ${!isDarkMode ? 'text-gray-600' : 'text-gray-500'}`}>
+                          {item.description}
+                        </p>
+                        
+                        <div className={`mt-6 text-sm font-bold flex items-center transition-colors ${!isDarkMode ? 'text-gray-400 group-hover:text-gray-900' : 'text-gray-400 group-hover:text-white'}`}>
+                          Shop Now <svg className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+                {/* --- END SCHOLASTIC SPOTLIGHT --- */}
+
                 {dynamicCategories.map((cat, index) => {
                   const catBooks = getBooksForCategory(cat.name);
                   return (
@@ -563,7 +628,7 @@ export default function Home() {
         </>
       )}
 
-      <FloatingMenu isDarkMode={isDarkMode} toggleTheme={() => setIsDarkMode(!isDarkMode)} />
+      <FloatingMenu />
       <SpeedInsights />
     </main>
   );
