@@ -9,6 +9,10 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { useTheme } from '@/components/ThemeProvider';   
 
 export default function RetailersPage() {
+  // 1. Activate the theme brain
+  const { theme } = useTheme();
+  const isDarkUI = theme === 'dark' || theme === 'true-dark';
+
   const [formData, setFormData] = useState({
     name: '',
     company: '',
@@ -45,50 +49,55 @@ export default function RetailersPage() {
   };
 
   return (
-     <main className="min-h-screen flex flex-col py-12">
-        <Link href="/" className="absolute top-8 left-8 text-sky-400 hover:text-sky-300 font-bold tracking-wide flex items-center gap-2">
-        <span>←</span> Return to Storefront
-      </Link>
+     // Added items-center to horizontally center the entire page content
+     <main className="min-h-screen flex flex-col items-center py-12 relative overflow-hidden">
+      
+      {/* Constrained back button to align perfectly with the form below it */}
+      <div className="w-full max-w-2xl px-6 z-10 mb-8 self-center">
+        <Link href="/" className={`inline-flex font-bold tracking-wide items-center gap-2 transition-colors ${isDarkUI ? 'text-sky-400 hover:text-sky-300' : 'text-sky-600 hover:text-sky-500'}`}>
+          <span>←</span> Return to Storefront
+        </Link>
+      </div>
 
-      <div className="max-w-2xl w-full mt-12">
-        <h1 className="text-5xl font-extrabold mb-4 tracking-tight">
-          Next-Gen <span className="text-sky-400 italic">Point of Sale</span>
+      <div className="max-w-2xl w-full z-10 px-6">
+        <h1 className={`text-5xl font-extrabold mb-4 tracking-tight transition-colors ${isDarkUI ? 'text-white' : 'text-gray-900'}`}>
+          Next-Gen <span className="text-sky-500 italic">Point of Sale</span>
         </h1>
-        <p className="text-gray-400 text-lg mb-10 leading-relaxed">
+        <p className={`text-lg mb-10 leading-relaxed transition-colors ${isDarkUI ? 'text-gray-400' : 'text-gray-600'}`}>
           We are building the ultimate aggregation and sales infrastructure for independent booksellers and comic shops. Join the waitlist to secure early access and shape the development of the software.
         </p>
 
         {status === 'success' ? (
-          <div className="bg-sky-900/30 border border-sky-500/50 rounded-xl p-8 text-center">
-            <h3 className="text-2xl font-bold text-sky-400 mb-2">Transmission Received</h3>
-            <p className="text-gray-300">You are on the list. We will be in touch shortly.</p>
+          <div className={`border rounded-xl p-8 text-center transition-colors ${isDarkUI ? 'bg-sky-900/30 border-sky-500/50' : 'bg-sky-50 border-sky-200'}`}>
+            <h3 className={`text-2xl font-bold mb-2 ${isDarkUI ? 'text-sky-400' : 'text-sky-600'}`}>Transmission Received</h3>
+            <p className={isDarkUI ? 'text-gray-300' : 'text-gray-700'}>You are on the list. We will be in touch shortly.</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl space-y-6">
+          <form onSubmit={handleSubmit} className={`border rounded-2xl p-8 shadow-2xl space-y-6 transition-colors ${isDarkUI ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex flex-col">
                 <label className="text-xs font-mono text-gray-500 uppercase tracking-widest mb-2">Your Name</label>
-                <input required type="text" onChange={(e) => setFormData({...formData, name: e.target.value})} className="bg-gray-950 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                <input required type="text" onChange={(e) => setFormData({...formData, name: e.target.value})} className={`border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
               </div>
               <div className="flex flex-col">
                 <label className="text-xs font-mono text-gray-500 uppercase tracking-widest mb-2">Shop / Company Name</label>
-                <input required type="text" onChange={(e) => setFormData({...formData, company: e.target.value})} className="bg-gray-950 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                <input required type="text" onChange={(e) => setFormData({...formData, company: e.target.value})} className={`border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
               </div>
             </div>
 
             <div className="flex flex-col">
               <label className="text-xs font-mono text-gray-500 uppercase tracking-widest mb-2">Email Address</label>
-              <input required type="email" onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-gray-950 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <input required type="email" onChange={(e) => setFormData({...formData, email: e.target.value})} className={`border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
             </div>
 
             <div className="flex flex-col">
               <label className="text-xs font-mono text-gray-500 uppercase tracking-widest mb-2">Current POS Software</label>
-              <input type="text" placeholder="e.g. Square, Shopify, Lightspeed, Custom..." onChange={(e) => setFormData({...formData, pos_system: e.target.value})} className="bg-gray-950 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <input type="text" placeholder="e.g. Square, Shopify, Lightspeed, Custom..." onChange={(e) => setFormData({...formData, pos_system: e.target.value})} className={`border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
             </div>
 
             <div className="flex flex-col">
               <label className="text-xs font-mono text-gray-500 uppercase tracking-widest mb-2">Database Infrastructure</label>
-              <select required onChange={(e) => setFormData({...formData, infrastructure: e.target.value})} className="bg-gray-950 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500 appearance-none">
+              <select required onChange={(e) => setFormData({...formData, infrastructure: e.target.value})} className={`border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-sky-500 appearance-none transition-colors ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`}>
                 <option value="">Select your current setup...</option>
                 <option value="Cloud/Online">Cloud / Online Software</option>
                 <option value="Local Computer">Local Computer / Hard Drive</option>
@@ -97,7 +106,7 @@ export default function RetailersPage() {
               </select>
             </div>
 
-            <button disabled={status === 'loading'} type="submit" className="w-full bg-sky-500 hover:bg-sky-400 text-gray-950 font-bold text-lg py-4 rounded-lg transition-all shadow-[0_0_20px_rgba(14,165,233,0.3)] disabled:opacity-50">
+            <button disabled={status === 'loading'} type="submit" className={`w-full font-bold text-lg py-4 rounded-lg transition-all shadow-lg disabled:opacity-50 ${isDarkUI ? 'bg-sky-500 hover:bg-sky-400 text-gray-950 shadow-sky-500/20' : 'bg-sky-600 hover:bg-sky-500 text-white shadow-sky-600/20'}`}>
               {status === 'loading' ? 'Initializing...' : 'Join the Waitlist'}
             </button>
             {status === 'error' && <p className="text-red-500 text-sm text-center mt-2">Error connecting to vault. Please try again.</p>}

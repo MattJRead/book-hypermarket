@@ -1,25 +1,37 @@
+'use client';
+
 import Link from 'next/link';
 import FloatingMenu from '../../components/FloatingMenu';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { useTheme } from '@/components/ThemeProvider';
 
 export default function AboutPage() {
+  // 1. Call the brain to check the current theme
+  const { theme } = useTheme();
+  
+  // 2. Create the boolean that tells the text which color to be
+  const isDarkUI = theme === 'dark' || theme === 'true-dark';
+
   return (
-    <main className="min-h-screen flex flex-col py-12">      
+    // Added 'items-center' to perfectly center your content block
+    <main className="min-h-screen flex flex-col items-center py-12 relative overflow-hidden">      
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-sky-500/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-      <Link href="/" className="absolute top-8 left-8 text-sky-400 hover:text-sky-300 font-bold tracking-wide flex items-center gap-2 z-10">
-        <span>←</span> Return to Storefront
-      </Link>
+      {/* Moved the back button into a constrained container so it aligns with the text */}
+      <div className="w-full max-w-3xl px-6 z-10 mb-8 self-center">
+        <Link href="/" className={`inline-flex font-bold tracking-wide items-center gap-2 transition-colors ${isDarkUI ? 'text-sky-400 hover:text-sky-300' : 'text-sky-600 hover:text-sky-500'}`}>
+          <span>←</span> Return to Storefront
+        </Link>
+      </div>
 
-      <div className="max-w-3xl w-full mt-12 z-10">
-        <h1 className="text-5xl font-extrabold mb-8 tracking-tight border-b border-gray-800 pb-8">
-          What is book <span className="text-sky-400 italic">Hypermarket</span>
+      <div className="max-w-3xl w-full z-10 px-6">
+        <h1 className={`text-5xl font-extrabold mb-8 tracking-tight border-b pb-8 transition-colors ${isDarkUI ? 'border-gray-800 text-white' : 'border-gray-300 text-gray-900'}`}>
+          What is book <span className="text-sky-500 italic">Hypermarket</span>
         </h1>
         
-        <div className="space-y-6 text-lg text-gray-300 leading-relaxed">
+        <div className={`space-y-6 text-lg leading-relaxed transition-colors ${isDarkUI ? 'text-gray-300' : 'text-gray-700'}`}>
           <p>
-            At <strong className="text-white">Book Hypermarket</strong>, our mission is simple: we help readers and collectors find the absolute best deals in seconds.
+            At <strong className={isDarkUI ? 'text-white' : 'text-gray-900'}>Book Hypermarket</strong>, our mission is simple: we help readers and collectors find the absolute best deals in seconds.
           </p>
           <p>
             We are a high-performance aggregation engine. We scour the web to spotlight the greatest live offers from industry giants like Waterstones, Blackwell's, Forbidden Planet and more. But we don't stop there.
@@ -29,12 +41,6 @@ export default function AboutPage() {
           </p>
           <p>
             Whether you are hunting for a rare paperback, a graphic novel, or just the best price on a bestseller, Book Hypermarket brings the entire market to your fingertips.
-          </p>
-          <p>
-            Book Hypermarket is currently in Beta. Our inventory and pricing engine are expanding daily. Thank you for your patience.
-            </p>
-          <p className="font-mono text-sky-400 text-sm pt-8 uppercase tracking-widest">
-            
           </p>
         </div>
       </div>
