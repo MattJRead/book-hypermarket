@@ -91,7 +91,7 @@ export default function Wishlist() {
       </div>
 
       {/* THE GLOBAL MENU INJECTION */}
-      <FloatingMenu isDarkMode={true} />
+      <FloatingMenu />
       <SpeedInsights />
     </main>
   );
