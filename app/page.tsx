@@ -291,8 +291,18 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
               )}
             </div>
             <h2 className="text-2xl font-black text-center mb-2 leading-tight drop-shadow-md">{book.title}</h2>
-            <p className={`text-lg text-center mb-6 font-medium ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`}>{book.author}</p>
-            <div className={`px-4 py-2 rounded-lg font-mono text-sm tracking-widest ${isDarkMode ? 'bg-gray-950 text-gray-400' : 'bg-gray-100 text-gray-600'}`}>ISBN: <span className="font-bold text-white">{book.isbn13}</span></div>
+             <button 
+               onClick={(e) => { 
+                 e.stopPropagation(); 
+                  setIsCoverModalOpen(false); 
+                  if (onAuthorClick) onAuthorClick(book.author); 
+                 }} 
+                   className={`text-lg text-center mb-6 font-medium hover:underline transition-colors cursor-pointer w-full z-20 ${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-600 hover:text-sky-500'}`}
+                   title={`Search for more books by ${book.author}`}
+                    >
+                  {book.author}
+               </button>         
+         <div className={`px-4 py-2 rounded-lg font-mono text-sm tracking-widest ${isDarkMode ? 'bg-gray-950 text-gray-400' : 'bg-gray-100 text-gray-600'}`}>ISBN: <span className="font-bold text-white">{book.isbn13}</span></div>
           </div>
         </div>
       )}
