@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
-import { useTheme } from '../components/ThemeProvider';
+import { useTheme } from '@/components/ThemeProvider';
 
 type Book = { id: string; title: string; author: string; category: string; cover_image_url?: string; isbn13: string };
 type UserAccount = { id: string; email: string; created_at: string; last_sign_in: string };
