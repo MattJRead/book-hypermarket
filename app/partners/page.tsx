@@ -3,7 +3,8 @@
 import { useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import FloatingMenu from '@/components/FloatingMenu'; // Ensure this path matches your project structure
+import FloatingMenu from '@/components/FloatingMenu';
+import { useTheme } from '@/components/ThemeProvider'; // Added the import
 
 const partners = [
   {
@@ -60,7 +61,9 @@ const partners = [
   }
 ];
 
-function PartnerRow({ partner }: { partner: typeof partners[0] }) {
+
+// We pass isDarkUI into the component so the cards know how to render
+function PartnerRow({ partner, isDarkUI }: { partner: typeof partners[0], isDarkUI: boolean }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [activeDot, setActiveDot] = useState(0);
 
@@ -105,25 +108,25 @@ function PartnerRow({ partner }: { partner: typeof partners[0] }) {
             <Image src={partner.logoPath} alt={partner.name} fill style={{ objectFit: 'contain', padding: '0.4rem' }} />
           </div>
           <div>
-            <h2 className="text-3xl font-bold text-white tracking-tight">{partner.name}</h2>
-            <p className="text-gray-500 font-medium">{partner.description}</p>
+            <h2 className={`text-3xl font-bold tracking-tight ${isDarkUI ? 'text-white' : 'text-gray-900'}`}>{partner.name}</h2>
+            <p className={`font-medium ${isDarkUI ? 'text-gray-500' : 'text-gray-600'}`}>{partner.description}</p>
           </div>
         </div>
       </div>
 
-      <div className="relative w-full max-w-[1000px] px-6">
+      <div className="relative w-full max-w-[1000px] px-6 group">
         <button 
           onClick={() => scroll('left')}
-          className="absolute left-0 top-[40%] -translate-y-1/2 z-20 w-12 h-20 bg-black border border-gray-700 rounded-xl items-center justify-center hidden md:flex hover:bg-gray-800 transition-all active:scale-95 shadow-[0_0_15px_rgba(0,0,0,0.8)]"
+          className={`absolute left-0 top-[40%] -translate-y-1/2 z-20 w-12 h-20 border rounded-xl items-center justify-center hidden md:flex transition-all active:scale-95 shadow-[0_0_15px_rgba(0,0,0,0.8)] opacity-0 group-hover:opacity-100 ${isDarkUI ? 'bg-black border-gray-700 hover:bg-gray-800 text-white' : 'bg-white border-gray-300 hover:bg-gray-100 text-gray-900'}`}
         >
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
         </button>
 
         <button 
           onClick={() => scroll('right')}
-          className="absolute right-0 top-[40%] -translate-y-1/2 z-20 w-12 h-20 bg-black border border-gray-700 rounded-xl items-center justify-center hidden md:flex hover:bg-gray-800 transition-all active:scale-95 shadow-[0_0_15px_rgba(0,0,0,0.8)]"
+          className={`absolute right-0 top-[40%] -translate-y-1/2 z-20 w-12 h-20 border rounded-xl items-center justify-center hidden md:flex transition-all active:scale-95 shadow-[0_0_15px_rgba(0,0,0,0.8)] opacity-0 group-hover:opacity-100 ${isDarkUI ? 'bg-black border-gray-700 hover:bg-gray-800 text-white' : 'bg-white border-gray-300 hover:bg-gray-100 text-gray-900'}`}
         >
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
         </button>
 
         <div 
@@ -132,11 +135,11 @@ function PartnerRow({ partner }: { partner: typeof partners[0] }) {
           className="flex overflow-x-auto gap-6 mx-auto w-full max-w-[948px] scrollbar-hide snap-x snap-mandatory py-4"
         >
           {partner.items.map(item => (
-            <div key={item.id} className={`snap-start shrink-0 w-[280px] md:w-[300px] rounded-[1.5rem] p-6 flex flex-col relative overflow-hidden transition-all duration-300 hover:ring-2 hover:ring-gray-700 shadow-xl ${item.isMain ? 'bg-gray-900 border border-gray-700' : 'bg-gray-900/40 border border-gray-800'}`}>
+            <div key={item.id} className={`snap-start shrink-0 w-[280px] md:w-[300px] rounded-[1.5rem] p-6 flex flex-col relative overflow-hidden transition-all duration-300 hover:ring-2 hover:ring-gray-700 shadow-xl border ${item.isMain ? (isDarkUI ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-300') : (isDarkUI ? 'bg-gray-900/40 border-gray-800' : 'bg-gray-50 border-gray-200')}`}>
               {item.isMain && <div className={`absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r ${partner.color}`} />}
               <div className="flex-grow">
-                <h3 className={`text-xl font-bold mb-3 ${item.isMain ? 'text-white' : 'text-gray-300'}`}>{item.title}</h3>
-                <p className="text-gray-500 text-sm font-medium leading-relaxed mb-8">{item.description}</p>
+                <h3 className={`text-xl font-bold mb-3 ${item.isMain ? (isDarkUI ? 'text-white' : 'text-gray-900') : (isDarkUI ? 'text-gray-300' : 'text-gray-700')}`}>{item.title}</h3>
+                <p className={`text-sm font-medium leading-relaxed mb-8 ${isDarkUI ? 'text-gray-500' : 'text-gray-600'}`}>{item.description}</p>
               </div>
               <a href={item.link} target="_blank" rel="noopener noreferrer" className={`w-full py-3 rounded-xl font-bold text-sm text-center text-white transition-all ${item.isMain ? `bg-gradient-to-r ${partner.color} shadow-lg shadow-orange-500/10` : 'bg-gray-800 hover:bg-gray-700'}`}>
                 {item.isMain ? 'Visit Official Store' : 'Shop Product'}
@@ -148,7 +151,7 @@ function PartnerRow({ partner }: { partner: typeof partners[0] }) {
         {/* Progress Rectangles */}
         <div className="flex gap-2 justify-center mt-4">
           {partner.items.map((_, i) => (
-            <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === activeDot ? 'bg-sky-500 w-12' : 'bg-gray-800 w-8'}`} />
+            <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === activeDot ? 'bg-sky-500 w-12' : (isDarkUI ? 'bg-gray-800 w-8' : 'bg-gray-300 w-8')}`} />
           ))}
         </div>
       </div>
@@ -157,22 +160,37 @@ function PartnerRow({ partner }: { partner: typeof partners[0] }) {
 }
 
 export default function PartnersPage() {
+  
+  // The hook MUST go here, inside the main page function!
+  const { theme } = useTheme();
+  
+  // High-level check for the components
+  const isDarkUI = theme === 'dark' || theme === 'true-dark';
+
+  // The 4-tier theme system, complete with the warm Cream for Soft Light
+  const themeStyles = {
+    'light': 'bg-orange-50 text-stone-900', // Beautiful Reader's Cream
+    'true-light': 'bg-white text-black',
+    'dark': 'bg-gray-950 text-white',
+    'true-dark': 'bg-black text-gray-300'
+  }[theme];
+
   return (
-    <main className="min-h-screen flex flex-col py-12 bg-gray-950 text-white selection:bg-sky-500/30 overflow-x-hidden">
+    <main className={`min-h-screen flex flex-col py-12 selection:bg-sky-500/30 overflow-x-hidden transition-colors duration-500 ${themeStyles}`}>
       <div className="max-w-[1000px] mx-auto w-full px-4">
-        <Link href="/" className="inline-flex items-center px-6 py-2 rounded-xl text-sm font-bold bg-gray-900 border border-gray-800 hover:border-gray-600 transition-all mb-12 group">
+        <Link href="/" className={`inline-flex items-center px-6 py-2 rounded-xl text-sm font-bold border transition-all mb-12 group ${isDarkUI ? 'bg-gray-900 border-gray-800 hover:border-gray-600 text-white' : 'bg-white border-gray-300 hover:bg-gray-100 text-gray-900'}`}>
           <svg className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> Back to Storefront
         </Link>
 
         <div className="text-center mb-20">
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 bg-gradient-to-b from-white to-gray-500 bg-clip-text text-transparent">Trusted Partners</h1>
-          <p className="text-lg md:text-xl max-w-2xl mx-auto text-gray-400 font-medium">Premium brands and essential services curated for the modern reader.</p>
+          <h1 className={`text-5xl md:text-7xl font-black tracking-tighter mb-6 bg-gradient-to-b bg-clip-text text-transparent ${isDarkUI ? 'from-white to-gray-500' : 'from-gray-900 to-gray-500'}`}>Trusted Partners</h1>
+          <p className={`text-lg md:text-xl max-w-2xl mx-auto font-medium ${isDarkUI ? 'text-gray-400' : 'text-gray-600'}`}>Premium brands and essential services curated for the modern reader.</p>
         </div>
       </div>
 
       <div className="flex flex-col gap-24 items-center mb-32">
         {partners.map(partner => (
-          <PartnerRow key={partner.id} partner={partner} />
+          <PartnerRow key={partner.id} partner={partner} isDarkUI={isDarkUI} />
         ))}
       </div>
 

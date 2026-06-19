@@ -368,10 +368,10 @@ export default function Home() {
 
   // Upgraded Theme Styles featuring the beautiful Cream variation for Soft Light
   const themeStyles = {
-    'light': 'bg-[#fdfbf7] text-[#2d2a26]', 
+    'light': 'bg-orange-50 text-stone-900', // This forces a warm, professional cream/parchment color
     'true-light': 'bg-white text-black',
     'dark': 'bg-gray-950 text-white',
-    'true-dark': 'bg-black text-white'
+    'true-dark': 'bg-black text-gray-300'
   }[theme];
 
   const [books, setBooks] = useState<Book[]>([]);
@@ -508,8 +508,7 @@ export default function Home() {
   };
   
   return (
-    <main className={`min-h-screen flex flex-col py-8 pb-32 transition-colors duration-500 overflow-hidden ${themeStyles}`}>
-      <NotificationBell userId={userId} isDarkMode={isDarkMode} />
+<main className={`min-h-screen flex flex-col py-12 transition-colors duration-500 overflow-hidden ${themeStyles}`}>      <NotificationBell userId={userId} isDarkMode={isDarkMode} />
       <header className="flex justify-center items-center mb-12 w-full relative">
         <button onClick={handleClearViews} className="hover:opacity-80 transition-opacity">
           <h1 className="flex items-baseline font-extrabold tracking-tighter">

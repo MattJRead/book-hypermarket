@@ -1,9 +1,9 @@
 'use client';
 
+import { useTheme } from '../components/ThemeProvider';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '../lib/supabase';
-import { useTheme } from './ThemeProvider';
 
 export default function FloatingMenu() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -119,20 +119,24 @@ export default function FloatingMenu() {
         className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-50 p-5 rounded-2xl shadow-[0_10px_30px_rgba(14,165,233,0.4)] transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center ${isMenuOpen ? 'open-state' : ''} ${isDarkUI ? 'bg-[#0ea5e9] text-white' : 'bg-gray-900 text-white'}`}
       >
         <div className="relative w-8 h-8">
+          <div className="relative w-8 h-8">
+          {/* THE NEW, RESPONSIVE OPEN BOOK ICON */}
           <svg 
             className={`absolute inset-0 w-full h-full transition-all duration-300 transform ${isMenuOpen ? 'opacity-0 scale-50 rotate-90' : 'opacity-100 scale-100 rotate-0'} animate-book`} 
             viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
           >
-            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-            <path d="M6.5 2L6.5 22" />
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
           </svg>
           
+          {/* THE CLOSE 'X' ICON */}
           <svg 
             className={`absolute inset-0 w-full h-full transition-all duration-300 transform ${isMenuOpen ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90'}`} 
             viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
           >
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
+        </div>
         </div>
       </button>
 

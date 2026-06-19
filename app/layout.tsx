@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from '@/components/ThemeProvider';
+import ThemeWrapper from '@/components/ThemeWrapper'; // Import the new wrapper
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,15 +31,11 @@ export default function RootLayout({
       <head>  
         <meta name='impact-site-verification' content='aa76c5d0-1ed2-4b09-8598-cf44b86a79f0'></meta>
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
         <ThemeProvider>
-          <Script 
-            src="https://s.skimresources.com/js/YOUR_SKIMLINKS_ID.skimlinks.js" 
-            strategy="afterInteractive" 
-          />
-          {children}
+          <ThemeWrapper>
+            {children}
+          </ThemeWrapper>
         </ThemeProvider>
         <Analytics />
       </body>
