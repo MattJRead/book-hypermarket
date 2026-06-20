@@ -58,6 +58,19 @@ const partners = [
       { id: 'a-2', title: 'Reading Lights', description: 'Perfect illumination for reading in bed.', link: 'https://amzn.to/4oxCKsW', isMain: false },
       { id: 'a-3', title: 'Bookshelves', description: 'Organize and display your library beautifully.', link: 'https://amzn.to/4xBMJlk', isMain: false }
   ]
+  },
+  {
+    id: 'Geek Crate',
+    name: 'Geek Crate',
+    description: 'Our global fulfillment partner. Access millions of titles and accessories.',
+    logoPath: '/logos/geekcrate.png',
+    color: 'from-purple-500 to-pink-600',
+    items: [
+      { id: 'g-main', title: 'Ultra Crate', description: 'Unbox a surprise bundle of gear and collectibles from your favourite movies, games and TV shows with Geek Crate - the ultimate mystery box for geeks and gamers!', link: 'https://tidd.ly/3QhbG4O', isMain: true },
+      { id: 'g-1', title: 'Otaku Crate', description: 'Get a surprise mix of official items from the best anime & manga series delivered straight to your door with Otaku Crate!', link: 'https://tidd.ly/4uJF81h', isMain: false },
+      { id: 'g-2', title: 'Potter Crate', description: 'Unlock the magic of the Wizarding World™ with Potter Crate - The Harry Potter themed Mystery Box!', link: 'https://tidd.ly/4uRN3tw', isMain: false },
+      { id: 'g-3', title: 'Geek Crate', description: 'Mystery Boxes For All Fandoms. Get 30% off your first box!', link: 'https://tidd.ly/4uY6wsM', isMain: false }
+  ]
   }
 ];
 
