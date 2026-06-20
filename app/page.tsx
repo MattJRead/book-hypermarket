@@ -244,7 +244,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     if (dbError) {
       console.error("[Vault Rejection - Wishlist]:", dbError);
       setIsWishlisted(!newStatus); // Revert the star UI
-      alert("Error saving to your wishlist. Check the console, My Lord.");
+      alert("Error saving to your wishlist. I'm Deeply Sorry.");
     }
 
     setIsWishlistUpdating(false);
