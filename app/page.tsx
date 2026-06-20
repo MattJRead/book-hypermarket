@@ -9,6 +9,9 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import NotificationBell from '../components/NotificationBell';
 import BarcodeScanner from '../components/BarcodeScanner';
 import { useTheme } from '@/components/ThemeProvider';
+import GlobalVaultFeed from '@/components/GlobalVaultFeed'; // Adjust path if needed
+
+<GlobalVaultFeed />
 
 type Book = { id: string; title: string; author: string; isbn13: string; category: string; cover_image_url?: string; format?: string; };
 type Banner = { id: string; title: string; subtitle: string; background_image_url: string; text_color: string; landing_page_text: string; target_isbns: string[]; slot_position: number; };
