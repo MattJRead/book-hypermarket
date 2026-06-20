@@ -62,7 +62,7 @@ const partners = [
   {
     id: 'Geek Crate',
     name: 'Geek Crate',
-    description: 'Our global fulfillment partner. Access millions of titles and accessories.',
+    description: 'Choose from our range of crates, perfect for casual fans or dedicated collectors, available as a one-off or on our flexible subscription plans',
     logoPath: '/logos/geekcrate.png',
     color: 'from-purple-500 to-pink-600',
     items: [
