@@ -5,8 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
 import FloatingMenu from '../../components/FloatingMenu';
-import { SpeedInsights } from "@vercel/speed-insights/next"
-import { useTheme } from '@/components/ThemeProvider';
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { useTheme } from '../../components/ThemeProvider';
 
 type Book = {
   id: string;
@@ -20,6 +20,8 @@ type Book = {
 export default function Wishlist() {
   const [wishlistBooks, setWishlistBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { theme } = useTheme();
+const isDarkMode = theme === 'dark';
 
   useEffect(() => {
     async function fetchWishlist() {
@@ -33,8 +35,15 @@ export default function Wishlist() {
           .eq('user_id', session.user.id);
           
         if (data && !error) {
-          const extractedBooks = data.map(row => row.books).flat() as Book[];
+          // Safely extract the nested book objects and filter out any potential nulls
+          const extractedBooks = data
+            .map(row => row.books)
+            .flat()
+            .filter(Boolean) as Book[];
+            
           setWishlistBooks(extractedBooks);
+        } else if (error) {
+          console.error("Error fetching wishlist:", error);
         }
       }
       setIsLoading(false);
@@ -43,7 +52,22 @@ export default function Wishlist() {
   }, []);
 
   return (
-    <main className="min-h-screen flex flex-col py-12">      
+    <main className="min-h-screen flex flex-col py-12">  
+      
+      {/* Centered Logo Section */}
+      <div className="w-full flex justify-center mb-8">
+        <Link href="/" className="hover:opacity-80 transition-opacity">
+          <div className="flex items-baseline font-extrabold tracking-tighter">
+            <span className={`text-4xl lowercase ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>book</span>
+            <span className="relative mx-1 text-5xl text-sky-400 italic inline-block px-1">
+              Hyper
+              <span className={`absolute left-0 right-0 h-[4px] top-[54%] -translate-y-1/2 ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}></span>
+            </span>
+            <span className={`text-4xl lowercase ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>-market</span>
+          </div>
+        </Link>
+      </div>
+
       <header className="flex flex-col justify-center items-center mb-12 w-full max-w-7xl mx-auto px-6 relative">
         <div className="w-full flex justify-start mb-6">
           <Link href="/" className="px-6 py-2 rounded-full font-bold flex items-center transition-all hover:-translate-x-1 bg-gray-800 text-white hover:bg-gray-700">
@@ -52,9 +76,9 @@ export default function Wishlist() {
           </Link>
         </div>
         
-        <h1 className="text-4xl font-extrabold tracking-tight text-emerald-400">
+        <h2 className="text-4xl font-extrabold tracking-tight text-emerald-400">
           🎯 My Wishlist
-        </h1>
+        </h2>
         <p className="text-gray-400 mt-2 font-mono text-sm">Tracking targets for price drops</p>
       </header>
 
@@ -75,10 +99,10 @@ export default function Wishlist() {
                 </div>
                 
                 <div className="w-32 h-48 shrink-0 rounded-md mb-4 shadow-lg flex flex-col items-center justify-center z-10 overflow-hidden relative border border-gray-700 bg-gray-800">
-                  {book.cover_image_url ? (
+                  {book.cover_image_url && book.cover_image_url !== 'UNAVAILABLE' ? (
                     <Image src={book.cover_image_url} alt={book.title} width={128} height={192} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-gray-500 text-xs font-mono uppercase tracking-widest z-10">Cover</span>
+                    <Image src="/fox.png" alt="Cover Unavailable" width={128} height={192} className="w-full h-full object-cover p-2" />
                   )}
                 </div>
                 
@@ -90,7 +114,6 @@ export default function Wishlist() {
         )}
       </div>
 
-      {/* THE GLOBAL MENU INJECTION */}
       <FloatingMenu />
       <SpeedInsights />
     </main>

@@ -218,7 +218,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     if (dbError) {
       console.error("[Vault Rejection - Library]:", dbError);
       setIsOwned(!newStatus); // This instantly reverts the button back so it doesn't lie to the user
-      alert("Error saving to your bookshelf. Check the console, My Lord.");
+      alert("Error saving to your bookshelf. I'm Deeply Sorry.");
     }
     
     setIsUpdating(false);
