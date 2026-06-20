@@ -205,10 +205,22 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     const dbBookId = await ensureBookInDatabase();
     const newStatus = !isOwned;
     setIsOwned(newStatus); 
-    try {
-      if (newStatus) await supabase.from('user_libraries').insert({ user_id: userId, book_id: dbBookId });
-      else await supabase.from('user_libraries').delete().match({ user_id: userId, book_id: dbBookId });
-    } catch (error) { setIsOwned(!newStatus); }
+    
+    let dbError = null;
+    if (newStatus) {
+      const { error } = await supabase.from('user_libraries').insert({ user_id: userId, book_id: dbBookId });
+      dbError = error;
+    } else {
+      const { error } = await supabase.from('user_libraries').delete().match({ user_id: userId, book_id: dbBookId });
+      dbError = error;
+    }
+
+    if (dbError) {
+      console.error("[Vault Rejection - Library]:", dbError);
+      setIsOwned(!newStatus); // This instantly reverts the button back so it doesn't lie to the user
+      alert("Error saving to your bookshelf. Check the console, My Lord.");
+    }
+    
     setIsUpdating(false);
   };
 
@@ -219,10 +231,22 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     const dbBookId = await ensureBookInDatabase();
     const newStatus = !isWishlisted;
     setIsWishlisted(newStatus); 
-    try {
-      if (newStatus) await supabase.from('user_wishlists').insert({ user_id: userId, book_id: dbBookId });
-      else await supabase.from('user_wishlists').delete().match({ user_id: userId, book_id: dbBookId });
-    } catch (error) { setIsWishlisted(!newStatus); }
+    
+    let dbError = null;
+    if (newStatus) {
+      const { error } = await supabase.from('user_wishlists').insert({ user_id: userId, book_id: dbBookId });
+      dbError = error;
+    } else {
+      const { error } = await supabase.from('user_wishlists').delete().match({ user_id: userId, book_id: dbBookId });
+      dbError = error;
+    }
+
+    if (dbError) {
+      console.error("[Vault Rejection - Wishlist]:", dbError);
+      setIsWishlisted(!newStatus); // Revert the star UI
+      alert("Error saving to your wishlist. Check the console, My Lord.");
+    }
+
     setIsWishlistUpdating(false);
   };
 
