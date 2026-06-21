@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ id: existingBook.id });
     }
 
-    // 3. If it doesn't exist, we forge a brand new entry in the books table
+   // 3. If it doesn't exist, we forge a brand new entry in the books table
     const { data: newBook, error: insertError } = await supabase
       .from('books')
       .insert([{
@@ -30,8 +30,8 @@ export async function POST(request: Request) {
         author: book.author,
         isbn13: book.isbn13,
         category: book.category || 'General',
-        cover_image_url: book.cover_image_url || 'UNAVAILABLE',
-        format: book.format || 'Paperback'
+        cover_image_url: book.cover_image_url || 'UNAVAILABLE'
+        // The 'format' line has been completely removed!
       }])
       .select('id')
       .single();
