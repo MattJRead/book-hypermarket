@@ -14,7 +14,7 @@ type Book = { id: string; title: string; author: string; isbn13: string; categor
 type Banner = { id: string; title: string; subtitle: string; background_image_url: string; text_color: string; landing_page_text: string; target_isbns: string[]; slot_position: number; };
 
 // ==========================================
-// THE SCHOLASTIC SPOTLIGHT DATA & ENGINE
+// AFFILIATE PARTNER SPOTLIGHT PAYLOADS
 // ==========================================
 const scholasticSpotlight = [
   { id: 's-1', title: 'Books For Ages 0-6', description: 'The Newest and Best Books for 0-6 year olds, chosen by experts.', link: 'https://tidd.ly/4ezEfm2', color: 'bg-red-500' },
@@ -22,10 +22,28 @@ const scholasticSpotlight = [
   { id: 's-3', title: 'Books For Ages 11+', description: 'The Best Young Adult Fiction and Non-Fiction, chosen by experts.', link: 'https://tidd.ly/4eNVaCB', color: 'bg-red-500' },
   { id: 's-4', title: 'Award-Winning Books', description: 'Explore Award-Winning Books on Scholastic.', link: 'https://tidd.ly/4oz5IJ2', color: 'bg-red-700' },
   { id: 's-5', title: 'Get 20% OFF across the Scholastic Shop', description: 'Get 20% off across the Scholastic Shop. Minimum spend £30. Use Code: READ20. Offer ends at 11.59pm on 30th June 2026.', link: 'https://tidd.ly/3Sna3mC', color: 'bg-red-700' },
-  { id: 's-main', title: 'Award-Winning Authors', description: 'Explore Award-Winning Authors on Scholastic.', link: 'https://tidd.ly/4vXgqeQ', color: 'bg-red-700' }
+  { id: 's-main', title: 'Award-Winning Authors', description: 'Explore Award-Winning Authors on Scholastic.', link: 'https://tidd.ly/4vXgqeQ', color: 'bg-red-700' },
+  { id: 's-parents', title: 'For Parents', description: 'Resources, book packs, and reading guides curated specifically for parents.', link: 'https://tidd.ly/4gJjQgQ', color: 'bg-red-600' },
+  { id: 's-teachers', title: 'For Teachers', description: 'Classroom resources, lesson planning assistance, and educational book bundles.', link: 'https://tidd.ly/4g4UUQM', color: 'bg-red-600' }
 ];
 
-function ScholasticCarousel({ isDarkMode }: { isDarkMode: boolean }) {
+const ebaySpotlight = [
+  { id: 'e-1', title: 'First Edition Books', description: 'Track down rare, elusive, and investment-grade first editions.', link: 'https://ebay.us/NDSTES', color: 'bg-blue-600' },
+  { id: 'e-2', title: 'Vintage Sci-Fi Books', description: 'Explore classic pulp, retro futuristic covers, and golden-age sci-fi.', link: 'https://ebay.us/Ozas0G', color: 'bg-yellow-500' },
+  { id: 'e-3', title: 'Book Bundles', description: 'Score massive multi-book collections and genre lots for cheap.', link: 'https://ebay.us/qhu1eJ', color: 'bg-green-600' },
+  { id: 'e-4', title: 'Antiquarian & Collectible', description: 'Beautiful leather-bound classics, historical volumes, and vintage printings.', link: 'https://ebay.us/1rL13x', color: 'bg-orange-600' },
+  { id: 'e-5', title: 'Books & Magazines', description: 'Browse the massive global clearinghouse of everyday print media.', link: 'https://ebay.us/9DRXdF', color: 'bg-purple-600' },
+  { id: 'e-6', title: 'Box Sets', description: 'Complete literary trilogies, epic fantasy sagas, and collection cases.', link: 'https://ebay.us/Yq5HFu', color: 'bg-pink-600' }
+];
+
+const bookshopSpotlight = [
+  { id: 'b-1', title: 'Indie Champions Top 25', description: 'The absolute best-selling titles across independent brick-and-mortar bookshops.', link: 'https://tidd.ly/4evXRbY', color: 'bg-teal-600' },
+  { id: 'b-2', title: 'Signed + Pre-Orders', description: 'Secure exclusive signed copies and lock in upcoming highly-anticipated releases.', link: 'https://tidd.ly/4vyYtU3', color: 'bg-teal-600' },
+  { id: 'b-3', title: 'Books of the Month', description: 'Fresh monthly independent picks spanning fiction, non-fiction, and classics.', link: 'https://tidd.ly/3T628KE', color: 'bg-teal-700' },
+  { id: 'b-4', title: 'E-Books', description: 'Instantly download digital copies while still funneling profit directly to local shops.', link: 'https://tidd.ly/4f5kiEV', color: 'bg-teal-800' }
+];
+
+function PartnerCarousel({ title, subtitle, badge, badgeColor, items, isDarkMode }: { title: string; subtitle: string; badge: string; badgeColor: string; items: any[]; isDarkMode: boolean }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -36,20 +54,17 @@ function ScholasticCarousel({ isDarkMode }: { isDarkMode: boolean }) {
   };
 
   return (
-    <div className="w-full max-w-[1000px] mx-auto mt-8 mb-12 px-4 relative group">
+    <div className="w-full max-w-[1000px] mx-auto mt-8 mb-12 px-4 relative group animate-in fade-in duration-500">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <span className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-red-600/20">S</span>
-            Scholastic Spotlight
+            <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-lg shadow-lg ${badgeColor}`}>{badge}</span>
+            {title}
           </h2>
           <p className={`mt-1 font-medium ${!isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-            The global leader in children's publishing.
+            {subtitle}
           </p>
         </div>
-        <a href="https://tidd.ly/3QUpTEV" target="_blank" rel="noopener noreferrer" className="hidden md:flex text-sm font-bold text-red-500 hover:text-red-400 transition-colors items-center">
-          View All <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-        </a>
       </div>
       
       <div className="relative w-full">
@@ -57,7 +72,7 @@ function ScholasticCarousel({ isDarkMode }: { isDarkMode: boolean }) {
         <button onClick={() => scroll('right')} className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 -mr-4 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-600' : 'bg-white text-gray-900 hover:bg-gray-100 border border-gray-200'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg></button>
 
         <div ref={scrollRef} className="flex overflow-x-auto gap-6 snap-x snap-mandatory py-4 px-2 -mx-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          {scholasticSpotlight.map((item) => (
+          {items.map((item) => (
             <a 
               key={item.id} 
               href={item.link} 
@@ -67,10 +82,10 @@ function ScholasticCarousel({ isDarkMode }: { isDarkMode: boolean }) {
             >
               <div className={`absolute top-0 left-0 w-full h-1 ${item.color}`} />
               
-              <h3 className={`text-xl font-bold mb-2 transition-colors ${!isDarkMode ? 'text-gray-900 group-hover:text-red-600' : 'text-white group-hover:text-red-400'}`}>
+              <h3 className={`text-xl font-bold mb-2 transition-colors ${!isDarkMode ? 'text-gray-900 group-hover:text-sky-600' : 'text-white group-hover:text-sky-400'}`}>
                 {item.title}
               </h3>
-              <p className={`text-sm flex-grow leading-relaxed ${!isDarkMode ? 'text-gray-600' : 'text-gray-500'}`}>
+              <p className={`text-sm flex-grow leading-relaxed ${!isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
                 {item.description}
               </p>
               
@@ -523,7 +538,6 @@ export default function Home() {
         const brandNewBooks = uniqueBooks.filter(newBook => !books.some(b => b.isbn13 === newBook.isbn13));
         setBooks(prevBooks => [...brandNewBooks, ...prevBooks]);
 
-        // 🔽 SILENTLY AUTO-SAVE SEARCHED BOOKS TO SUPABASE SO THEY SURVIVE REFRESHES
         brandNewBooks.forEach(book => {
           if (book.id.startsWith('ext_')) {
             fetch('/api/save-book', {
@@ -553,7 +567,6 @@ export default function Home() {
         setBooks(prevBooks => { const combined = [...prevBooks, ...newBatch]; return Array.from(new Map(combined.map(b => [b.isbn13, b])).values()); });
         setApiSearchResults(prev => { const combined = [...prev, ...newBatch]; return Array.from(new Map(combined.map(b => [b.isbn13, b])).values()); });
         
-        // Background vaulting for paginated results
         newBatch.forEach(book => {
           if (book.id.startsWith('ext_')) {
             fetch('/api/save-book', {
@@ -594,7 +607,6 @@ export default function Home() {
       if (newBooks.length > 0) {
         setBooks(prevBooks => [...newBooks, ...prevBooks]);
 
-        // 🔽 SILENTLY AUTO-SAVE BANNER TARGETS TO SUPABASE SO THE BANNER NEVER SHOWS FEWER BOOKS
         newBooks.forEach(book => {
           if (book.id.startsWith('ext_')) {
             fetch('/api/save-book', {
@@ -725,7 +737,8 @@ export default function Home() {
                   isDarkMode={isDarkMode} 
                 />
 
-                <ScholasticCarousel isDarkMode={isDarkMode} />
+                {/* SLOT 1: SCHOLASTIC SPOTLIGHT CAROUSEL */}
+                <PartnerCarousel title="Scholastic Spotlight" subtitle="The global leader in children's publishing." badge="S" badgeColor="bg-red-600" items={scholasticSpotlight} isDarkMode={isDarkMode} />
 
                 {dynamicCategories.map((cat, index) => {
                   const catBooks = getBooksForCategory(cat.name);
@@ -733,8 +746,18 @@ export default function Home() {
                     <div key={cat.name}>
                       <CategoryVault title={cat.name} books={catBooks} isDarkMode={isDarkMode} colorClass={cat.color} onViewAll={() => setActiveCategoryView({ name: cat.name, books: catBooks })} userId={userId} userLibrary={userLibrary} userWishlist={userWishlist} onAuthorClick={handleAuthorClick} />
                       
+                      {/* SLOT 2: BOOKSHOP.ORG CAROUSEL (After 1st category) */}
+                      {index === 0 && (
+                        <PartnerCarousel title="Bookshop.org Picks" subtitle="Supporting local independent bookshops directly." badge="B" badgeColor="bg-teal-600" items={bookshopSpotlight} isDarkMode={isDarkMode} />
+                      )}
+
                       {index === 1 && (
                         <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 2)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />
+                      )}
+
+                      {/* SLOT 3: EBAY RARE FINDS CAROUSEL (After 3rd category) */}
+                      {index === 2 && (
+                        <PartnerCarousel title="eBay Rare Finds" subtitle="Explore marketplace treasures, collectibles, and box sets." badge="E" badgeColor="bg-blue-600" items={ebaySpotlight} isDarkMode={isDarkMode} />
                       )}
 
                       {index === 3 && (
