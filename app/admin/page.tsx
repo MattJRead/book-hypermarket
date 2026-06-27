@@ -12,6 +12,8 @@ type Banner = { id: string; title: string; subtitle: string; background_image_ur
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'analytics' | 'book_info' | 'banner_forge' | 'broadcast' | 'accounts'>('analytics');
+  
+  // GLOBAL ADMIN SECRET
   const [adminSecret, setAdminSecret] = useState(''); 
 
   const [books, setBooks] = useState<Book[]>([]);
@@ -40,7 +42,7 @@ export default function AdminDashboard() {
   const [accountsStatus, setAccountsStatus] = useState('');
 
   const [analyticsData, setAnalyticsData] = useState<any[]>([]);
-  const [analyticsStatus, setAnalyticsStatus] = useState('Initializing tracker...');
+  const [analyticsStatus, setAnalyticsStatus] = useState('Enter Global Admin Secret to sync data.');
 
   const { theme } = useTheme();
   const isDarkUI = theme === 'dark' || theme === 'true-dark';
@@ -50,31 +52,33 @@ export default function AdminDashboard() {
       const { data: bookData } = await supabase.from('books').select('id, title, author, category, cover_image_url, isbn13').order('title');
       if (bookData) setBooks(bookData);
 
+      // We still load public banners for viewing
       const { data: bannerData } = await supabase.from('storefront_banners').select('*').order('created_at', { ascending: false });
       if (bannerData) setBanners(bannerData);
     }
     loadVaultData();
   }, []);
 
-  useEffect(() => {
-    async function fetchAnalytics() {
-      if (activeTab === 'analytics') {
-        setAnalyticsStatus('Syncing with database...');
-        const { data, error } = await supabase
-          .from('analytics')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          setAnalyticsStatus('Error: ' + error.message);
-        } else {
-          setAnalyticsData(data || []);
-          setAnalyticsStatus('');
-        }
-      }
+  // 🔽 UPDATED: SECURE ANALYTICS FETCH
+  const fetchAnalytics = async () => {
+    if (!adminSecret) return setAnalyticsStatus('Admin Secret is required.');
+    setAnalyticsStatus('Syncing securely with database...');
+    try {
+      const res = await fetch('/api/admin/analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret: adminSecret })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || "Failed to sync analytics.");
+      
+      setAnalyticsData(data.analytics || []);
+      setAnalyticsStatus('');
+    } catch (err: any) {
+      setAnalyticsStatus(`Error: ${err.message}`);
     }
-    fetchAnalytics();
-  }, [activeTab]);
+  };
 
   const handleSelectBook = (book: Book) => {
     setSelectedBook(book);
@@ -99,11 +103,12 @@ export default function AdminDashboard() {
     }
   };
 
-  // 🔽 ARMORED BANNER FORGE SAVE ENGINE
+  // 🔽 UPDATED: SECURE BANNER SAVE ROUTE
   const handleSaveBanner = async (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
+    if (!adminSecret) return setBannerStatus('Global Admin Secret required to save.');
     if (!editingBanner?.title) return setBannerStatus('Title is required.');
-    setBannerStatus('Forging banner...');
+    setBannerStatus('Forging banner securely...');
     
     const bannerPayload = {
       title: editingBanner.title,
@@ -117,37 +122,31 @@ export default function AdminDashboard() {
     };
 
     try {
+      const res = await fetch('/api/admin/banners', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          secret: adminSecret, 
+          action: 'save', 
+          banner: editingBanner.id ? { ...bannerPayload, id: editingBanner.id } : bannerPayload 
+        })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Vault rejected update.");
+
       if (editingBanner.id) {
-        const { data, error } = await supabase
-          .from('storefront_banners')
-          .update(bannerPayload)
-          .eq('id', editingBanner.id)
-          .select(); // Removed .single() to prevent PGRST116 crashes on silent RLS blocks
-
-        if (error) throw new Error(error.message);
-        if (!data || data.length === 0) throw new Error("Vault rejected update. RLS policies blocked write access.");
-
-        const updated = data[0];
-        setBanners(banners.map(b => b.id === updated.id ? updated : b)); 
-        setEditingBanner(updated);
+        setBanners(banners.map(b => b.id === data.banner.id ? data.banner : b)); 
+        setEditingBanner(data.banner);
         setBannerStatus('Banner updated!'); 
       } else {
-        const { data, error } = await supabase
-          .from('storefront_banners')
-          .insert([bannerPayload])
-          .select();
-
-        if (error) throw new Error(error.message);
-        if (!data || data.length === 0) throw new Error("Vault rejected insert. RLS policies blocked write access.");
-
-        const forged = data[0];
-        setBanners([forged, ...banners]); 
-        setEditingBanner(forged); 
+        setBanners([data.banner, ...banners]); 
+        setEditingBanner(data.banner); 
         setBannerStatus('Banner forged!'); 
       }
     } catch (err: any) {
-      console.error("[Banner Forge DB Rejection]:", err);
-      setBannerStatus(`DB Error: ${err.message}`);
+      console.error("[Banner Forge Secure Rejection]:", err);
+      setBannerStatus(`Secure Route Error: ${err.message}`);
       alert(`Could not save banner: ${err.message}`);
     }
   };
@@ -170,7 +169,6 @@ export default function AdminDashboard() {
     setIsBannerSearching(false);
   };
 
-  // 🔽 ARMORED BOOK DOWNLOADER ENGINE
   const addBannerBook = async (book: Book, e?: React.MouseEvent) => {
     if (e) e.preventDefault();
     if (!editingBanner || !book.isbn13) return; 
@@ -213,16 +211,31 @@ export default function AdminDashboard() {
     });
   };
 
+  // 🔽 UPDATED: SECURE BANNER DELETE ROUTE
   const deleteBanner = async (id: string, e?: React.MouseEvent) => {
     if (e) e.preventDefault();
+    if (!adminSecret) return alert('Global Admin Secret required to destroy banners.');
     if(!confirm('Destroy this banner permanently?')) return;
-    await supabase.from('storefront_banners').delete().eq('id', id);
-    setBanners(banners.filter(b => b.id !== id));
-    if (editingBanner?.id === id) setEditingBanner(null);
+
+    try {
+      const res = await fetch('/api/admin/banners', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret: adminSecret, action: 'delete', id })
+      });
+      
+      if (!res.ok) throw new Error("Deletion failed.");
+
+      setBanners(banners.filter(b => b.id !== id));
+      if (editingBanner?.id === id) setEditingBanner(null);
+    } catch (err) {
+      alert("Failed to securely destroy banner.");
+    }
   };
 
   const handleBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!adminSecret) return alert('Global Admin Secret required.');
     setBcStatus({ loading: true, message: 'Deploying...', isError: false });
     try {
       const res = await fetch('/api/admin/broadcast', {
@@ -243,6 +256,7 @@ export default function AdminDashboard() {
   };
 
   const fetchAccounts = async () => {
+    if (!adminSecret) return alert('Global Admin Secret required.');
     setAccountsStatus('Fetching registry...');
     try {
       const res = await fetch('/api/admin/users', {
@@ -275,14 +289,24 @@ export default function AdminDashboard() {
       <main className="min-h-screen flex flex-col py-12">
         <div className="w-full max-w-6xl mx-auto px-4">
         
+        {/* 🔽 UPDATED GLOBAL HEADER WITH SECRET INPUT */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
           <h1 className={`text-3xl font-extrabold tracking-tight flex items-center ${isDarkUI ? 'text-white' : 'text-gray-900'}`}>
             <svg className="w-8 h-8 mr-3 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             Command Center
           </h1>
-          <Link href="/" className={`px-6 py-2 rounded-lg text-sm font-bold transition-colors shadow-md ${isDarkUI ? 'bg-gray-800 hover:bg-gray-700 text-white' : 'bg-white border border-gray-300 hover:bg-gray-100 text-gray-900'}`}>
-            Return to Storefront
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <input 
+              type="password" 
+              value={adminSecret} 
+              onChange={(e) => setAdminSecret(e.target.value)} 
+              placeholder="Global Admin Secret..." 
+              className={`border rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-sky-500 w-full sm:w-auto ${isDarkUI ? 'bg-black border-gray-800 text-gray-300' : 'bg-gray-50 border-gray-300 text-gray-900'}`} 
+            />
+            <Link href="/" className={`px-6 py-2 rounded-lg text-sm font-bold text-center transition-colors shadow-md ${isDarkUI ? 'bg-gray-800 hover:bg-gray-700 text-white' : 'bg-white border border-gray-300 hover:bg-gray-100 text-gray-900'}`}>
+              Return to Storefront
+            </Link>
+          </div>
         </div>
 
         <div className={`flex gap-8 border-b mb-8 overflow-x-auto pb-1 ${isDarkUI ? 'border-gray-800' : 'border-gray-300'}`}>
@@ -307,6 +331,11 @@ export default function AdminDashboard() {
 
         {activeTab === 'analytics' && (
           <div className="animate-in fade-in duration-300">
+            <div className="flex justify-end mb-6">
+               <button type="button" onClick={fetchAnalytics} disabled={!adminSecret} className={`px-6 py-2 rounded-lg text-sm font-bold transition-colors ${!adminSecret ? (isDarkUI ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-gray-200 text-gray-500 cursor-not-allowed') : 'bg-sky-600 hover:bg-sky-500 text-white'}`}>
+                  Sync Analytics Data
+               </button>
+            </div>
             {analyticsStatus ? (
               <div className="text-center py-12 text-sky-500 font-mono animate-pulse">[{analyticsStatus}]</div>
             ) : (
@@ -621,15 +650,8 @@ export default function AdminDashboard() {
                 <input type="text" value={bcActionUrl} onChange={(e) => setBcActionUrl(e.target.value)} placeholder="/wishlist" className={`w-full border rounded-lg p-3 text-sm focus:outline-none focus:border-red-500 ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
               </div>
 
-              <div className={`pt-4 border-t mt-2 ${isDarkUI ? 'border-gray-800' : 'border-gray-200'}`}>
-                <label className="block text-xs font-bold text-red-500 uppercase tracking-wider mb-2 flex items-center">
-                  Authorization Code
-                </label>
-                <input required type="password" value={adminSecret} onChange={(e) => setAdminSecret(e.target.value)} placeholder="Secret..." className={`w-full border rounded-lg p-3 text-sm focus:outline-none focus:border-red-500 text-red-500 ${isDarkUI ? 'bg-black border-red-900' : 'bg-red-50 border-red-200'}`} />
-              </div>
-
               <button disabled={bcStatus.loading || !adminSecret} type="submit" className={`mt-2 w-full py-4 rounded-lg font-bold text-sm transition-all flex justify-center items-center ${bcStatus.loading || !adminSecret ? (isDarkUI ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gray-200 text-gray-500 cursor-not-allowed') : 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_15px_rgba(220,38,38,0.5)]'}`}>
-                {!adminSecret ? 'REQUIRES ADMIN SECRET' : bcStatus.loading ? '[ DEPLOYING... ]' : 'DEPLOY BROADCAST'}
+                {!adminSecret ? 'REQUIRES GLOBAL ADMIN SECRET' : bcStatus.loading ? '[ DEPLOYING... ]' : 'DEPLOY BROADCAST'}
               </button>
             </form>
           </div>
@@ -640,12 +662,9 @@ export default function AdminDashboard() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <h2 className="text-lg font-bold text-sky-500">Platform Registry</h2>
               
-              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                <input type="password" value={adminSecret} onChange={(e) => setAdminSecret(e.target.value)} placeholder="Secret..." className={`border rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-sky-500 w-full sm:w-auto ${isDarkUI ? 'bg-black border-gray-800 text-gray-300' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
-                <button type="button" onClick={fetchAccounts} disabled={!adminSecret} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors w-full sm:w-auto whitespace-nowrap ${!adminSecret ? (isDarkUI ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-gray-200 text-gray-500 cursor-not-allowed') : 'bg-sky-600 hover:bg-sky-500 text-white'}`}>
-                  Sync Registry
-                </button>
-              </div>
+              <button type="button" onClick={fetchAccounts} disabled={!adminSecret} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors w-full sm:w-auto whitespace-nowrap ${!adminSecret ? (isDarkUI ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-gray-200 text-gray-500 cursor-not-allowed') : 'bg-sky-600 hover:bg-sky-500 text-white'}`}>
+                Sync Registry
+              </button>
             </div>
             
             <div className={`overflow-x-auto border rounded-xl ${isDarkUI ? 'border-gray-800' : 'border-gray-200'}`}>
