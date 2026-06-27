@@ -53,11 +53,9 @@ function ScholasticCarousel({ isDarkMode }: { isDarkMode: boolean }) {
       </div>
       
       <div className="relative w-full">
-        {/* Floating Arrows */}
         <button onClick={() => scroll('left')} className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 -ml-4 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-600' : 'bg-white text-gray-900 hover:bg-gray-100 border border-gray-200'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg></button>
         <button onClick={() => scroll('right')} className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 -mr-4 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-600' : 'bg-white text-gray-900 hover:bg-gray-100 border border-gray-200'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg></button>
 
-        {/* Scroll Container with hidden scrollbar */}
         <div ref={scrollRef} className="flex overflow-x-auto gap-6 snap-x snap-mandatory py-4 px-2 -mx-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {scholasticSpotlight.map((item) => (
             <a 
@@ -114,14 +112,12 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
 
   const titleSearchQuery = encodeURIComponent(book.title);
   
-  // Base Store Links
   const waterstonesLink = `https://www.waterstones.com/books/search/term/${titleSearchQuery}`;
   const blackwellsLink = `https://blackwells.co.uk/bookshop/search/?keyword=${titleSearchQuery}`;
   const amazonLink = `https://www.amazon.co.uk/s?k=${titleSearchQuery}&tag=bookhypermarket-21`;
   const ebayLink = `https://www.ebay.co.uk/sch/i.html?_nkw=${titleSearchQuery}&mkcid=1&mkrid=710-53481-19255-0&siteid=3&campid=5339156569&toolid=10001&mkevt=1`;
   const wobLink = `https://www.wob.com/en-gb/category/all?search=${titleSearchQuery}`;
 
-  // 1. THE SCHOLASTIC TRIGGER (UPGRADED)
   const safeCategory = (book.category || '').toLowerCase();
   const isKidsBook = 
     safeCategory.includes('learning') || 
@@ -163,7 +159,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     fetchPrices();
   }, [book.isbn13, book.title]);
 
-  // 2. THE AWIN PAYLOAD CONSTRUCTION
   const shops = [
     { id: 'waterstones', name: 'Waterstones', url: waterstonesLink, displayPrice: formatPrice(prices?.waterstones) },
     { id: 'blackwells', name: 'Blackwells', url: blackwellsLink, displayPrice: formatPrice(prices?.blackwells) },
@@ -172,7 +167,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     { id: 'wob', name: 'World of Books', url: wobLink, displayPrice: formatPrice(prices?.wob) },
   ];
 
-  // Inject Scholastic dynamically with your exact Awin credentials
   if (isKidsBook) {
     const myAwinPublisherId = "2934999"; 
     const scholasticAwinMerchantId = "2957"; 
@@ -217,7 +211,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
 
     if (dbError) {
       console.error("[Vault Rejection - Library]:", dbError);
-      setIsOwned(!newStatus); // This instantly reverts the button back so it doesn't lie to the user
+      setIsOwned(!newStatus);
       alert("Error saving to your bookshelf. I'm Deeply Sorry.");
     }
     
@@ -243,7 +237,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
 
     if (dbError) {
       console.error("[Vault Rejection - Wishlist]:", dbError);
-      setIsWishlisted(!newStatus); // Revert the star UI
+      setIsWishlisted(!newStatus);
       alert("Error saving to your wishlist. I'm Deeply Sorry.");
     }
 
@@ -362,7 +356,6 @@ function FeaturedBannerCarousel({ banners, onSelectBanner, isDarkMode }: { banne
               onClick={() => onSelectBanner(banner)}
               className="snap-start shrink-0 w-[85vw] max-w-[400px] h-48 rounded-3xl p-6 md:p-8 flex items-center justify-between cursor-pointer transition-transform hover:scale-[1.02] hover:shadow-2xl shadow-lg relative overflow-hidden group bg-gradient-to-br from-gray-800 to-gray-950"
             >
-              {/* If no URL is provided, it falls back to the sleek dark gradient above */}
               {banner.background_image_url && (
                 <div 
                   className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" 
@@ -432,12 +425,10 @@ function CategoryVault({ title, books, isDarkMode, colorClass, onViewAll, userId
 export default function Home() {
   const { theme } = useTheme();
   
-  // Connect the local boolean to the new global brain so the existing BookCards render correctly
   const isDarkMode = theme === 'dark' || theme === 'true-dark';
 
-  // Upgraded Theme Styles featuring the beautiful Cream variation for Soft Light
   const themeStyles = {
-    'light': 'bg-orange-50 text-stone-900', // This forces a warm, professional cream/parchment color
+    'light': 'bg-orange-50 text-stone-900',
     'true-light': 'bg-white text-black',
     'dark': 'bg-gray-950 text-white',
     'true-dark': 'bg-black text-gray-300'
@@ -455,7 +446,6 @@ export default function Home() {
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   
-  // High-Level Views
   const [activeCategoryView, setActiveCategoryView] = useState<{name: string, books: Book[]} | null>(null);
   const [activeBannerView, setActiveBannerView] = useState<Banner | null>(null);
 
@@ -517,10 +507,22 @@ export default function Home() {
       let combinedBooks: Book[] = [];
       resultsArray.forEach(data => { if (data.success && data.books) combinedBooks = [...combinedBooks, ...data.books]; });
       const uniqueBooks = Array.from(new Map(combinedBooks.map(b => [b.isbn13, b])).values());
+      
       if (uniqueBooks.length > 0) {
         setApiSearchResults(uniqueBooks); 
         const brandNewBooks = uniqueBooks.filter(newBook => !books.some(b => b.isbn13 === newBook.isbn13));
         setBooks(prevBooks => [...brandNewBooks, ...prevBooks]);
+
+        // 🔽 SILENTLY AUTO-SAVE SEARCHED BOOKS TO SUPABASE SO THEY SURVIVE REFRESHES
+        brandNewBooks.forEach(book => {
+          if (book.id.startsWith('ext_')) {
+            fetch('/api/save-book', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(book)
+            }).catch(err => console.error("[Permanent Vaulting Error]:", err));
+          }
+        });
       } else { setApiSearchResults([]); }
     } catch (error) { console.error("Vault breach failed", error); }
     setIsLoading(false);
@@ -537,8 +539,20 @@ export default function Home() {
       const data = await res.json();
       if (data.success && data.books && data.books.length > 0) {
         if (data.books.length < 10) setHasMoreResults(false);
-        setBooks(prevBooks => { const combined = [...prevBooks, ...data.books]; return Array.from(new Map(combined.map(b => [b.isbn13, b])).values()); });
-        setApiSearchResults(prev => { const combined = [...prev, ...data.books]; return Array.from(new Map(combined.map(b => [b.isbn13, b])).values()); });
+        const newBatch = data.books as Book[];
+        setBooks(prevBooks => { const combined = [...prevBooks, ...newBatch]; return Array.from(new Map(combined.map(b => [b.isbn13, b])).values()); });
+        setApiSearchResults(prev => { const combined = [...prev, ...newBatch]; return Array.from(new Map(combined.map(b => [b.isbn13, b])).values()); });
+        
+        // Background vaulting for paginated results
+        newBatch.forEach(book => {
+          if (book.id.startsWith('ext_')) {
+            fetch('/api/save-book', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(book)
+            }).catch(() => {});
+          }
+        });
       } else { setHasMoreResults(false); }
     } catch (error) { console.error("DEBUG: Frontend error:", error); }
     setIsFetchingMore(false);
@@ -569,6 +583,17 @@ export default function Home() {
       
       if (newBooks.length > 0) {
         setBooks(prevBooks => [...newBooks, ...prevBooks]);
+
+        // 🔽 SILENTLY AUTO-SAVE BANNER TARGETS TO SUPABASE SO THE BANNER NEVER SHOWS FEWER BOOKS
+        newBooks.forEach(book => {
+          if (book.id.startsWith('ext_')) {
+            fetch('/api/save-book', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(book)
+            }).catch(err => console.error("[Banner Permanent Vaulting Error]:", err));
+          }
+        });
       }
     } catch (error) {
       console.error("Failed to fetch missing banner books", error);
@@ -577,7 +602,8 @@ export default function Home() {
   };
   
   return (
-<main className={`min-h-screen flex flex-col py-12 transition-colors duration-500 overflow-hidden ${themeStyles}`}>      <NotificationBell userId={userId} isDarkMode={isDarkMode} />
+    <main className={`min-h-screen flex flex-col py-12 transition-colors duration-500 overflow-hidden ${themeStyles}`}>      
+      <NotificationBell userId={userId} isDarkMode={isDarkMode} />
       <header className="flex justify-center items-center mb-12 w-full relative">
         <button onClick={handleClearViews} className="hover:opacity-80 transition-opacity">
           <h1 className="flex items-baseline font-extrabold tracking-tighter">
@@ -606,11 +632,17 @@ export default function Home() {
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {books
-              .filter(b => b.isbn13 && activeBannerView.target_isbns.map(i => i.replace(/[- ]/g, '')).includes(b.isbn13.replace(/[- ]/g, '')))
-              .map(book => (
-                <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} onAuthorClick={handleAuthorClick} />
-            ))}
+            {isLoading ? (
+              <div className="col-span-full text-center py-20 text-sky-400 animate-pulse font-mono">
+                [ Scouring vaults for banner targets... ]
+              </div>
+            ) : (
+              books
+                .filter(b => b.isbn13 && activeBannerView.target_isbns.map(i => i.replace(/[- ]/g, '')).includes(b.isbn13.replace(/[- ]/g, '')))
+                .map(book => (
+                  <BookCard key={book.id} book={book} isDarkMode={isDarkMode} userId={userId} initiallyOwned={userLibrary.includes(book.id)} initiallyWishlisted={userWishlist.includes(book.id)} onAuthorClick={handleAuthorClick} />
+              ))
+            )}
           </div>
         </div>
       ) : activeCategoryView ? (
@@ -673,7 +705,6 @@ export default function Home() {
               </div>
             ) : (
               <>
-                {/* SLOT 1: Top of the Page */}
                 <FeaturedBannerCarousel 
                   banners={banners.filter(b => b.slot_position === 1 || !b.slot_position)}
                   onSelectBanner={(banner) => {
@@ -684,7 +715,6 @@ export default function Home() {
                   isDarkMode={isDarkMode} 
                 />
 
-                {/* THE SCHOLASTIC SPOTLIGHT CAROUSEL INJECTION */}
                 <ScholasticCarousel isDarkMode={isDarkMode} />
 
                 {dynamicCategories.map((cat, index) => {
@@ -693,17 +723,14 @@ export default function Home() {
                     <div key={cat.name}>
                       <CategoryVault title={cat.name} books={catBooks} isDarkMode={isDarkMode} colorClass={cat.color} onViewAll={() => setActiveCategoryView({ name: cat.name, books: catBooks })} userId={userId} userLibrary={userLibrary} userWishlist={userWishlist} onAuthorClick={handleAuthorClick} />
                       
-                      {/* SLOT 2: Injected after the 2nd Category */}
                       {index === 1 && (
                         <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 2)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />
                       )}
 
-                      {/* SLOT 3: Injected after the 4th Category */}
                       {index === 3 && (
                         <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 3)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />
                       )}
 
-                      {/* SLOT 4: Injected after the 6th Category */}
                       {index === 5 && (
                         <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 4)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />
                       )}
