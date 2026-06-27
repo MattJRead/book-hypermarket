@@ -12,8 +12,6 @@ type Banner = { id: string; title: string; subtitle: string; background_image_ur
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'analytics' | 'book_info' | 'banner_forge' | 'broadcast' | 'accounts'>('analytics');
-  
-  // GLOBAL ADMIN SECRET
   const [adminSecret, setAdminSecret] = useState(''); 
 
   const [books, setBooks] = useState<Book[]>([]);
@@ -52,14 +50,12 @@ export default function AdminDashboard() {
       const { data: bookData } = await supabase.from('books').select('id, title, author, category, cover_image_url, isbn13').order('title');
       if (bookData) setBooks(bookData);
 
-      // We still load public banners for viewing
       const { data: bannerData } = await supabase.from('storefront_banners').select('*').order('created_at', { ascending: false });
       if (bannerData) setBanners(bannerData);
     }
     loadVaultData();
   }, []);
 
-  // 🔽 UPDATED: SECURE ANALYTICS FETCH
   const fetchAnalytics = async () => {
     if (!adminSecret) return setAnalyticsStatus('Admin Secret is required.');
     setAnalyticsStatus('Syncing securely with database...');
@@ -70,9 +66,7 @@ export default function AdminDashboard() {
         body: JSON.stringify({ secret: adminSecret })
       });
       const data = await res.json();
-      
       if (!res.ok) throw new Error(data.error || "Failed to sync analytics.");
-      
       setAnalyticsData(data.analytics || []);
       setAnalyticsStatus('');
     } catch (err: any) {
@@ -90,11 +84,7 @@ export default function AdminDashboard() {
   const handleUpdateBook = async () => {
     if (!selectedBook) return;
     setBookStatus('Saving...');
-    const { error } = await supabase
-      .from('books')
-      .update({ category: editCategory, cover_image_url: editCoverUrl })
-      .eq('id', selectedBook.id);
-      
+    const { error } = await supabase.from('books').update({ category: editCategory, cover_image_url: editCoverUrl }).eq('id', selectedBook.id);
     if (error) {
       setBookStatus('Error saving update.');
     } else {
@@ -103,7 +93,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // 🔽 UPDATED: SECURE BANNER SAVE ROUTE
   const handleSaveBanner = async (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
     if (!adminSecret) return setBannerStatus('Global Admin Secret required to save.');
@@ -125,15 +114,12 @@ export default function AdminDashboard() {
       const res = await fetch('/api/admin/banners', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          secret: adminSecret, 
-          action: 'save', 
-          banner: editingBanner.id ? { ...bannerPayload, id: editingBanner.id } : bannerPayload 
-        })
+        body: JSON.stringify({ secret: adminSecret, action: 'save', banner: editingBanner.id ? { ...bannerPayload, id: editingBanner.id } : bannerPayload })
       });
       
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Vault rejected update.");
+      if (!data.banner) throw new Error("API succeeded but returned no banner data. Check backend logs."); // Prevents the crash
 
       if (editingBanner.id) {
         setBanners(banners.map(b => b.id === data.banner.id ? data.banner : b)); 
@@ -147,7 +133,6 @@ export default function AdminDashboard() {
     } catch (err: any) {
       console.error("[Banner Forge Secure Rejection]:", err);
       setBannerStatus(`Secure Route Error: ${err.message}`);
-      alert(`Could not save banner: ${err.message}`);
     }
   };
 
@@ -174,26 +159,18 @@ export default function AdminDashboard() {
     if (!editingBanner || !book.isbn13) return; 
     const isbn = book.isbn13;
     const currentIsbns = editingBanner.target_isbns || [];
-    
     if (currentIsbns.includes(isbn)) return; 
 
     if (!books.some(b => b.isbn13 === isbn)) {
       setBannerStatus(`Downloading ${book.title} to vault...`);
       try {
-        const res = await fetch('/api/save-book', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(book)
-        });
-        
+        const res = await fetch('/api/save-book', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(book) });
         if (!res.ok) throw new Error(`API returned status ${res.status}`);
-        
         const savedBook = await res.json();
         if (savedBook && savedBook.id) {
           setBooks(prev => [...prev, savedBook]);
         }
       } catch (e: any) {
-        console.error("Failed to provision book:", e);
         setBannerStatus(`Warning: Local cache failed for ${book.title}`);
       }
     }
@@ -205,27 +182,16 @@ export default function AdminDashboard() {
   const removeBannerIsbn = (isbn: string, e?: React.MouseEvent) => {
     if (e) e.preventDefault();
     if (!editingBanner) return;
-    setEditingBanner({ 
-      ...editingBanner, 
-      target_isbns: (editingBanner.target_isbns || []).filter(i => i !== isbn) 
-    });
+    setEditingBanner({ ...editingBanner, target_isbns: (editingBanner.target_isbns || []).filter(i => i !== isbn) });
   };
 
-  // 🔽 UPDATED: SECURE BANNER DELETE ROUTE
   const deleteBanner = async (id: string, e?: React.MouseEvent) => {
     if (e) e.preventDefault();
     if (!adminSecret) return alert('Global Admin Secret required to destroy banners.');
     if(!confirm('Destroy this banner permanently?')) return;
-
     try {
-      const res = await fetch('/api/admin/banners', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ secret: adminSecret, action: 'delete', id })
-      });
-      
+      const res = await fetch('/api/admin/banners', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secret: adminSecret, action: 'delete', id }) });
       if (!res.ok) throw new Error("Deletion failed.");
-
       setBanners(banners.filter(b => b.id !== id));
       if (editingBanner?.id === id) setEditingBanner(null);
     } catch (err) {
@@ -238,11 +204,7 @@ export default function AdminDashboard() {
     if (!adminSecret) return alert('Global Admin Secret required.');
     setBcStatus({ loading: true, message: 'Deploying...', isError: false });
     try {
-      const res = await fetch('/api/admin/broadcast', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: bcTitle, message: bcMessage, type: bcType, action_url: bcActionUrl, secret: adminSecret })
-      });
+      const res = await fetch('/api/admin/broadcast', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: bcTitle, message: bcMessage, type: bcType, action_url: bcActionUrl, secret: adminSecret }) });
       const data = await res.json();
       if (res.ok) {
         setBcStatus({ loading: false, message: data.message, isError: false });
@@ -259,11 +221,7 @@ export default function AdminDashboard() {
     if (!adminSecret) return alert('Global Admin Secret required.');
     setAccountsStatus('Fetching registry...');
     try {
-      const res = await fetch('/api/admin/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ secret: adminSecret })
-      });
+      const res = await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secret: adminSecret }) });
       const data = await res.json();
       if (res.ok) {
         setAccounts(data.users);
@@ -276,11 +234,18 @@ export default function AdminDashboard() {
     }
   };
 
-  const filteredBooks = books.filter(b => b.title.toLowerCase().includes(searchQuery.toLowerCase()) || b.author.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5);
+  // 🔽 THE CRASH FIX: Bulletproofed rendering filters. These will no longer crash if 'title' or 'author' is missing in the database.
+  const filteredBooks = books.filter(b => 
+    (b.title || '').toLowerCase().includes((searchQuery || '').toLowerCase()) || 
+    (b.author || '').toLowerCase().includes((searchQuery || '').toLowerCase())
+  ).slice(0, 5);
   
   const displayBannerBooks = hasPressedBannerEnter 
     ? bannerApiResults 
-    : books.filter(b => b.title.toLowerCase().includes(bannerSearchQuery.toLowerCase()) || b.author.toLowerCase().includes(bannerSearchQuery.toLowerCase())).slice(0, 10);
+    : books.filter(b => 
+        (b.title || '').toLowerCase().includes((bannerSearchQuery || '').toLowerCase()) || 
+        (b.author || '').toLowerCase().includes((bannerSearchQuery || '').toLowerCase())
+      ).slice(0, 10);
 
   const visits = analyticsData.filter(e => e.event_type === 'page_visit');
   const clicks = analyticsData.filter(e => e.event_type === 'affiliate_click');
@@ -289,20 +254,13 @@ export default function AdminDashboard() {
       <main className="min-h-screen flex flex-col py-12">
         <div className="w-full max-w-6xl mx-auto px-4">
         
-        {/* 🔽 UPDATED GLOBAL HEADER WITH SECRET INPUT */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
           <h1 className={`text-3xl font-extrabold tracking-tight flex items-center ${isDarkUI ? 'text-white' : 'text-gray-900'}`}>
             <svg className="w-8 h-8 mr-3 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             Command Center
           </h1>
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <input 
-              type="password" 
-              value={adminSecret} 
-              onChange={(e) => setAdminSecret(e.target.value)} 
-              placeholder="Global Admin Secret..." 
-              className={`border rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-sky-500 w-full sm:w-auto ${isDarkUI ? 'bg-black border-gray-800 text-gray-300' : 'bg-gray-50 border-gray-300 text-gray-900'}`} 
-            />
+            <input type="password" value={adminSecret} onChange={(e) => setAdminSecret(e.target.value)} placeholder="Global Admin Secret..." className={`border rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-sky-500 w-full sm:w-auto ${isDarkUI ? 'bg-black border-gray-800 text-gray-300' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
             <Link href="/" className={`px-6 py-2 rounded-lg text-sm font-bold text-center transition-colors shadow-md ${isDarkUI ? 'bg-gray-800 hover:bg-gray-700 text-white' : 'bg-white border border-gray-300 hover:bg-gray-100 text-gray-900'}`}>
               Return to Storefront
             </Link>
@@ -317,12 +275,7 @@ export default function AdminDashboard() {
             { id: 'accounts', label: 'Accounts' },
             { id: 'broadcast', label: 'Broadcast' }
           ].map(tab => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`pb-3 text-sm font-bold tracking-wide transition-colors relative whitespace-nowrap ${activeTab === tab.id ? (isDarkUI ? 'text-white' : 'text-gray-900') : (isDarkUI ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700')}`}
-            >
+            <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id as any)} className={`pb-3 text-sm font-bold tracking-wide transition-colors relative whitespace-nowrap ${activeTab === tab.id ? (isDarkUI ? 'text-white' : 'text-gray-900') : (isDarkUI ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700')}`}>
               {tab.label}
               {activeTab === tab.id && <span className="absolute bottom-0 left-0 w-full h-[2px] bg-sky-500"></span>}
             </button>
@@ -405,8 +358,8 @@ export default function AdminDashboard() {
               <div className="flex flex-col gap-2 max-h-96 overflow-y-auto pr-2">
                 {searchQuery && filteredBooks.map(book => (
                   <button type="button" key={book.id} onClick={() => handleSelectBook(book)} className={`text-left p-3 rounded-lg border transition-colors ${selectedBook?.id === book.id ? (isDarkUI ? 'bg-sky-900/30 border-sky-500' : 'bg-sky-50 border-sky-500') : (isDarkUI ? 'bg-gray-950 border-gray-800 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300')}`}>
-                    <div className={`font-bold text-sm truncate ${isDarkUI ? 'text-white' : 'text-gray-900'}`}>{book.title}</div>
-                    <div className="text-xs text-gray-500 truncate">{book.author}</div>
+                    <div className={`font-bold text-sm truncate ${isDarkUI ? 'text-white' : 'text-gray-900'}`}>{book.title || 'Unknown Title'}</div>
+                    <div className="text-xs text-gray-500 truncate">{book.author || 'Unknown Author'}</div>
                   </button>
                 ))}
                 {searchQuery && filteredBooks.length === 0 && <p className="text-gray-500 text-sm">No books found.</p>}
@@ -492,7 +445,7 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Subtitle</label>
-                      <input type="text" value={editingBanner.subtitle || ''} onChange={e => setEditingBanner({...editingBanner, subtitle: e.target.value})} className={`w-full border rounded-lg p-3 text-sm focus:border-sky-500 focus:outline-none ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} placeholder="e.g. Your next great escape awaits." />
+                      <input type="text" value={editingBanner.subtitle || ''} onChange={e => setEditingBanner({...editingBanner, subtitle: e.target.value})} className={`w-full border rounded-lg p-3 text-sm focus:border-sky-500 focus:outline-none ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} placeholder="e.g. Your next escape awaits." />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Background Image URL</label>
@@ -576,8 +529,8 @@ export default function AdminDashboard() {
                                 className={`w-full text-left flex justify-between items-center p-3 rounded border transition-all ${isAdded ? (isDarkUI ? 'bg-gray-800 border-gray-700 opacity-50 cursor-not-allowed' : 'bg-gray-200 border-gray-300 opacity-50 cursor-not-allowed') : (isDarkUI ? 'bg-sky-900/20 border-sky-900 hover:bg-sky-900/40 hover:border-sky-500' : 'bg-sky-50 border-sky-200 hover:bg-sky-100 hover:border-sky-400')}`}
                               >
                                 <div className="flex flex-col overflow-hidden pr-2">
-                                  <span className={`text-sm font-bold truncate ${isAdded ? 'text-gray-500' : (isDarkUI ? 'text-sky-100' : 'text-sky-900')}`}>{book.title}</span>
-                                  <span className="text-xs text-gray-500 truncate">{book.author}</span>
+                                  <span className={`text-sm font-bold truncate ${isAdded ? 'text-gray-500' : (isDarkUI ? 'text-sky-100' : 'text-sky-900')}`}>{book.title || 'Unknown'}</span>
+                                  <span className="text-xs text-gray-500 truncate">{book.author || 'Unknown'}</span>
                                 </div>
                                 {!isAdded && <span className="text-xs font-bold bg-sky-600 text-white px-2 py-1 rounded shrink-0">+ Add</span>}
                                 {isAdded && <span className="text-xs font-bold text-gray-500 px-2 py-1 shrink-0">Attached</span>}
@@ -594,7 +547,7 @@ export default function AdminDashboard() {
                             const b = books.find(book => book.isbn13 === isbn);
                             return (
                               <div key={isbn} className={`flex justify-between items-center p-3 border rounded ${isDarkUI ? 'bg-emerald-900/20 border-emerald-900/50' : 'bg-emerald-50 border-emerald-200'}`}>
-                                <span className={`text-xs font-bold truncate pr-2 ${isDarkUI ? 'text-emerald-100' : 'text-emerald-900'}`}>{b ? b.title : `ISBN: ${isbn}`}</span>
+                                <span className={`text-xs font-bold truncate pr-2 ${isDarkUI ? 'text-emerald-100' : 'text-emerald-900'}`}>{b ? (b.title || 'Unknown Title') : `ISBN: ${isbn}`}</span>
                                 <button type="button" onClick={(e) => removeBannerIsbn(isbn, e)} className="text-xs font-bold text-red-500 hover:text-red-400 shrink-0">Remove</button>
                               </div>
                             );
