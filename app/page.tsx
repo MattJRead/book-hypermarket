@@ -89,7 +89,7 @@ function ScholasticCarousel({ isDarkMode }: { isDarkMode: boolean }) {
 // 1. THE BOOK CARD ENGINE
 // ==========================================
 function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishlisted, onAuthorClick }: { book: Book, isDarkMode: boolean, userId: string | null, initiallyOwned: boolean, initiallyWishlisted: boolean, onAuthorClick?: (author: string) => void }) {
-  const [prices, setPrices] = useState<{ waterstones: string, blackwells: string, amazon: string, ebay: string, wob: string } | null>(null);
+  const [prices, setPrices] = useState<{ waterstones: string, blackwells: string, amazon: string, ebay: string, bookshop: string } | null>(null);
   const [isLoadingPrice, setIsLoadingPrice] = useState(true);
   const [isOwned, setIsOwned] = useState(initiallyOwned);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -116,7 +116,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
   const blackwellsLink = `https://blackwells.co.uk/bookshop/search/?keyword=${titleSearchQuery}`;
   const amazonLink = `https://www.amazon.co.uk/s?k=${titleSearchQuery}&tag=bookhypermarket-21`;
   const ebayLink = `https://www.ebay.co.uk/sch/i.html?_nkw=${titleSearchQuery}&mkcid=1&mkrid=710-53481-19255-0&siteid=3&campid=5339156569&toolid=10001&mkevt=1`;
-  const wobLink = `https://www.wob.com/en-gb/category/all?search=${titleSearchQuery}`;
+  const bookshopLink = `https://tidd.ly/4vBJ5Xh`;
 
   const safeCategory = (book.category || '').toLowerCase();
   const isKidsBook = 
@@ -148,7 +148,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
           { id: 'blackwells', price: evaluatePrice(data.blackwells) },
           { id: 'amazon', price: evaluatePrice(data.amazon) },
           { id: 'ebay', price: evaluatePrice(data.ebay) },
-          { id: 'wob', price: evaluatePrice(data.wob) }
+          { id: 'bookshop', price: evaluatePrice(data.bookshop) }
         ];
         shopRankings.sort((a, b) => a.price - b.price);
         const bestShop = shopRankings.find(s => s.price !== Infinity);
@@ -164,7 +164,7 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     { id: 'blackwells', name: 'Blackwells', url: blackwellsLink, displayPrice: formatPrice(prices?.blackwells) },
     { id: 'amazon', name: 'Amazon', url: amazonLink, displayPrice: formatPrice(prices?.amazon) },
     { id: 'ebay', name: 'eBay', url: ebayLink, displayPrice: formatPrice(prices?.ebay) },
-    { id: 'wob', name: 'World of Books', url: wobLink, displayPrice: formatPrice(prices?.wob) },
+    { id: 'bookshop', name: 'Bookshop', url: bookshopLink, displayPrice: formatPrice(prices?.bookshop) },
   ];
 
   if (isKidsBook) {
@@ -363,8 +363,8 @@ function FeaturedBannerCarousel({ banners, onSelectBanner, isDarkMode }: { banne
                 ></div>
               )}
               
-              <div 
-                className={`relative z-10 w-full pr-4 drop-shadow-md ${!banner.text_color?.startsWith('#') ? (banner.text_color || 'text-white') : ''}`}
+             <div 
+                className={`relative z-10 w-full p-5 rounded-2xl bg-black/50 backdrop-blur-md border border-white/10 drop-shadow-md ${!banner.text_color?.startsWith('#') ? (banner.text_color || 'text-white') : ''}`}
                 style={banner.text_color?.startsWith('#') ? { color: banner.text_color } : undefined}
               >
                 <h3 className="text-2xl md:text-3xl font-black mb-2 leading-tight drop-shadow-xl">{banner.title}</h3>
@@ -478,6 +478,16 @@ export default function Home() {
     }
     fetchData();
   }, []);
+
+  useEffect(() => {
+      const timeoutId = setTimeout(() => {
+        if (searchQuery && !hasPressedEnter && searchQuery.length > 2) {
+          executeSearch(searchQuery);
+        }
+      }, 500); 
+      
+      return () => clearTimeout(timeoutId);
+    }, [searchQuery, hasPressedEnter]);
 
   const coreColors: Record<string, string> = { 'Fiction': 'border-purple-500', 'Non-Fiction': 'border-yellow-500', 'Horror': 'border-red-500', 'Learning / Educational': 'border-green-500' };
   const uniqueCategories = Array.from(new Set(books.map(b => b.category).filter(c => c && c !== 'General')));

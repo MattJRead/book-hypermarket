@@ -14,7 +14,6 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'analytics' | 'book_info' | 'banner_forge' | 'broadcast' | 'accounts'>('analytics');
   const [adminSecret, setAdminSecret] = useState(''); 
 
-  // --- BOOK INFO STATE ---
   const [books, setBooks] = useState<Book[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -22,44 +21,30 @@ export default function AdminDashboard() {
   const [editCoverUrl, setEditCoverUrl] = useState('');
   const [bookStatus, setBookStatus] = useState('');
 
-  // --- BANNER FORGE STATE ---
   const [banners, setBanners] = useState<Banner[]>([]);
   const [editingBanner, setEditingBanner] = useState<Partial<Banner> | null>(null);
   const [bannerStatus, setBannerStatus] = useState('');
   
-  // New Global Search States for Banner Forge
   const [bannerSearchQuery, setBannerSearchQuery] = useState('');
   const [bannerApiResults, setBannerApiResults] = useState<Book[]>([]);
   const [isBannerSearching, setIsBannerSearching] = useState(false);
   const [hasPressedBannerEnter, setHasPressedBannerEnter] = useState(false);
 
-  // --- BROADCAST STATE ---
   const [bcTitle, setBcTitle] = useState('');
   const [bcMessage, setBcMessage] = useState('');
   const [bcType, setBcType] = useState('system_update');
   const [bcActionUrl, setBcActionUrl] = useState('');
   const [bcStatus, setBcStatus] = useState({ loading: false, message: '', isError: false });
 
-  // --- ACCOUNTS STATE ---
   const [accounts, setAccounts] = useState<UserAccount[]>([]);
   const [accountsStatus, setAccountsStatus] = useState('');
 
-  // --- ANALYTICS STATE ---
   const [analyticsData, setAnalyticsData] = useState<any[]>([]);
   const [analyticsStatus, setAnalyticsStatus] = useState('Initializing tracker...');
 
-  // THEME ENGINE
   const { theme } = useTheme();
   const isDarkUI = theme === 'dark' || theme === 'true-dark';
 
-  const themeStyles = {
-    'light': 'bg-orange-50 text-stone-900',
-    'true-light': 'bg-white text-black',
-    'dark': 'bg-gray-950 text-white',
-    'true-dark': 'bg-black text-gray-300'
-  }[theme];
-
-  // 1. Load Data on Mount
   useEffect(() => {
     async function loadVaultData() {
       const { data: bookData } = await supabase.from('books').select('id, title, author, category, cover_image_url, isbn13').order('title');
@@ -71,7 +56,6 @@ export default function AdminDashboard() {
     loadVaultData();
   }, []);
 
-  // 2. Load Analytics when tab is active
   useEffect(() => {
     async function fetchAnalytics() {
       if (activeTab === 'analytics') {
@@ -92,7 +76,6 @@ export default function AdminDashboard() {
     fetchAnalytics();
   }, [activeTab]);
 
-  // --- Actions: Books ---
   const handleSelectBook = (book: Book) => {
     setSelectedBook(book);
     setEditCategory(book.category || 'General');
@@ -116,8 +99,9 @@ export default function AdminDashboard() {
     }
   };
 
-  // --- Actions: Banners ---
-  const handleSaveBanner = async () => {
+  // 🔽 ARMORED BANNER FORGE SAVE ENGINE
+  const handleSaveBanner = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     if (!editingBanner?.title) return setBannerStatus('Title is required.');
     setBannerStatus('Forging banner...');
     
@@ -132,25 +116,39 @@ export default function AdminDashboard() {
       slot_position: editingBanner.slot_position || 1
     };
 
-    if (editingBanner.id) {
-      const { data, error } = await supabase.from('storefront_banners').update(bannerPayload).eq('id', editingBanner.id).select().single();
-      if (error) {
-        console.error("Supabase Error:", error);
-        setBannerStatus(`DB Error: ${error.message}`);
-      } else { 
-        setBanners(banners.map(b => b.id === data.id ? data : b)); 
+    try {
+      if (editingBanner.id) {
+        const { data, error } = await supabase
+          .from('storefront_banners')
+          .update(bannerPayload)
+          .eq('id', editingBanner.id)
+          .select(); // Removed .single() to prevent PGRST116 crashes on silent RLS blocks
+
+        if (error) throw new Error(error.message);
+        if (!data || data.length === 0) throw new Error("Vault rejected update. RLS policies blocked write access.");
+
+        const updated = data[0];
+        setBanners(banners.map(b => b.id === updated.id ? updated : b)); 
+        setEditingBanner(updated);
         setBannerStatus('Banner updated!'); 
-      }
-    } else {
-      const { data, error } = await supabase.from('storefront_banners').insert([bannerPayload]).select().single();
-      if (error) {
-        console.error("Supabase Error:", error);
-        setBannerStatus(`DB Error: ${error.message}`);
-      } else { 
-        setBanners([data, ...banners]); 
-        setEditingBanner(data); 
+      } else {
+        const { data, error } = await supabase
+          .from('storefront_banners')
+          .insert([bannerPayload])
+          .select();
+
+        if (error) throw new Error(error.message);
+        if (!data || data.length === 0) throw new Error("Vault rejected insert. RLS policies blocked write access.");
+
+        const forged = data[0];
+        setBanners([forged, ...banners]); 
+        setEditingBanner(forged); 
         setBannerStatus('Banner forged!'); 
       }
+    } catch (err: any) {
+      console.error("[Banner Forge DB Rejection]:", err);
+      setBannerStatus(`DB Error: ${err.message}`);
+      alert(`Could not save banner: ${err.message}`);
     }
   };
 
@@ -172,12 +170,14 @@ export default function AdminDashboard() {
     setIsBannerSearching(false);
   };
 
-  const addBannerBook = async (book: Book) => {
-    if (!editingBanner || !book.isbn13) return; // Guard against missing ISBNs
+  // 🔽 ARMORED BOOK DOWNLOADER ENGINE
+  const addBannerBook = async (book: Book, e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    if (!editingBanner || !book.isbn13) return; 
     const isbn = book.isbn13;
     const currentIsbns = editingBanner.target_isbns || [];
     
-    if (currentIsbns.includes(isbn)) return; // Prevent duplicates
+    if (currentIsbns.includes(isbn)) return; 
 
     if (!books.some(b => b.isbn13 === isbn)) {
       setBannerStatus(`Downloading ${book.title} to vault...`);
@@ -187,20 +187,25 @@ export default function AdminDashboard() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(book)
         });
+        
+        if (!res.ok) throw new Error(`API returned status ${res.status}`);
+        
         const savedBook = await res.json();
-        if (savedBook.id) {
+        if (savedBook && savedBook.id) {
           setBooks(prev => [...prev, savedBook]);
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error("Failed to provision book:", e);
+        setBannerStatus(`Warning: Local cache failed for ${book.title}`);
       }
-      setBannerStatus('');
     }
 
     setEditingBanner({ ...editingBanner, target_isbns: [...currentIsbns, isbn] });
+    setBannerStatus('');
   };
 
-  const removeBannerIsbn = (isbn: string) => {
+  const removeBannerIsbn = (isbn: string, e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     if (!editingBanner) return;
     setEditingBanner({ 
       ...editingBanner, 
@@ -208,14 +213,14 @@ export default function AdminDashboard() {
     });
   };
 
-  const deleteBanner = async (id: string) => {
+  const deleteBanner = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     if(!confirm('Destroy this banner permanently?')) return;
     await supabase.from('storefront_banners').delete().eq('id', id);
     setBanners(banners.filter(b => b.id !== id));
     if (editingBanner?.id === id) setEditingBanner(null);
   };
 
-  // --- Actions: Broadcast ---
   const handleBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
     setBcStatus({ loading: true, message: 'Deploying...', isError: false });
@@ -237,7 +242,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // --- Actions: Accounts ---
   const fetchAccounts = async () => {
     setAccountsStatus('Fetching registry...');
     try {
@@ -258,7 +262,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // --- Search Filters ---
   const filteredBooks = books.filter(b => b.title.toLowerCase().includes(searchQuery.toLowerCase()) || b.author.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5);
   
   const displayBannerBooks = hasPressedBannerEnter 
@@ -270,7 +273,7 @@ export default function AdminDashboard() {
 
   return (
       <main className="min-h-screen flex flex-col py-12">
-        <div className="w-full max-w-6xl">
+        <div className="w-full max-w-6xl mx-auto px-4">
         
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
           <h1 className={`text-3xl font-extrabold tracking-tight flex items-center ${isDarkUI ? 'text-white' : 'text-gray-900'}`}>
@@ -282,7 +285,6 @@ export default function AdminDashboard() {
           </Link>
         </div>
 
-        {/* 📑 TABS NAVIGATION */}
         <div className={`flex gap-8 border-b mb-8 overflow-x-auto pb-1 ${isDarkUI ? 'border-gray-800' : 'border-gray-300'}`}>
           {[
             { id: 'analytics', label: 'Analytics' },
@@ -293,6 +295,7 @@ export default function AdminDashboard() {
           ].map(tab => (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id as any)}
               className={`pb-3 text-sm font-bold tracking-wide transition-colors relative whitespace-nowrap ${activeTab === tab.id ? (isDarkUI ? 'text-white' : 'text-gray-900') : (isDarkUI ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700')}`}
             >
@@ -302,9 +305,6 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* =========================================
-            TAB: ANALYTICS
-            ========================================= */}
         {activeTab === 'analytics' && (
           <div className="animate-in fade-in duration-300">
             {analyticsStatus ? (
@@ -356,7 +356,7 @@ export default function AdminDashboard() {
                           </tr>
                         ))}
                         {clicks.length === 0 && (
-                          <tr><td colSpan={3} className="px-6 py-8 text-center text-gray-500 font-mono">No tracking data recorded yet. Go click a book!</td></tr>
+                          <tr><td colSpan={3} className="px-6 py-8 text-center text-gray-500 font-mono">No tracking data recorded yet.</td></tr>
                         )}
                       </tbody>
                     </table>
@@ -367,9 +367,6 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* =========================================
-            TAB: BOOK INFO
-            ========================================= */}
         {activeTab === 'book_info' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-300">
             <div className={`border rounded-2xl p-6 ${isDarkUI ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
@@ -378,7 +375,7 @@ export default function AdminDashboard() {
               
               <div className="flex flex-col gap-2 max-h-96 overflow-y-auto pr-2">
                 {searchQuery && filteredBooks.map(book => (
-                  <button key={book.id} onClick={() => handleSelectBook(book)} className={`text-left p-3 rounded-lg border transition-colors ${selectedBook?.id === book.id ? (isDarkUI ? 'bg-sky-900/30 border-sky-500' : 'bg-sky-50 border-sky-500') : (isDarkUI ? 'bg-gray-950 border-gray-800 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300')}`}>
+                  <button type="button" key={book.id} onClick={() => handleSelectBook(book)} className={`text-left p-3 rounded-lg border transition-colors ${selectedBook?.id === book.id ? (isDarkUI ? 'bg-sky-900/30 border-sky-500' : 'bg-sky-50 border-sky-500') : (isDarkUI ? 'bg-gray-950 border-gray-800 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300')}`}>
                     <div className={`font-bold text-sm truncate ${isDarkUI ? 'text-white' : 'text-gray-900'}`}>{book.title}</div>
                     <div className="text-xs text-gray-500 truncate">{book.author}</div>
                   </button>
@@ -416,10 +413,10 @@ export default function AdminDashboard() {
 
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Cover Image URL</label>
-                    <input type="text" value={editCoverUrl} onChange={(e) => setEditCoverUrl(e.target.value)} placeholder="Paste direct image link here (https://...)" className={`w-full border rounded-lg p-3 text-sm focus:outline-none focus:border-sky-500 ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
+                    <input type="text" value={editCoverUrl} onChange={(e) => setEditCoverUrl(e.target.value)} placeholder="Direct link (https://...)" className={`w-full border rounded-lg p-3 text-sm focus:outline-none focus:border-sky-500 ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
                   </div>
 
-                  <button onClick={handleUpdateBook} className="mt-2 w-full py-3 rounded-lg font-bold text-sm bg-sky-600 hover:bg-sky-500 text-white transition-colors">
+                  <button type="button" onClick={handleUpdateBook} className="mt-2 w-full py-3 rounded-lg font-bold text-sm bg-sky-600 hover:bg-sky-500 text-white transition-colors">
                     Save Changes
                   </button>
                   {bookStatus && <div className="text-center text-xs font-mono text-emerald-500 mt-2">{bookStatus}</div>}
@@ -429,14 +426,10 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* =========================================
-            TAB: BANNER FORGE
-            ========================================= */}
         {activeTab === 'banner_forge' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-300">
-            {/* LEFT: Banner List */}
             <div className={`border rounded-2xl p-6 lg:col-span-1 ${isDarkUI ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
-              <button onClick={() => { setEditingBanner({ title: '', subtitle: '', text_color: '#ffffff', target_isbns: [], is_published: false, slot_position: 1 }); setBannerStatus(''); }} className="w-full mb-6 py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-bold text-sm transition-colors shadow-lg">
+              <button type="button" onClick={() => { setEditingBanner({ title: '', subtitle: '', text_color: '#ffffff', target_isbns: [], is_published: false, slot_position: 1 }); setBannerStatus(''); }} className="w-full mb-6 py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-bold text-sm transition-colors shadow-lg">
                 + Forge New Banner
               </button>
               <h2 className="text-sm font-bold mb-4 text-gray-500 uppercase tracking-wider">Existing Banners</h2>
@@ -453,7 +446,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* RIGHT: Banner Editor */}
             <div className={`border rounded-2xl p-6 lg:col-span-2 relative overflow-hidden ${isDarkUI ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
               {!editingBanner ? (
                 <div className="flex items-center justify-center h-full text-gray-500 italic">Select a banner to edit, or forge a new one.</div>
@@ -461,7 +453,7 @@ export default function AdminDashboard() {
                 <div className="flex flex-col gap-6">
                   <div className={`flex justify-between items-center border-b pb-4 ${isDarkUI ? 'border-gray-800' : 'border-gray-200'}`}>
                     <h2 className="text-xl font-bold text-sky-500">{editingBanner.id ? 'Edit Banner' : 'Forge New Banner'}</h2>
-                    {editingBanner.id && <button onClick={() => deleteBanner(editingBanner.id!)} className="text-xs font-bold text-red-500 hover:text-red-400">Destroy Banner</button>}
+                    {editingBanner.id && <button type="button" onClick={(e) => deleteBanner(editingBanner.id!, e)} className="text-xs font-bold text-red-500 hover:text-red-400">Destroy Banner</button>}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -506,10 +498,9 @@ export default function AdminDashboard() {
 
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Landing Page Intro Text</label>
-                    <textarea rows={3} value={editingBanner.landing_page_text || ''} onChange={e => setEditingBanner({...editingBanner, landing_page_text: e.target.value})} className={`w-full border rounded-lg p-3 text-sm focus:border-sky-500 focus:outline-none resize-none ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} placeholder="The text users see at the top of the page after clicking this banner..." />
+                    <textarea rows={3} value={editingBanner.landing_page_text || ''} onChange={e => setEditingBanner({...editingBanner, landing_page_text: e.target.value})} className={`w-full border rounded-lg p-3 text-sm focus:border-sky-500 focus:outline-none resize-none ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} placeholder="Intro text users see..." />
                   </div>
 
-                  {/* Target Book Assigner */}
                   <div className={`border rounded-xl p-4 ${isDarkUI ? 'bg-black border-gray-800' : 'bg-gray-50 border-gray-200'}`}>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-4 flex items-center">
                       Attach Books to Banner
@@ -520,7 +511,7 @@ export default function AdminDashboard() {
                         <div className="relative">
                           <input 
                             type="text" 
-                            placeholder="Search vault or press Enter for global search..." 
+                            placeholder="Search vault or press Enter..." 
                             value={bannerSearchQuery} 
                             onChange={(e) => {
                               setBannerSearchQuery(e.target.value);
@@ -532,6 +523,7 @@ export default function AdminDashboard() {
                           />
                           {bannerSearchQuery && (
                             <button 
+                              type="button"
                               onClick={() => { setBannerSearchQuery(''); setBannerApiResults([]); setHasPressedBannerEnter(false); }}
                               className="absolute right-3 top-3 text-gray-500 hover:text-sky-500"
                               title="Clear Search"
@@ -548,8 +540,9 @@ export default function AdminDashboard() {
                             const isAdded = editingBanner.target_isbns?.includes(book.isbn13);
                             return (
                               <button 
+                                type="button"
                                 key={`${book.isbn13}-${index}`}
-                                onClick={() => addBannerBook(book)} 
+                                onClick={(e) => addBannerBook(book, e)} 
                                 disabled={isAdded}
                                 className={`w-full text-left flex justify-between items-center p-3 rounded border transition-all ${isAdded ? (isDarkUI ? 'bg-gray-800 border-gray-700 opacity-50 cursor-not-allowed' : 'bg-gray-200 border-gray-300 opacity-50 cursor-not-allowed') : (isDarkUI ? 'bg-sky-900/20 border-sky-900 hover:bg-sky-900/40 hover:border-sky-500' : 'bg-sky-50 border-sky-200 hover:bg-sky-100 hover:border-sky-400')}`}
                               >
@@ -562,9 +555,6 @@ export default function AdminDashboard() {
                               </button>
                             );
                           })}
-                          {hasPressedBannerEnter && displayBannerBooks.length === 0 && !isBannerSearching && (
-                            <div className="text-xs text-gray-500 p-2">No results found globally.</div>
-                          )}
                         </div>
                       </div>
 
@@ -576,7 +566,7 @@ export default function AdminDashboard() {
                             return (
                               <div key={isbn} className={`flex justify-between items-center p-3 border rounded ${isDarkUI ? 'bg-emerald-900/20 border-emerald-900/50' : 'bg-emerald-50 border-emerald-200'}`}>
                                 <span className={`text-xs font-bold truncate pr-2 ${isDarkUI ? 'text-emerald-100' : 'text-emerald-900'}`}>{b ? b.title : `ISBN: ${isbn}`}</span>
-                                <button onClick={() => removeBannerIsbn(isbn)} className="text-xs font-bold text-red-500 hover:text-red-400 shrink-0">Remove</button>
+                                <button type="button" onClick={(e) => removeBannerIsbn(isbn, e)} className="text-xs font-bold text-red-500 hover:text-red-400 shrink-0">Remove</button>
                               </div>
                             );
                           })}
@@ -596,7 +586,7 @@ export default function AdminDashboard() {
                       <span className={`ml-3 text-sm font-bold ${editingBanner.is_published ? 'text-emerald-500' : 'text-gray-500'}`}>{editingBanner.is_published ? 'LIVE ON STOREFRONT' : 'Draft Mode (Hidden)'}</span>
                     </label>
 
-                    <button onClick={handleSaveBanner} className="px-8 py-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg transition-colors shadow-lg">Save Banner</button>
+                    <button type="button" onClick={(e) => handleSaveBanner(e)} className="px-8 py-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg transition-colors shadow-lg">Save Banner</button>
                   </div>
                   {bannerStatus && <div className="text-right text-xs font-mono text-emerald-500">{bannerStatus}</div>}
                 </div>
@@ -605,9 +595,6 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* =========================================
-            TAB: BROADCAST (ONLINE STATE)
-            ========================================= */}
         {activeTab === 'broadcast' && (
           <div className={`w-full max-w-2xl mx-auto border rounded-2xl p-8 relative overflow-hidden animate-in fade-in duration-300 ${isDarkUI ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-orange-500 to-red-600"></div>
@@ -627,51 +614,39 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Message</label>
-                <textarea required rows={4} value={bcMessage} onChange={(e) => setBcMessage(e.target.value)} placeholder="Type your broadcast..." className={`w-full border rounded-lg p-3 text-sm focus:outline-none focus:border-red-500 resize-none ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`}></textarea>
+                <textarea required rows={4} value={bcMessage} onChange={(e) => setBcMessage(e.target.value)} placeholder="Type broadcast..." className={`w-full border rounded-lg p-3 text-sm focus:outline-none focus:border-red-500 resize-none ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`}></textarea>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Action URL (Optional)</label>
-                <input type="text" value={bcActionUrl} onChange={(e) => setBcActionUrl(e.target.value)} placeholder="e.g. /wishlist" className={`w-full border rounded-lg p-3 text-sm focus:outline-none focus:border-red-500 ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Action URL</label>
+                <input type="text" value={bcActionUrl} onChange={(e) => setBcActionUrl(e.target.value)} placeholder="/wishlist" className={`w-full border rounded-lg p-3 text-sm focus:outline-none focus:border-red-500 ${isDarkUI ? 'bg-black border-gray-800 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
               </div>
 
               <div className={`pt-4 border-t mt-2 ${isDarkUI ? 'border-gray-800' : 'border-gray-200'}`}>
                 <label className="block text-xs font-bold text-red-500 uppercase tracking-wider mb-2 flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                   Authorization Code
                 </label>
-                <input required type="password" value={adminSecret} onChange={(e) => setAdminSecret(e.target.value)} placeholder="Enter Admin Secret..." className={`w-full border rounded-lg p-3 text-sm focus:outline-none focus:border-red-500 text-red-500 ${isDarkUI ? 'bg-black border-red-900' : 'bg-red-50 border-red-200'}`} />
+                <input required type="password" value={adminSecret} onChange={(e) => setAdminSecret(e.target.value)} placeholder="Secret..." className={`w-full border rounded-lg p-3 text-sm focus:outline-none focus:border-red-500 text-red-500 ${isDarkUI ? 'bg-black border-red-900' : 'bg-red-50 border-red-200'}`} />
               </div>
 
               <button disabled={bcStatus.loading || !adminSecret} type="submit" className={`mt-2 w-full py-4 rounded-lg font-bold text-sm transition-all flex justify-center items-center ${bcStatus.loading || !adminSecret ? (isDarkUI ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gray-200 text-gray-500 cursor-not-allowed') : 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_15px_rgba(220,38,38,0.5)]'}`}>
                 {!adminSecret ? 'REQUIRES ADMIN SECRET' : bcStatus.loading ? '[ DEPLOYING... ]' : 'DEPLOY BROADCAST'}
               </button>
-              
-              {bcStatus.message && (
-                <div className={`mt-4 p-4 rounded-lg text-sm font-mono border ${bcStatus.isError ? (isDarkUI ? 'bg-red-950/50 border-red-900 text-red-400' : 'bg-red-50 border-red-200 text-red-600') : (isDarkUI ? 'bg-emerald-950/50 border-emerald-900 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-600')}`}>
-                  {bcStatus.message}
-                </div>
-              )}
             </form>
           </div>
         )}
 
-        {/* =========================================
-            TAB: ACCOUNTS (ONLINE STATE)
-            ========================================= */}
         {activeTab === 'accounts' && (
           <div className={`border rounded-2xl p-6 animate-in fade-in duration-300 ${isDarkUI ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <h2 className="text-lg font-bold text-sky-500">Platform Registry</h2>
               
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                <input type="password" value={adminSecret} onChange={(e) => setAdminSecret(e.target.value)} placeholder="Admin Secret..." className={`border rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-sky-500 w-full sm:w-auto ${isDarkUI ? 'bg-black border-gray-800 text-gray-300' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
-                <button onClick={fetchAccounts} disabled={!adminSecret} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors w-full sm:w-auto whitespace-nowrap ${!adminSecret ? (isDarkUI ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-gray-200 text-gray-500 cursor-not-allowed') : 'bg-sky-600 hover:bg-sky-500 text-white'}`}>
+                <input type="password" value={adminSecret} onChange={(e) => setAdminSecret(e.target.value)} placeholder="Secret..." className={`border rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-sky-500 w-full sm:w-auto ${isDarkUI ? 'bg-black border-gray-800 text-gray-300' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
+                <button type="button" onClick={fetchAccounts} disabled={!adminSecret} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors w-full sm:w-auto whitespace-nowrap ${!adminSecret ? (isDarkUI ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-gray-200 text-gray-500 cursor-not-allowed') : 'bg-sky-600 hover:bg-sky-500 text-white'}`}>
                   Sync Registry
                 </button>
               </div>
             </div>
-            
-            {accountsStatus && <div className="text-sm font-mono text-sky-500 mb-4">{accountsStatus}</div>}
             
             <div className={`overflow-x-auto border rounded-xl ${isDarkUI ? 'border-gray-800' : 'border-gray-200'}`}>
               <table className="w-full text-left text-sm">
@@ -683,17 +658,13 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${isDarkUI ? 'divide-gray-800' : 'divide-gray-200'}`}>
-                  {accounts.length === 0 ? (
-                    <tr><td colSpan={3} className="px-4 py-8 text-center text-gray-500 font-mono">No accounts loaded. Enter Admin Secret and sync.</td></tr>
-                  ) : (
-                    accounts.map(acc => (
-                      <tr key={acc.id} className={`transition-colors ${isDarkUI ? 'hover:bg-gray-800/50' : 'hover:bg-gray-50'}`}>
-                        <td className={`px-4 py-3 font-mono ${isDarkUI ? 'text-gray-300' : 'text-gray-900'}`}>{acc.email}</td>
-                        <td className="px-4 py-3 text-gray-500">{new Date(acc.created_at).toLocaleDateString()}</td>
-                        <td className="px-4 py-3 text-gray-500">{acc.last_sign_in ? new Date(acc.last_sign_in).toLocaleDateString() : 'Never'}</td>
-                      </tr>
-                    ))
-                  )}
+                  {accounts.map(acc => (
+                    <tr key={acc.id} className={`transition-colors ${isDarkUI ? 'hover:bg-gray-800/50' : 'hover:bg-gray-50'}`}>
+                      <td className={`px-4 py-3 font-mono ${isDarkUI ? 'text-gray-300' : 'text-gray-900'}`}>{acc.email}</td>
+                      <td className="px-4 py-3 text-gray-500">{new Date(acc.created_at).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-gray-500">{acc.last_sign_in ? new Date(acc.last_sign_in).toLocaleDateString() : 'Never'}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
