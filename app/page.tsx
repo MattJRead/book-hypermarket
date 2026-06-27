@@ -23,24 +23,26 @@ const scholasticSpotlight = [
   { id: 's-4', title: 'Award-Winning Books', description: 'Explore Award-Winning Books on Scholastic.', link: 'https://tidd.ly/4oz5IJ2', color: 'bg-red-700' },
   { id: 's-5', title: 'Get 20% OFF across the Scholastic Shop', description: 'Get 20% off across the Scholastic Shop. Minimum spend £30. Use Code: READ20. Offer ends at 11.59pm on 30th June 2026.', link: 'https://tidd.ly/3Sna3mC', color: 'bg-red-700' },
   { id: 's-main', title: 'Award-Winning Authors', description: 'Explore Award-Winning Authors on Scholastic.', link: 'https://tidd.ly/4vXgqeQ', color: 'bg-red-700' },
-  { id: 's-parents', title: 'For Parents', description: 'Resources, book packs, and reading guides curated specifically for parents.', link: 'https://tidd.ly/4gJjQgQ', color: 'bg-red-600' },
-  { id: 's-teachers', title: 'For Teachers', description: 'Classroom resources, lesson planning assistance, and educational book bundles.', link: 'https://tidd.ly/4g4UUQM', color: 'bg-red-600' }
+  { id: 's-parents', title: 'For Parents', description: 'Resources, book packs, and reading guides curated specifically for parents.', link: 'https://tidd.ly/4aS2iLS', color: 'bg-red-600' },
+  { id: 's-teachers', title: 'For Teachers', description: 'Classroom resources, lesson planning assistance, and educational book bundles.', link: 'https://tidd.ly/4ewKxEe', color: 'bg-red-600' }
 ];
 
 const ebaySpotlight = [
   { id: 'e-1', title: 'First Edition Books', description: 'Track down rare, elusive, and investment-grade first editions.', link: 'https://ebay.us/NDSTES', color: 'bg-blue-600' },
   { id: 'e-2', title: 'Vintage Sci-Fi Books', description: 'Explore classic pulp, retro futuristic covers, and golden-age sci-fi.', link: 'https://ebay.us/Ozas0G', color: 'bg-yellow-500' },
   { id: 'e-3', title: 'Book Bundles', description: 'Score massive multi-book collections and genre lots for cheap.', link: 'https://ebay.us/qhu1eJ', color: 'bg-green-600' },
-  { id: 'e-4', title: 'Antiquarian & Collectible', description: 'Beautiful leather-bound classics, historical volumes, and vintage printings.', link: 'https://ebay.us/1rL13x', color: 'bg-orange-600' },
-  { id: 'e-5', title: 'Books & Magazines', description: 'Browse the massive global clearinghouse of everyday print media.', link: 'https://ebay.us/9DRXdF', color: 'bg-purple-600' },
+  { id: 'e-4', title: 'Antiquarian & Collectible', description: 'Beautiful leather-bound classics, historical volumes, and vintage printings.', link: 'https://ebay.us/FoYwZq', color: 'bg-orange-600' },
+  { id: 'e-5', title: 'Magazines', description: 'Browse the massive global clearinghouse of everyday print media.', link: 'https://ebay.us/lVWuIR', color: 'bg-purple-600' },
   { id: 'e-6', title: 'Box Sets', description: 'Complete literary trilogies, epic fantasy sagas, and collection cases.', link: 'https://ebay.us/Yq5HFu', color: 'bg-pink-600' }
 ];
 
 const bookshopSpotlight = [
-  { id: 'b-1', title: 'Indie Champions Top 25', description: 'The absolute best-selling titles across independent brick-and-mortar bookshops.', link: 'https://tidd.ly/4evXRbY', color: 'bg-teal-600' },
+  { id: 'b-1', title: 'Indie Champions Top 25', description: 'The absolute best-selling titles across independent brick-and-mortar bookshops.', link: 'https://tidd.ly/4aUPZyk', color: 'bg-teal-600' },
   { id: 'b-2', title: 'Signed + Pre-Orders', description: 'Secure exclusive signed copies and lock in upcoming highly-anticipated releases.', link: 'https://tidd.ly/4vyYtU3', color: 'bg-teal-600' },
   { id: 'b-3', title: 'Books of the Month', description: 'Fresh monthly independent picks spanning fiction, non-fiction, and classics.', link: 'https://tidd.ly/3T628KE', color: 'bg-teal-700' },
-  { id: 'b-4', title: 'E-Books', description: 'Instantly download digital copies while still funneling profit directly to local shops.', link: 'https://tidd.ly/4f5kiEV', color: 'bg-teal-800' }
+  { id: 'b-4', title: 'Paperback Fiction', description: 'The latest and greatest in paperback fiction.', link: 'https://tidd.ly/4eLMHyF', color: 'bg-teal-700' },
+  { id: 'b-5', title: 'Gift Cards', description: 'The perfect gift for any book lover.', link: 'https://tidd.ly/4vwmStt', color: 'bg-teal-700' },
+  { id: 'b-6', title: 'E-Books', description: 'Instantly download digital copies while still funneling profit directly to local shops.', link: 'https://tidd.ly/4f5kiEV', color: 'bg-teal-800' }
 ];
 
 function PartnerCarousel({ title, subtitle, badge, badgeColor, items, isDarkMode }: { title: string; subtitle: string; badge: string; badgeColor: string; items: any[]; isDarkMode: boolean }) {
