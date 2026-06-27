@@ -259,7 +259,8 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     setIsWishlistUpdating(false);
   };
 
-const bookJsonLd = {
+  // GEO STEP 3: Dynamic JSON-LD AI Receipt
+  const bookJsonLd = {
     "@context": "https://schema.org",
     "@type": "Book",
     "name": book.title,
@@ -272,12 +273,12 @@ const bookJsonLd = {
 
   return (
     <>
-    <script
+      {/* 🔽 THE FIX: Kept safely outside the flex container to prevent Safari/WebKit layout stretching bugs */}
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(bookJsonLd) }}
       />
 
-      <div className={`p-6 rounded-2xl border flex flex-col items-center text-center transition-all hover:scale-[1.02] shadow-sm h-full relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} ${isOwned ? 'ring-2 ring-emerald-500' : ''}`}></div>
       <div className={`p-6 rounded-2xl border flex flex-col items-center text-center transition-all hover:scale-[1.02] shadow-sm h-full relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} ${isOwned ? 'ring-2 ring-emerald-500' : ''}`}>
         {isOwned && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none"></div>}
 
@@ -641,7 +642,8 @@ export default function Home() {
   };
   
   return (
-    <main className={`min-h-screen flex flex-col py-12 transition-colors duration-500 overflow-hidden ${themeStyles}`}>      
+    ///{* 🔽 THE FIX 2: Removed 'overflow-hidden' from main wrapper to restore page scrolling *}///
+    <main className={`min-h-screen flex flex-col py-12 transition-colors duration-500 overflow-x-hidden ${themeStyles}`}>      
       <NotificationBell userId={userId} isDarkMode={isDarkMode} />
       <header className="flex justify-center items-center mb-12 w-full relative">
         <button onClick={handleClearViews} className="hover:opacity-80 transition-opacity">
