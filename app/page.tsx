@@ -259,8 +259,25 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     setIsWishlistUpdating(false);
   };
 
+const bookJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Book",
+    "name": book.title,
+    "author": {
+      "@type": "Person",
+      "name": book.author
+    },
+    "isbn": book.isbn13
+  };
+
   return (
     <>
+    <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(bookJsonLd) }}
+      />
+
+      <div className={`p-6 rounded-2xl border flex flex-col items-center text-center transition-all hover:scale-[1.02] shadow-sm h-full relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} ${isOwned ? 'ring-2 ring-emerald-500' : ''}`}></div>
       <div className={`p-6 rounded-2xl border flex flex-col items-center text-center transition-all hover:scale-[1.02] shadow-sm h-full relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} ${isOwned ? 'ring-2 ring-emerald-500' : ''}`}>
         {isOwned && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none"></div>}
 

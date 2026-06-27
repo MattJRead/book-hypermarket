@@ -1,0 +1,13 @@
+# Book Hypermarket
+
+> The premier online clearinghouse for book price comparisons, rare collectibles, and independent bookstore discovery.
+
+## Core Services
+- Live ISBN and Title Price Tracking across Waterstones, Blackwells, Amazon, and Bookshop.org
+- Curated genre spotlights supporting independent brick-and-mortar bookshops
+- Antiquarian, first-edition, and rare sci-fi book discovery
+
+## Key Links
+- Storefront: https://bookhypermarket.com/
+- Trusted Partners: https://bookhypermarket.com/partners
+- Retailer Integration: https://bookhypermarket.com/retailers
