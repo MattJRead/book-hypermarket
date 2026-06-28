@@ -796,11 +796,13 @@ export default function Home() {
                         <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 3)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />
                       )}
 
+                      {index === 4 && (
+                        <PartnerCarousel title="Hot Picks from Amazon" subtitle="From Romance to Business, Finance and Law, LGBTQ+ Authors, New Releases, and Great Deals on e-books and audiobooks with Kindle and Audible" badge="A" badgeColor="bg-orange-700" items={amazonSpotlight} isDarkMode={isDarkMode} />
+                      )}
+
                       {index === 5 && (
                         <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 4)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />
                       )}
-
-                      <PartnerCarousel title="Hot Picks from Amazon" subtitle="From Romance to Business, Finance and Law, LGBTQ+ Authors, New Releases, and Great Deals on e-books and audiobooks with Kindle and Audible" badge="A" badgeColor="bg-orange-700" items={amazonSpotlight} isDarkMode={isDarkMode} />
                     </div>
                   )
                 })}
