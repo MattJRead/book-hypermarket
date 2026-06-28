@@ -36,6 +36,17 @@ const ebaySpotlight = [
   { id: 'e-6', title: 'Box Sets', description: 'Complete literary trilogies, epic fantasy sagas, and collection cases.', link: 'https://ebay.us/Yq5HFu', color: 'bg-pink-600' }
 ];
 
+const amazonSpotlight = [
+  { id: 'a-1', title: 'Romance', description: 'The most popular romance novels on Amazon, updated hourly.', link: 'https://amzn.to/3SBxl8s', color: 'bg-orange-700' },
+  { id: 'a-2', title: 'Amazon New Releases', description: 'The hottest new books on Amazon, updated hourly.', link: 'https://amzn.to/3SAPtzg', color: 'bg-orange-700' },
+  { id: 'a-3', title: 'Business, Finance and Law', description: 'The latest and greatest in business, finance and law.', link: 'https://amzn.to/4oQS5VV', color: 'bg-orange-700' },
+  { id: 'a-4', title: 'Crime, Thrillers & Mystery', description: 'The latest and greatest in crime, thrillers and mystery.', link: 'https://amzn.to/4f7fIpJ', color: 'bg-orange-700' },
+  { id: 'a-5', title: 'LGBTQ+', description: 'The latest and greatest in LGBTQ+ literature.', link: 'https://amzn.to/4oOyKo8', color: 'bg-linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet)-700' },
+  { id: 'a-6', title: 'Biography and Autobiography Books', description: 'The latest and greatest in biography and autobiography books.', link: 'https://amzn.to/4wijp1S', color: 'bg-orange-700' },
+  { id: 'a-7', title: 'Audible', description: 'The latest and greatest in audiobooks, podcasts, and Audible exclusive content.', link: 'https://amzn.to/4eOYZ9w', color: 'bg-darkorange-700' },
+  { id: 'a-8', title: 'Kindle Unlimited', description: 'Explore millions of books, thousands of audiobooks and selected magazines on any device.', link: 'https://amzn.to/4oQW8kG', color: 'bg-orange-700' }
+];
+
 const bookshopSpotlight = [
   { id: 'b-1', title: 'Indie Champions Top 25', description: 'The absolute best-selling titles across independent brick-and-mortar bookshops.', link: 'https://tidd.ly/4aUPZyk', color: 'bg-teal-600' },
   { id: 'b-2', title: 'Signed + Pre-Orders', description: 'Secure exclusive signed copies and lock in upcoming highly-anticipated releases.', link: 'https://tidd.ly/4vyYtU3', color: 'bg-teal-600' },
@@ -784,6 +795,8 @@ export default function Home() {
                       {index === 3 && (
                         <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 3)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />
                       )}
+
+                      <PartnerCarousel title="Hot Picks from Amazon" subtitle="From Romance to Business, Finance and Law, LGBTQ+ Authors, New Releases, and Great Deals on e-books and audiobooks with Kindle and Audible" badge="A" badgeColor="bg-orange-700" items={amazonSpotlight} isDarkMode={isDarkMode} />
 
                       {index === 5 && (
                         <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 4)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />
