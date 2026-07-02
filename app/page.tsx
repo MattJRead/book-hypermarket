@@ -144,7 +144,10 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
   const blackwellsLink = `https://blackwells.co.uk/bookshop/search/?keyword=${titleSearchQuery}`;
   const amazonLink = `https://www.amazon.co.uk/s?k=${titleSearchQuery}&tag=bookhypermarket-21`;
   const ebayLink = `https://www.ebay.co.uk/sch/i.html?_nkw=${titleSearchQuery}&mkcid=1&mkrid=710-53481-19255-0&siteid=3&campid=5339156569&toolid=10001&mkevt=1`;
-  const bookshopLink = `https://tidd.ly/4vBJ5Xh`;
+  const myAwinPublisherId = "2934999"; 
+  const bookshopAwinMerchantId = "62675"; 
+  const rawBookshopUrl = `https://uk.bookshop.org/search?keywords=${book.isbn13 || titleSearchQuery}`;
+  const bookshopLink = `https://www.awin1.com/cread.php?awinmid=${bookshopAwinMerchantId}&awinaffid=${myAwinPublisherId}&p=${encodeURIComponent(rawBookshopUrl)}`;
 
   const safeCategory = (book.category || '').toLowerCase();
   const isKidsBook = 
