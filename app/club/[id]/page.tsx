@@ -1,4 +1,5 @@
 import { supabase } from '../../../lib/supabase';
+import UpdateProgress from './UpdateProgress';
 
 export default async function ClubDashboard({ 
   params 
@@ -60,6 +61,7 @@ export default async function ClubDashboard({
                   </div>
 
                 </div>
+                <UpdateProgress clubId={id} />
               </div>
             );
           })}
