@@ -46,7 +46,7 @@ export default function ClubHub() {
   return (
     <div className="max-w-5xl mx-auto p-6 mt-8 relative">
       
-      {/* 1. Centered Header with Stylized "Club" */}
+      {/* 1. Centered Header with Persistent Create Button */}
       <div className="flex flex-col items-center justify-center mb-12 text-center gap-4">
         <div>
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
@@ -55,14 +55,12 @@ export default function ClubHub() {
           <p className="text-gray-400">Your private reading networks.</p>
         </div>
         
-        {user && (
-          <Link 
-            href="/club/create" 
-            className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-6 rounded-md transition shadow-lg shadow-blue-900/20 mt-2"
-          >
-            + Create Club
-          </Link>
-        )}
+        <Link 
+          href="/club/create" 
+          className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-6 rounded-md transition shadow-lg shadow-blue-900/20 mt-2 inline-block"
+        >
+          + Create Club
+        </Link>
       </div>
 
       {/* 2. Loading State */}
