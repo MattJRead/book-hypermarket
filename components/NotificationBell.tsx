@@ -10,6 +10,10 @@ type AppNotification = {
   type: string;
   action_url?: string;
   created_at: string;
+  // Added optional fields for the Book Club payloads
+  event_type?: string;
+  recipient_id?: string;
+  club_id?: string;
 };
 
 export default function NotificationBell({ userId, isDarkMode }: { userId: string | null, isDarkMode: boolean }) {
@@ -20,10 +24,7 @@ export default function NotificationBell({ userId, isDarkMode }: { userId: strin
   useEffect(() => {
     // 1. Fetch un-dismissed notifications from the last 30 days
     async function fetchNotifications() {
-      // Check the browser's memory for notifications the user already closed
       const savedDismissed = JSON.parse(localStorage.getItem('dismissed_notifications') || '[]');
-
-      // Calculate the date 30 days ago to prevent pulling ancient data
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -34,34 +35,120 @@ export default function NotificationBell({ userId, isDarkMode }: { userId: strin
         .order('created_at', { ascending: false });
 
       if (data) {
-        // Filter out the ones this specific user has already dismissed
-        const active = data.filter(n => !savedDismissed.includes(n.id));
+        // Format Book Club events to match your UI structure
+        const formattedData = data.map(notif => {
+          if (notif.event_type) {
+            let title = 'Book Club Activity';
+            let message = 'New activity in your book club.';
+            let action_url = `/club/${notif.club_id}`;
+
+            if (notif.event_type === 'quote_reaction') {
+              title = 'New Reaction';
+              message = 'Someone reacted to your pinned quote.';
+              action_url += '/quotes';
+            } else if (notif.event_type === 'review_reply') {
+              title = 'New Reply';
+              message = 'Someone replied to your chapter review.';
+              action_url += '/discussion';
+            } else if (notif.event_type === 'book_completed') {
+              title = 'Book Completed';
+              message = 'A member just finished the book!';
+            }
+
+            return {
+              ...notif,
+              title,
+              message,
+              type: 'book_club',
+              action_url
+            };
+          }
+          return notif;
+        });
+
+        // Filter out dismissed alerts AND ensure personal Book Club alerts only show to the right user
+        const active = formattedData.filter(n => 
+          !savedDismissed.includes(n.id) && 
+          (!n.event_type || n.recipient_id === userId) 
+        );
+        
         setNotifications(active);
       }
     }
     
     fetchNotifications();
 
-    // Close the inbox if the user clicks anywhere else on the screen
+    // 2. The WebSocket Subscription for Real-Time Book Club Alerts
+    let channel: any;
+    if (userId) {
+      channel = supabase
+        .channel('real-time-notifications')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `recipient_id=eq.${userId}`, // Listen only for this user
+          },
+          (payload) => {
+            const notif = payload.new;
+            
+            // Instantly format the new alert for your UI
+            let title = 'Book Club Activity';
+            let message = 'New activity in your book club.';
+            let action_url = `/club/${notif.club_id}`;
+
+            if (notif.event_type === 'quote_reaction') {
+              title = 'New Reaction';
+              message = 'Someone reacted to your pinned quote.';
+              action_url += '/quotes';
+            } else if (notif.event_type === 'review_reply') {
+              title = 'New Reply';
+              message = 'Someone replied to your chapter review.';
+              action_url += '/discussion';
+            } else if (notif.event_type === 'book_completed') {
+              title = 'Book Completed';
+              message = 'A member just finished the book!';
+            }
+
+            // THE FIX: Explicitly map the properties to satisfy the AppNotification type
+            const formattedNotif: AppNotification = {
+              id: notif.id,
+              title: title,
+              message: message,
+              type: 'book_club',
+              action_url: action_url,
+              created_at: notif.created_at || new Date().toISOString(),
+              event_type: notif.event_type,
+              recipient_id: notif.recipient_id,
+              club_id: notif.club_id
+            };
+
+            setNotifications((prev) => [formattedNotif, ...prev]);
+          }
+        )
+        .subscribe();
+    }
+
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [userId]);
 
-  // 2. The Dismiss Mechanism
   const dismissNotification = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevents accidentally clicking a link while dismissing
+    e.stopPropagation(); 
     const savedDismissed = JSON.parse(localStorage.getItem('dismissed_notifications') || '[]');
     const updatedDismissed = [...savedDismissed, id];
-    
-    // Save to browser memory so it stays gone even if they refresh
     localStorage.setItem('dismissed_notifications', JSON.stringify(updatedDismissed));
-    
-    // Visually remove it from the list instantly
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
@@ -105,9 +192,17 @@ export default function NotificationBell({ userId, isDarkMode }: { userId: strin
                 {notifications.map(notif => (
                   <div key={notif.id} className={`p-5 relative group hover:bg-black/10 transition-colors ${notif.action_url ? 'cursor-pointer hover:bg-sky-900/10' : ''}`} onClick={() => notif.action_url && window.open(notif.action_url, '_blank')}>
                     <div className="flex justify-between items-start mb-3">
-                      <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border ${notif.type === 'alert' ? 'border-red-500 text-red-500 bg-red-500/10' : notif.type === 'new_release' ? 'border-purple-500 text-purple-500 bg-purple-500/10' : 'border-sky-500 text-sky-500 bg-sky-500/10'}`}>
+                      
+                      {/* Dynamic Color Badges */}
+                      <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border 
+                        ${notif.type === 'alert' ? 'border-red-500 text-red-500 bg-red-500/10' 
+                        : notif.type === 'new_release' ? 'border-purple-500 text-purple-500 bg-purple-500/10' 
+                        : notif.type === 'book_club' ? 'border-emerald-500 text-emerald-500 bg-emerald-500/10' 
+                        : 'border-sky-500 text-sky-500 bg-sky-500/10'}`}
+                      >
                         {notif.type.replace('_', ' ')}
                       </span>
+
                       <button onClick={(e) => dismissNotification(notif.id, e)} className="text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1" title="Dismiss">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                       </button>
