@@ -4,17 +4,17 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import Link from 'next/link';
 
-export default function ClubDashboard({ params }: { params: { id: string } }) {
+export default function ClubDashboard({ params }: { params: { clubId: string } }) {
   const [club, setClub] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchClubDetails() {
-      // 1. Fetch the specific club data using the ID in the URL
+      // 1. Fetch the specific club data using the new clubId from the URL
       const { data, error } = await supabase
         .from('clubs')
         .select('*')
-        .eq('id', params.id)
+        .eq('id', params.clubId)
         .single();
         
       if (data) {
@@ -24,7 +24,7 @@ export default function ClubDashboard({ params }: { params: { id: string } }) {
     }
     
     fetchClubDetails();
-  }, [params.id]);
+  }, [params.clubId]);
 
   if (isLoading) {
     return (
