@@ -1,20 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { supabase } from '../../../lib/supabase';
 import Link from 'next/link';
 
-export default function ClubDashboard({ params }: { params: { clubId: string } }) {
+export default function ClubDashboard({ params }: { params: Promise<{ id: string }> }) {
+  // Unwrap the Next.js 15 Promise exactly like we did in the layout
+  const { id } = use(params); 
   const [club, setClub] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchClubDetails() {
-      // 1. Fetch the specific club data using the new clubId from the URL
       const { data, error } = await supabase
         .from('clubs')
         .select('*')
-        .eq('id', params.clubId)
+        .eq('id', id)
         .single();
         
       if (data) {
@@ -24,7 +25,7 @@ export default function ClubDashboard({ params }: { params: { clubId: string } }
     }
     
     fetchClubDetails();
-  }, [params.clubId]);
+  }, [id]);
 
   if (isLoading) {
     return (
@@ -38,29 +39,26 @@ export default function ClubDashboard({ params }: { params: { clubId: string } }
   if (!club) {
     return (
       <div className="text-center py-20 mt-12">
-        <h1 className="text-3xl font-bold text-white mb-4">404 - Club Not Found</h1>
-        <p className="text-gray-400 mb-6">The vault could not locate this reading network.</p>
+        <h1 className="text-3xl font-bold text-white mb-4">404 - Module Not Found</h1>
+        <p className="text-gray-400 mb-6">The vault could not load this specific dashboard module.</p>
         <Link href="/club" className="bg-blue-600 px-6 py-2 rounded text-white font-bold transition hover:bg-blue-500">Return to Hub</Link>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6 mt-8 relative">
-      <Link href="/club" className="text-sm text-blue-400 hover:text-blue-300 font-bold mb-8 inline-block transition-colors">
-        ← Back to Hub
-      </Link>
-      
-      {/* Cinematic Banner */}
-      <div className="bg-gray-800 p-8 md:p-12 rounded-2xl border border-gray-700 shadow-2xl relative overflow-hidden mb-8">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-        
-        <div className="relative z-10">
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-2">{club.name}</h1>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-4">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Invite ID:</span>
-            <code className="bg-gray-900 text-blue-400 px-3 py-1 rounded border border-gray-700 text-sm">{club.id}</code>
-          </div>
+    <div className="relative mt-4">
+      {/* Invite ID Banner */}
+      <div className="bg-gray-800/60 p-6 rounded-2xl border border-gray-700 shadow-lg mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
+        <div>
+          <h2 className="text-lg font-bold text-white mb-1">Club Details</h2>
+          <p className="text-gray-400 text-sm">Share this ID to invite others to your network.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Invite ID:</span>
+          <code className="bg-gray-900 text-blue-400 px-4 py-2 rounded border border-gray-700 text-sm font-mono shadow-inner">
+            {club.id}
+          </code>
         </div>
       </div>
       
