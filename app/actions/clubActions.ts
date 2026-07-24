@@ -50,3 +50,42 @@ export async function createBookClub(formData: FormData) {
   // 4. Instantly route the creator to their new club dashboard
   redirect(`/club/${newClub.id}`);
 }
+
+export async function joinClubById(formData: FormData) {
+  const clubId = formData.get('clubId') as string;
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    throw new Error('You must be signed in to join a club.');
+  }
+
+  // 1. Verify the club actually exists
+  const { data: club, error: clubError } = await supabase
+    .from('clubs')
+    .select('id')
+    .eq('id', clubId)
+    .single();
+
+  if (clubError || !club) {
+    throw new Error('Invalid Club ID. Please check the code and try again.');
+  }
+
+  // 2. Add the user to the club (Supabase will block duplicates based on our Primary Key rule)
+  const { error: joinError } = await supabase
+    .from('club_members')
+    .insert({
+      club_id: club.id,
+      user_id: user.id,
+      reading_format: 'Physical',
+      current_position: 0,
+      total_length: 100
+    });
+
+  if (joinError) {
+    // If they are already in the club, just route them there anyway
+    redirect(`/club/${club.id}`);
+  }
+
+  // 3. Route them to their new dashboard
+  redirect(`/club/${club.id}`);
+}
