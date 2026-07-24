@@ -1,74 +1,137 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { createBookClub } from '../../actions/clubActions';
 import Link from 'next/link';
+import { joinClubById } from '../../actions/clubActions';
+import CopyInviteButton from './../CopyInviteButton';
 
-export default async function CreateClubPage() {
-  const { data: { user } } = await supabase.auth.getUser();
+export default function ClubHub() {
+  const [user, setUser] = useState<any>(null);
+  const [myClubs, setMyClubs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (!user) {
-    return (
-      <div className="max-w-xl mx-auto p-6 mt-12 text-center">
-        <h1 className="text-3xl font-bold text-white mb-4">Access Denied</h1>
-        <p className="text-gray-400 mb-6">You must be logged in to forge a club.</p>
-        <Link href="/login" className="bg-blue-600 px-6 py-2 rounded text-white font-bold">Sign In</Link>
-      </div>
-    );
-  }
+  useEffect(() => {
+    async function fetchHubData() {
+      // 1. Fetch the user session directly from the browser's memory
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        setUser(session.user);
+        
+        // 2. If they are logged in, fetch their specific clubs
+        const { data } = await supabase
+          .from('club_members')
+          .select(`
+            club_id,
+            clubs (
+              id,
+              name,
+              current_book_isbn
+            )
+          `)
+          .eq('user_id', session.user.id);
+          
+        if (data) {
+          setMyClubs(data.map((membership: any) => membership.clubs));
+        }
+      }
+      // Stop the loading spinner once the vault is checked
+      setIsLoading(false);
+    }
+    
+    fetchHubData();
+  }, []);
 
   return (
-    <div className="max-w-xl mx-auto p-6 mt-12">
-      <Link href="/club" className="text-sm text-blue-400 hover:text-blue-300 font-bold mb-6 inline-block">
-        ← Back to Hub
-      </Link>
+    <div className="max-w-5xl mx-auto p-6 mt-8 relative">
       
-      <div className="bg-gray-800 rounded-xl p-8 border border-gray-700 shadow-2xl relative overflow-hidden">
-        {/* Cinematic Header */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
+      {/* 1. Centered Header with Stylized "Club" */}
+      <div className="flex flex-col items-center justify-center mb-12 text-center gap-4">
+        <div>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
+            Book <span className="text-sky-500 italic font-black tracking-tight">Club</span> Hub
+          </h1>
+          <p className="text-gray-400">Your private reading networks.</p>
+        </div>
         
-        <h1 className="text-3xl font-bold text-white mb-2">Forge a New Club</h1>
-        <p className="text-gray-400 mb-8 text-sm">Create a private space for your reading network. You will receive an invite ID immediately after creation.</p>
-        
-        <form action={createBookClub} className="space-y-5">
-          <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Club Name</label>
-            <input 
-              type="text" 
-              name="clubName" 
-              required 
-              placeholder="e.g. The Midnight Readers"
-              className="w-full bg-gray-900 border border-gray-600 rounded-md p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Starting Book ISBN</label>
-            <input 
-              type="text" 
-              name="bookIsbn" 
-              required 
-              placeholder="Enter the 13-digit ISBN"
-              className="w-full bg-gray-900 border border-gray-600 rounded-md p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Target Finish Date</label>
-            <input 
-              type="date" 
-              name="targetDate" 
-              required 
-              className="w-full bg-gray-900 border border-gray-600 rounded-md p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition [color-scheme:dark]"
-            />
-          </div>
-
-          <button 
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 px-4 rounded-md transition shadow-lg mt-6"
+        {user && (
+          <Link 
+            href="/club/create" 
+            className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-6 rounded-md transition shadow-lg shadow-blue-900/20 mt-2"
           >
-            Launch Club
-          </button>
-        </form>
+            + Create Club
+          </Link>
+        )}
       </div>
+
+      {/* 2. Loading State */}
+      {isLoading ? (
+        <div className="text-center py-12">
+          <div className="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-400 font-bold">Accessing the Vault...</p>
+        </div>
+      ) : (
+        <>
+          {/* 3. Centered Search Bar for Joining */}
+          {user && (
+            <div className="max-w-xl mx-auto mb-16 bg-gray-800/50 p-6 rounded-xl border border-gray-700 backdrop-blur-sm">
+              <h2 className="text-sm font-bold text-gray-300 uppercase tracking-widest text-center mb-4">Have an invite code?</h2>
+              <form action={joinClubById} className="flex gap-2">
+                <input 
+                  type="text" 
+                  name="clubId" 
+                  required
+                  placeholder="Paste Unique Club ID here..." 
+                  className="flex-1 bg-gray-900 border border-gray-600 text-white rounded-md p-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono placeholder:font-sans"
+                />
+                <button 
+                  type="submit" 
+                  className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-md transition border border-gray-600"
+                >
+                  Join
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* 4. The Clubs Grid */}
+          <h2 className="text-xl font-bold text-white mb-6 border-b border-gray-700 pb-2">My Active Clubs</h2>
+          
+          {!user ? (
+            <div className="text-center py-12 bg-gray-900/50 rounded-lg border border-gray-800">
+              <p className="text-gray-400 mb-4">Please sign in to view your clubs.</p>
+              <Link href="/login" className="text-blue-400 font-bold hover:underline">Sign In to Continue</Link>
+            </div>
+          ) : myClubs.length === 0 ? (
+            <div className="text-center py-12 bg-gray-900/50 rounded-lg border border-gray-800 border-dashed">
+              <p className="text-gray-400">You haven't joined any clubs yet.</p>
+              <p className="text-sm text-gray-500 mt-2">Paste an invite ID above, or create your own to get started.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {myClubs.map((club) => (
+                <Link 
+                  key={club.id} 
+                  href={`/club/${club.id}`}
+                  className="block bg-gray-800 p-6 rounded-xl border border-gray-700 hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-900/20 transition group relative overflow-hidden"
+                >
+                  {/* Decorative gradient for the card */}
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-blue-500/20 transition"></div>
+                  
+                  <div className="relative z-10">
+                    <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition mb-2">{club.name}</h3>
+                    <p className="text-xs text-gray-400 mb-4 font-mono">Book ISBN: {club.current_book_isbn}</p>
+                    
+                    {/* The new interactive copy button */}
+                    <CopyInviteButton clubId={club.id} />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
