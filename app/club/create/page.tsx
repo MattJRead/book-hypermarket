@@ -32,7 +32,7 @@ export default function CreateClubPage() {
     const targetDate = formData.get('targetDate') as string;
 
     try {
-      // 1. Forge the club using the client session
+      // 1. Forge the club
       const { data: newClub, error: clubError } = await supabase
         .from('clubs')
         .insert({
@@ -44,7 +44,11 @@ export default function CreateClubPage() {
         .select('id')
         .single();
 
-      if (clubError || !newClub) throw new Error('Database rejected club creation.');
+      if (clubError) {
+        console.error("🔥 SUPABASE REJECTION (CLUBS TABLE):", clubError);
+        throw new Error('Database rejected club creation.');
+      }
+      if (!newClub) throw new Error('No club data returned.');
 
       // 2. Add creator to the roster
       const { error: memberError } = await supabase
@@ -57,13 +61,16 @@ export default function CreateClubPage() {
           total_length: 100
         });
 
-      if (memberError) throw new Error('Failed to join roster.');
+      if (memberError) {
+        console.error("🔥 SUPABASE REJECTION (MEMBERS TABLE):", memberError);
+        throw new Error('Failed to join roster.');
+      }
 
       // 3. Instantly route to the new dashboard
       router.push(`/club/${newClub.id}`);
     } catch (error) {
       console.error(error);
-      alert('A network error occurred while forging the club. Please try again.');
+      alert('A network error occurred while forging the club. Check the browser console for exact details.');
       setIsSubmitting(false);
     }
   }
