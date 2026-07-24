@@ -98,7 +98,7 @@ const isDarkMode = theme === 'dark';
                   <span className="bg-emerald-500/20 text-emerald-400 text-xs font-bold px-2 py-1 rounded-md border border-emerald-500/30">TRACKING</span>
                 </div>
                 
-                <div className="w-32 h-48 shrink-0 rounded-md mb-4 shadow-lg flex flex-col items-center justify-center z-10 overflow-hidden relative border border-gray-700 bg-gray-800">
+                <div className="w-32 h-48 shrink-0 rounded-md mb-4 shadow-lg flex flex-col items-center justify-center z-10 overflow relative border border-gray-700 bg-gray-800">
                   {book.cover_image_url && book.cover_image_url !== 'UNAVAILABLE' ? (
                     <Image src={book.cover_image_url} alt={book.title} width={128} height={192} className="w-full h-full object-cover" />
                   ) : (
