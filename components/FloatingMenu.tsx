@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 export default function FloatingMenu() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [isAppearanceOpen, setIsAppearanceOpen] = useState(false); // Added Appearance State
   const [userId, setUserId] = useState<string | null>(null);
   
   const { theme, setTheme } = useTheme();
@@ -25,7 +26,7 @@ export default function FloatingMenu() {
   return (
     <>
       <div className={`fixed bottom-28 left-1/2 -translate-x-1/2 z-40 w-72 rounded-2xl shadow-2xl border overflow-hidden transition-all duration-300 ${isMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'} ${isDarkUI ? 'bg-[#111827] border-gray-800' : 'bg-white border-gray-200'}`}>
-        <div className="flex flex-col max-h-[75vh] overflow-y-auto">
+        <div className="flex flex-col max-h-[75vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-gray-700 [&::-webkit-scrollbar-track]:bg-transparent">
           
           {/* THE SIGNED-IN USER HUB */}
           {userId ? (
@@ -39,10 +40,17 @@ export default function FloatingMenu() {
                 <svg className={`w-4 h-4 transition-transform ${isAccountOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
               </button>
               
-              <div className={`overflow-hidden transition-all bg-black/20 ${isAccountOpen ? 'max-h-64' : 'max-h-0'}`}>
+              {/* Upgraded from max-h-64 to max-h-[500px] to prevent clipping */}
+              <div className={`overflow-hidden transition-all bg-black/20 ${isAccountOpen ? 'max-h-[500px]' : 'max-h-0'}`}>
                 <Link href="/bookshelf" className={`block px-6 py-3 font-bold text-sm text-center border-b transition-colors ${isDarkUI ? 'border-gray-800 text-sky-400 hover:bg-gray-800' : 'border-gray-100 text-sky-600 hover:bg-gray-50'}`}>
                   My Bookshelf
                 </Link>
+                
+                {/* 🔽 INJECTED BOOK CLUB LINK */}
+                <Link href="/club" className={`block px-6 py-3 font-bold text-sm text-center border-b transition-colors ${isDarkUI ? 'border-gray-800 text-indigo-400 hover:bg-gray-800' : 'border-gray-100 text-indigo-600 hover:bg-gray-50'}`}>
+                  My Book Clubs
+                </Link>
+
                 <Link href="/wishlist" className={`block px-6 py-3 font-bold text-sm text-center border-b transition-colors ${isDarkUI ? 'border-gray-800 text-emerald-400 hover:bg-gray-800' : 'border-gray-100 text-emerald-600 hover:bg-gray-50'}`}>
                   My Wishlist
                 </Link>
@@ -72,7 +80,7 @@ export default function FloatingMenu() {
             About Us
           </Link>
 
-          {/* 🔽 INJECTED INSTAGRAM LINK */}
+          {/* INSTAGRAM LINK */}
           <a 
             href="https://www.instagram.com/bookhypermarket/" 
             target="_blank" 
@@ -83,10 +91,18 @@ export default function FloatingMenu() {
             Instagram
           </a>
 
-          {/* 4-TIER THEME SELECTOR */}
-          <div className={`px-4 py-5 ${isDarkUI ? 'bg-black/30' : 'bg-gray-50/50'}`}>
-            <p className={`text-[10px] font-black uppercase tracking-widest mb-3 text-center ${isDarkUI ? 'text-gray-500' : 'text-gray-400'}`}>Appearance</p>
-            <div className="grid grid-cols-2 gap-2">
+          {/* 🔽 UPGRADED APPEARANCE ACCORDION */}
+          <button 
+            type="button"
+            onClick={() => setIsAppearanceOpen(!isAppearanceOpen)} 
+            className={`w-full px-6 py-4 font-bold flex justify-between items-center transition-colors ${isDarkUI ? 'bg-black/30 text-gray-400 hover:bg-gray-800' : 'bg-gray-50/50 text-gray-500 hover:bg-gray-100'}`}
+          >
+            <span className="text-[10px] font-black uppercase tracking-widest">Appearance</span>
+            <svg className={`w-4 h-4 transition-transform ${isAppearanceOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
+          </button>
+          
+          <div className={`overflow-hidden transition-all ${isDarkUI ? 'bg-black/30' : 'bg-gray-50/50'} ${isAppearanceOpen ? 'max-h-[400px]' : 'max-h-0'}`}>
+            <div className="p-4 pt-2 grid grid-cols-2 gap-2">
               
               <button type="button" onClick={() => setTheme('light')} className={`p-3 rounded-xl text-xs font-bold flex flex-col items-center gap-2 transition-all ${theme === 'light' ? 'bg-sky-500 text-white shadow-md ring-2 ring-sky-500 ring-offset-2 ring-offset-gray-900' : isDarkUI ? 'bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-900'}`}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
