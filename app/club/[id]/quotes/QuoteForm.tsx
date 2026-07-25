@@ -29,14 +29,16 @@ export default function QuoteForm({
     const formData = new FormData(e.currentTarget);
     const chapter = parseInt(formData.get('chapter') as string);
     const quote = formData.get('quote') as string;
+    const speaker = formData.get('speaker') as string;
 
     const { error } = await supabase
       .from('club_quotes')
       .insert({
         club_id: clubId,
         user_id: user.id,
-        chapter: chapter, // <-- Perfectly aligned with your database column
+        chapter: chapter,
         quote_text: quote,
+        speaker: speaker || null, // Safely handles the optional input
       });
 
     if (error) {
@@ -63,7 +65,11 @@ export default function QuoteForm({
         </div>
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">The Exact Words</label>
-          <textarea name="quote" required rows={4} className="w-full bg-gray-900 border border-gray-600 rounded-md p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition resize-none"></textarea>
+          <textarea name="quote" required rows={3} className="w-full bg-gray-900 border border-gray-600 rounded-md p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition resize-none"></textarea>
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Who Said It? (Optional)</label>
+          <input type="text" name="speaker" placeholder="e.g. Nanny Ogg" className="w-full bg-gray-900 border border-gray-600 rounded-md p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition" />
         </div>
         <div className="flex gap-4 pt-2">
           <button type="submit" disabled={isSubmitting} className={`flex-1 bg-blue-600 text-white font-bold py-3 px-6 rounded-md transition shadow-lg ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-500'}`}>

@@ -39,12 +39,22 @@ export default function StickyNote({ quote, index }: { quote: any, index: number
     >
       <div className="absolute top-0 right-0 w-6 h-6 bg-black/10 rounded-bl-lg shadow-sm"></div>
       
-      <p style={handwritingStyle} className="text-lg leading-relaxed font-semibold">
-        "{quote.quote_text}"
-      </p>
+      <div className="mb-4">
+        {/* Removed the hardcoded quotes so manual punctuation looks perfect */}
+        <p style={handwritingStyle} className="text-lg leading-relaxed font-semibold">
+          {quote.quote_text}
+        </p>
+        
+        {/* Only renders the speaker line if they actually typed one */}
+        {quote.speaker && (
+          <p style={handwritingStyle} className="text-right text-md font-bold mt-2 opacity-90">
+            - {quote.speaker}
+          </p>
+        )}
+      </div>
       
-      <p style={handwritingStyle} className="text-right text-sm font-black mt-4 opacity-80">
-        - Ch. {quote.chapter || '?'}
+      <p style={handwritingStyle} className="text-right text-sm font-black opacity-70">
+        Ch. {quote.chapter || '?'}
       </p>
     </div>
   );
