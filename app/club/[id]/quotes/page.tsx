@@ -4,10 +4,11 @@ import { supabase } from '../../../../lib/supabase';
 import QuoteForm from './QuoteForm';
 import StickyNote from './StickyNote';
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 
 export default function QuotesPage() {
   const params = useParams();
+  const router = useRouter(); // Required to bypass the cache
   const id = params?.id as string;
   
   const [quotes, setQuotes] = useState<any[]>([]);
@@ -29,6 +30,17 @@ export default function QuotesPage() {
     if (id) fetchQuotes();
   }, [id]);
 
+  // Admin Delete Function
+  const handleDelete = async (quoteId: string) => {
+    if (!confirm("Are you sure you want to tear this note off the board?")) return;
+    
+    await supabase.from('club_quotes').delete().eq('id', quoteId);
+    
+    // Refresh the data instantly
+    fetchQuotes();
+    router.refresh(); 
+  };
+
   if (isLoading) {
     return (
       <div className="text-center py-12 mt-12">
@@ -41,7 +53,6 @@ export default function QuotesPage() {
   return (
     <div className="pb-12 mt-4 relative">
       
-      {/* The Popup Modal Overlay */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="w-full max-w-lg">
@@ -49,7 +60,8 @@ export default function QuotesPage() {
               clubId={id} 
               onSuccess={() => {
                 setIsModalOpen(false);
-                fetchQuotes(); // Instantly displays the new note
+                fetchQuotes(); 
+                router.refresh(); // Forces Next.js to drop the cache and show the new note
               }} 
               onCancel={() => setIsModalOpen(false)} 
             />
@@ -57,7 +69,6 @@ export default function QuotesPage() {
         </div>
       )}
 
-      {/* Centered Header & Button */}
       <div className="text-center mb-8">
         <h2 className="text-3xl font-black text-white mb-6 uppercase tracking-widest border-b border-gray-700 pb-4 inline-block">
           Favorite Quotes
@@ -72,7 +83,6 @@ export default function QuotesPage() {
         </div>
       </div>
 
-      {/* The Corkboard Area */}
       <div className="bg-amber-900 p-6 md:p-10 rounded-xl shadow-[inset_0_0_40px_rgba(0,0,0,0.8)] min-h-[500px] border-[14px] border-[#4a2e15] relative">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 items-start">
           
@@ -82,7 +92,12 @@ export default function QuotesPage() {
             </div>
           ) : (
             quotes.map((quote, index) => (
-              <StickyNote key={quote.id} quote={quote} index={index} />
+              <StickyNote 
+                key={quote.id} 
+                quote={quote} 
+                index={index} 
+                onDelete={() => handleDelete(quote.id)} 
+              />
             ))
           )}
           

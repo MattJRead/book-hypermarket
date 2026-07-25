@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 
-export default function StickyNote({ quote, index }: { quote: any, index: number }) {
+// Added onDelete to the component properties
+export default function StickyNote({ quote, index, onDelete }: { quote: any, index: number, onDelete: () => void }) {
   const [isUnlocked, setIsUnlocked] = useState(false);
 
   const colors = [
@@ -39,13 +40,23 @@ export default function StickyNote({ quote, index }: { quote: any, index: number
     >
       <div className="absolute top-0 right-0 w-6 h-6 bg-black/10 rounded-bl-lg shadow-sm"></div>
       
-      <div className="mb-4">
-        {/* Removed the hardcoded quotes so manual punctuation looks perfect */}
+      {/* Admin Delete Button */}
+      <button 
+        onClick={(e) => { 
+          e.stopPropagation(); 
+          onDelete(); 
+        }} 
+        className="absolute top-2 right-8 text-black/30 hover:text-red-700 transition-colors font-bold text-lg"
+        title="Delete this note"
+      >
+        ✕
+      </button>
+      
+      <div className="mb-4 mt-2">
         <p style={handwritingStyle} className="text-lg leading-relaxed font-semibold">
           {quote.quote_text}
         </p>
         
-        {/* Only renders the speaker line if they actually typed one */}
         {quote.speaker && (
           <p style={handwritingStyle} className="text-right text-md font-bold mt-2 opacity-90">
             - {quote.speaker}
