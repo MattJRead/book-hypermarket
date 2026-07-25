@@ -71,7 +71,8 @@ export default function CreateClubPage() {
 
     const payload: any = {
       name: clubName,
-      owner_id: user.id, // NOTE: Change to 'user_id' or 'created_by' if your database column is named differently
+      // THE FIX: Change this key to perfectly match your database column (e.g., user_id, created_by, or admin_id)
+      user_id: user.id, 
       current_book_isbn: selectedBook.isbn13
     };
 
