@@ -16,6 +16,9 @@ export default function ClubLayout({
   
   const [club, setClub] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // NEW: State to track if there are active polls
+  const [hasActivePoll, setHasActivePoll] = useState(false);
 
   useEffect(() => {
     if (!id) return; // Prevents the vault query from firing before the URL is read
@@ -30,8 +33,20 @@ export default function ClubLayout({
       if (data) setClub(data);
       setIsLoading(false);
     }
+
+    // NEW: Function to check for active polls in the database
+    async function checkPollStatus() {
+      const { count } = await supabase
+        .from('polls') 
+        .select('*', { count: 'exact', head: true })
+        .eq('club_id', id)
+        .eq('is_active', true);
+        
+      if (count && count > 0) setHasActivePoll(true);
+    }
     
     fetchClubDetails();
+    checkPollStatus();
   }, [id]);
 
   if (isLoading) {
@@ -88,6 +103,18 @@ export default function ClubLayout({
             >
               Quote Board
             </Link>
+            
+            {/* THE NEW POLLS TAB WITH NOTIFICATION DOT */}
+            <Link 
+              href={`/club/${id}/polls`} 
+              className={`relative pb-4 transition-colors font-bold ${isActive(`/club/${id}/polls`) ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-white'}`}
+            >
+              Polls
+              {hasActivePoll && (
+                <span className="absolute top-0 -right-3 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+              )}
+            </Link>
+
             <Link 
               href={`/club/${id}/settings`} 
               className={`pb-4 transition-colors font-bold ${isActive(`/club/${id}/settings`) ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-white'}`}
