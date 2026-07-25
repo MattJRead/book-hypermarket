@@ -2,12 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../../lib/supabase';
-import { useRouter } from 'next/navigation';
 
-export default function QuoteForm({ clubId }: { clubId: string }) {
+export default function QuoteForm({ 
+  clubId, 
+  onSuccess, 
+  onCancel 
+}: { 
+  clubId: string, 
+  onSuccess: () => void, 
+  onCancel: () => void 
+}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const router = useRouter();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -21,6 +27,7 @@ export default function QuoteForm({ clubId }: { clubId: string }) {
     setIsSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
+    const chapter = parseInt(formData.get('chapter') as string);
     const quote = formData.get('quote') as string;
 
     const { error } = await supabase
@@ -28,30 +35,41 @@ export default function QuoteForm({ clubId }: { clubId: string }) {
       .insert({
         club_id: clubId,
         user_id: user.id,
+        chapter_number: chapter,
         quote_text: quote,
       });
 
     if (error) {
-      console.error("🔥 SUPABASE REJECTION:", error);
-      alert('Database blocked your submission. Check console for details.');
+      console.error(error);
+      alert('Database blocked your submission.');
+      setIsSubmitting(false);
     } else {
       e.currentTarget.reset();
-      router.refresh();
+      setIsSubmitting(false);
+      onSuccess(); // Triggers the parent page to refresh the board instantly
     }
-    setIsSubmitting(false);
   }
 
   return (
-    <div className="bg-gray-800/60 p-6 rounded-2xl border border-gray-700 shadow-lg backdrop-blur-md mb-8">
-      <h2 className="text-xl font-bold text-white mb-4">Pin a Quote</h2>
+    <div className="bg-gray-800 p-8 rounded-2xl border border-gray-600 shadow-2xl relative">
+      <button onClick={onCancel} type="button" className="absolute top-4 right-5 text-gray-400 hover:text-white font-bold text-xl">✕</button>
+      
+      <h2 className="text-xl font-bold text-white mb-6">Write a Sticky Note</h2>
+      
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Quote</label>
-          <textarea name="quote" required rows={3} placeholder="The exact words..." className="w-full bg-gray-900 border border-gray-600 rounded-md p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition resize-none"></textarea>
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Found in Chapter</label>
+          <input type="number" name="chapter" required min="1" className="w-full bg-gray-900 border border-gray-600 rounded-md p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition" />
         </div>
-        <button type="submit" disabled={isSubmitting} className={`bg-blue-600 text-white font-bold py-2 px-6 rounded-md transition ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-500'}`}>
-          {isSubmitting ? 'Pinning...' : 'Pin Quote'}
-        </button>
+        <div>
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">The Exact Words</label>
+          <textarea name="quote" required rows={4} className="w-full bg-gray-900 border border-gray-600 rounded-md p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition resize-none"></textarea>
+        </div>
+        <div className="flex gap-4 pt-2">
+          <button type="submit" disabled={isSubmitting} className={`flex-1 bg-blue-600 text-white font-bold py-3 px-6 rounded-md transition shadow-lg ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-500'}`}>
+            {isSubmitting ? 'Pinning...' : 'Pin Quote'}
+          </button>
+        </div>
       </form>
     </div>
   );
