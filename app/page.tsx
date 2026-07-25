@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { supabase } from '../lib/supabase';
 import FloatingMenu from '../components/FloatingMenu';
 import { SpeedInsights } from "@vercel/speed-insights/next"
@@ -54,6 +53,15 @@ const bookshopSpotlight = [
   { id: 'b-4', title: 'Paperback Fiction', description: 'The latest and greatest in paperback fiction.', link: 'https://tidd.ly/4eLMHyF', color: 'bg-teal-700' },
   { id: 'b-5', title: 'Gift Cards', description: 'The perfect gift for any book lover.', link: 'https://tidd.ly/4vwmStt', color: 'bg-teal-700' },
   { id: 'b-6', title: 'E-Books', description: 'Instantly download digital copies while still funneling profit directly to local shops.', link: 'https://tidd.ly/4f5kiEV', color: 'bg-teal-800' }
+];
+
+const waterstonesSpotlight = [
+  { id: 'w-1', title: 'Bestsellers', description: 'The official Waterstones top titles across all genres.', link: 'https://www.awin1.com/cread.php?awinmid=3787&awinaffid=2934999&p=https%3A%2F%2Fwww.waterstones.com%2Fcampaign%2Fbestsellers', color: 'bg-cyan-700' },
+  { id: 'w-2', title: 'Signed & Special Editions', description: 'Exclusive slipcases, sprayed edges, and signed copies.', link: 'https://www.awin1.com/cread.php?awinmid=3787&awinaffid=2934999&p=https%3A%2F%2Fwww.waterstones.com%2Fcampaign%2Fspecial-editions', color: 'bg-cyan-800' },
+  { id: 'w-3', title: 'Books of the Month', description: 'Hand-picked fiction, non-fiction, and children’s books of the month.', link: 'https://www.awin1.com/cread.php?awinmid=3787&awinaffid=2934999&p=https%3A%2F%2Fwww.waterstones.com%2Fcampaign%2Fbooks-of-the-month', color: 'bg-cyan-900' },
+  { id: 'w-4', title: 'Pre-orders', description: 'Secure the most anticipated upcoming book releases.', link: 'https://www.awin1.com/cread.php?awinmid=3787&awinaffid=2934999&p=https%3A%2F%2Fwww.waterstones.com%2Fcampaign%2Fcoming-soon', color: 'bg-cyan-700' },
+  { id: 'w-5', title: 'Fiction Highlights', description: 'Discover the latest and greatest in contemporary fiction.', link: 'https://www.awin1.com/cread.php?awinmid=3787&awinaffid=2934999&p=https%3A%2F%2Fwww.waterstones.com%2Fcategory%2Ffiction', color: 'bg-cyan-800' },
+  { id: 'w-6', title: 'Gifts & Stationery', description: 'Perfect literary gifts, premium notebooks, and reading accessories.', link: 'https://www.awin1.com/cread.php?awinmid=3787&awinaffid=2934999&p=https%3A%2F%2Fwww.waterstones.com%2Fcategory%2Fstationery-and-gifts', color: 'bg-cyan-900' }
 ];
 
 function PartnerCarousel({ title, subtitle, badge, badgeColor, items, isDarkMode }: { title: string; subtitle: string; badge: string; badgeColor: string; items: any[]; isDarkMode: boolean }) {
@@ -139,12 +147,15 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
   };
 
   const titleSearchQuery = encodeURIComponent(book.title);
+  const myAwinPublisherId = "2934999"; 
   
-  const waterstonesLink = `https://www.waterstones.com/books/search/term/${titleSearchQuery}`;
+  const waterstonesMerchantId = "3787";
+  const rawWaterstonesUrl = `https://www.waterstones.com/books/search/term/${titleSearchQuery}`;
+  const waterstonesLink = `https://www.awin1.com/cread.php?awinmid=${waterstonesMerchantId}&awinaffid=${myAwinPublisherId}&p=${encodeURIComponent(rawWaterstonesUrl)}`;
+  
   const blackwellsLink = `https://blackwells.co.uk/bookshop/search/?keyword=${titleSearchQuery}`;
   const amazonLink = `https://www.amazon.co.uk/s?k=${titleSearchQuery}&tag=bookhypermarket-21`;
   const ebayLink = `https://www.ebay.co.uk/sch/i.html?_nkw=${titleSearchQuery}&mkcid=1&mkrid=710-53481-19255-0&siteid=3&campid=5339156569&toolid=10001&mkevt=1`;
-  const myAwinPublisherId = "2934999"; 
   const bookshopAwinMerchantId = "62675"; 
   const rawBookshopUrl = `https://uk.bookshop.org/search?keywords=${book.isbn13 || titleSearchQuery}`;
   const bookshopLink = `https://www.awin1.com/cread.php?awinmid=${bookshopAwinMerchantId}&awinaffid=${myAwinPublisherId}&p=${encodeURIComponent(rawBookshopUrl)}`;
@@ -199,7 +210,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
   ];
 
   if (isKidsBook) {
-    const myAwinPublisherId = "2934999"; 
     const scholasticAwinMerchantId = "2957"; 
     const rawScholasticUrl = `https://shop.scholastic.co.uk/search/search?search%5Bquery%5D=${titleSearchQuery}`;
     const awinTrackingLink = `https://www.awin1.com/cread.php?awinmid=${scholasticAwinMerchantId}&awinaffid=${myAwinPublisherId}&p=${encodeURIComponent(rawScholasticUrl)}`;
@@ -275,7 +285,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     setIsWishlistUpdating(false);
   };
 
-  // GEO STEP 3: Dynamic JSON-LD AI Receipt
   const bookJsonLd = {
     "@context": "https://schema.org",
     "@type": "Book",
@@ -289,7 +298,6 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
 
   return (
     <>
-      {/* 🔽 THE FIX: Kept safely outside the flex container to prevent Safari/WebKit layout stretching bugs */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(bookJsonLd) }}
@@ -306,9 +314,17 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
           )}
 
           <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center justify-center"><svg className="w-8 h-8 text-white drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg></div>
-          <Image src="/fox-placeholder.png" alt="Loading placeholder" width={80} height={120} className={`absolute object-contain z-10 transition-opacity duration-300 ${imageStatus === 'loaded' ? 'opacity-0' : 'opacity-100'}`} />
+          
+          <img src="/fox-placeholder.png" alt="Loading placeholder" className={`absolute w-16 h-auto object-contain z-10 transition-opacity duration-300 ${imageStatus === 'loaded' ? 'opacity-0' : 'opacity-100'}`} />
+          
           {book.cover_image_url && book.cover_image_url !== 'UNAVAILABLE' && (
-            <Image src={book.cover_image_url.replace('http:', 'https:')} alt={`Cover of ${book.title}`} fill sizes="128px" className={`absolute object-cover z-20 transition-opacity duration-500 ${imageStatus === 'loaded' ? 'opacity-100' : 'opacity-0'}`} onLoad={() => setImageStatus('loaded')} onError={() => setImageStatus('error')} />
+            <img 
+              src={book.cover_image_url.replace('http:', 'https:')} 
+              alt={`Cover of ${book.title}`} 
+              className={`absolute w-full h-full object-cover z-20 transition-opacity duration-500 ${imageStatus === 'loaded' ? 'opacity-100' : 'opacity-0'}`} 
+              onLoad={() => setImageStatus('loaded')} 
+              onError={() => setImageStatus('error')} 
+            />
           )}
         </div>
         
@@ -352,9 +368,9 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
             <button onClick={() => setIsCoverModalOpen(false)} className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-red-500/80 text-white transition-colors z-30" title="Close Modal"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"/></svg></button>
             <div className={`relative w-48 h-72 md:w-56 md:h-80 rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] mb-6 border ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-100'}`}>
               {book.cover_image_url && book.cover_image_url !== 'UNAVAILABLE' ? (
-                <Image src={book.cover_image_url.replace('http:', 'https:')} alt={`Cover of ${book.title}`} fill sizes="256px" className="object-cover" />
+                <img src={book.cover_image_url.replace('http:', 'https:')} alt={`Cover of ${book.title}`} className="absolute w-full h-full object-cover" />
               ) : (
-                <Image src="/fox-placeholder.png" alt="Placeholder" fill sizes="256px" className="object-contain p-8" />
+                <img src="/fox-placeholder.png" alt="Placeholder" className="absolute inset-0 w-full h-full object-contain p-8" />
               )}
             </div>
             <h2 className="text-2xl font-black text-center mb-2 leading-tight drop-shadow-md">{book.title}</h2>
@@ -658,7 +674,6 @@ export default function Home() {
   };
   
   return (
-    ///{* 🔽 THE FIX 2: Removed 'overflow-hidden' from main wrapper to restore page scrolling *}///
     <main className={`min-h-screen flex flex-col py-12 transition-colors duration-500 overflow-x-hidden ${themeStyles}`}>      
       <NotificationBell userId={userId} isDarkMode={isDarkMode} />
       <header className="flex justify-center items-center mb-12 w-full relative">
@@ -771,6 +786,9 @@ export default function Home() {
                   }} 
                   isDarkMode={isDarkMode} 
                 />
+
+                {/* NEW SLOT: WATERSTONES SPOTLIGHT CAROUSEL */}
+                <PartnerCarousel title="Waterstones Spotlight" subtitle="The UK's leading high street bookseller." badge="W" badgeColor="bg-cyan-800" items={waterstonesSpotlight} isDarkMode={isDarkMode} />
 
                 {/* SLOT 1: SCHOLASTIC SPOTLIGHT CAROUSEL */}
                 <PartnerCarousel title="Scholastic Spotlight" subtitle="The global leader in children's publishing." badge="S" badgeColor="bg-red-600" items={scholasticSpotlight} isDarkMode={isDarkMode} />
