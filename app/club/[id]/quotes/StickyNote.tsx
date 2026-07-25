@@ -1,8 +1,17 @@
 'use client';
 import { useState } from 'react';
 
-// Added onDelete to the component properties
-export default function StickyNote({ quote, index, onDelete }: { quote: any, index: number, onDelete: () => void }) {
+export default function StickyNote({ 
+  quote, 
+  index, 
+  onDelete, 
+  canDelete // <-- The new security property
+}: { 
+  quote: any, 
+  index: number, 
+  onDelete: () => void, 
+  canDelete: boolean 
+}) {
   const [isUnlocked, setIsUnlocked] = useState(false);
 
   const colors = [
@@ -40,17 +49,19 @@ export default function StickyNote({ quote, index, onDelete }: { quote: any, ind
     >
       <div className="absolute top-0 right-0 w-6 h-6 bg-black/10 rounded-bl-lg shadow-sm"></div>
       
-      {/* Admin Delete Button */}
-      <button 
-        onClick={(e) => { 
-          e.stopPropagation(); 
-          onDelete(); 
-        }} 
-        className="absolute top-2 right-8 text-black/30 hover:text-red-700 transition-colors font-bold text-lg"
-        title="Delete this note"
-      >
-        ✕
-      </button>
+      {/* The Admin/Owner Delete Button - Only renders if authorized */}
+      {canDelete && (
+        <button 
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            onDelete(); 
+          }} 
+          className="absolute top-2 right-8 text-black/30 hover:text-red-700 transition-colors font-bold text-lg z-10"
+          title="Delete this note"
+        >
+          ✕
+        </button>
+      )}
       
       <div className="mb-4 mt-2">
         <p style={handwritingStyle} className="text-lg leading-relaxed font-semibold">

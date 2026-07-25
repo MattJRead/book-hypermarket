@@ -8,14 +8,32 @@ import { useParams, useRouter } from 'next/navigation';
 
 export default function QuotesPage() {
   const params = useParams();
-  const router = useRouter(); // Required to bypass the cache
+  const router = useRouter(); 
   const id = params?.id as string;
   
   const [quotes, setQuotes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Security States
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [clubAdminId, setClubAdminId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // 1. Identify the logged-in user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) setCurrentUser(session.user);
+    });
+  }, []);
 
   const fetchQuotes = async () => {
+    // 2. Identify the club admin (Safely checks common column names)
+    const { data: club } = await supabase.from('clubs').select('*').eq('id', id).single();
+    if (club) {
+      setClubAdminId(club.owner_id || club.created_by || club.admin_id || club.user_id);
+    }
+
+    // 3. Fetch the sticky notes
     const { data } = await supabase
       .from('club_quotes')
       .select('*')
@@ -30,15 +48,18 @@ export default function QuotesPage() {
     if (id) fetchQuotes();
   }, [id]);
 
-  // Admin Delete Function
   const handleDelete = async (quoteId: string) => {
     if (!confirm("Are you sure you want to tear this note off the board?")) return;
     
-    await supabase.from('club_quotes').delete().eq('id', quoteId);
+    const { error } = await supabase.from('club_quotes').delete().eq('id', quoteId);
     
-    // Refresh the data instantly
-    fetchQuotes();
-    router.refresh(); 
+    if (error) {
+      console.error("Vault Rejection:", error);
+      alert("The database blocked this deletion. You may not have permission.");
+    } else {
+      fetchQuotes();
+      router.refresh(); 
+    }
   };
 
   if (isLoading) {
@@ -61,7 +82,7 @@ export default function QuotesPage() {
               onSuccess={() => {
                 setIsModalOpen(false);
                 fetchQuotes(); 
-                router.refresh(); // Forces Next.js to drop the cache and show the new note
+                router.refresh(); 
               }} 
               onCancel={() => setIsModalOpen(false)} 
             />
@@ -91,14 +112,22 @@ export default function QuotesPage() {
               The board is empty. Pin the first page flag.
             </div>
           ) : (
-            quotes.map((quote, index) => (
-              <StickyNote 
-                key={quote.id} 
-                quote={quote} 
-                index={index} 
-                onDelete={() => handleDelete(quote.id)} 
-              />
-            ))
+            quotes.map((quote, index) => {
+              // The precise logic determining if the trash can should be rendered
+              const isNoteOwner = currentUser?.id === quote.user_id;
+              const isClubAdmin = currentUser?.id === clubAdminId;
+              const canDelete = isNoteOwner || isClubAdmin;
+
+              return (
+                <StickyNote 
+                  key={quote.id} 
+                  quote={quote} 
+                  index={index} 
+                  canDelete={canDelete}
+                  onDelete={() => handleDelete(quote.id)} 
+                />
+              );
+            })
           )}
           
         </div>
