@@ -35,7 +35,7 @@ export default function QuoteForm({
       .insert({
         club_id: clubId,
         user_id: user.id,
-        chapter_number: chapter,
+        chapter: chapter, // <-- Perfectly aligned with your database column
         quote_text: quote,
       });
 
@@ -46,7 +46,7 @@ export default function QuoteForm({
     } else {
       e.currentTarget.reset();
       setIsSubmitting(false);
-      onSuccess(); // Triggers the parent page to refresh the board instantly
+      onSuccess();
     }
   }
 
