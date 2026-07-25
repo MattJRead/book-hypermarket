@@ -1,40 +1,39 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import Link from 'next/link';
+import { usePathname, useParams } from 'next/navigation';
 
 export default function ClubLayout({
-  children,
-  params
+  children
 }: {
   children: React.ReactNode;
-  params: Promise<{ id: string }>;
 }) {
-  // Use React's hook to unwrap the Next.js 15 params promise
-  const { id } = use(params);
+  const params = useParams();
+  const id = params?.id as string; // Safely extracts the ID from the URL directly
+  const pathname = usePathname(); 
+  
   const [club, setClub] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!id) return; // Prevents the vault query from firing before the URL is read
+
     async function fetchClubDetails() {
-      // Fetch the club details using the securely authenticated client
       const { data } = await supabase
         .from('clubs')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (data) {
-        setClub(data);
-      }
+      if (data) setClub(data);
       setIsLoading(false);
     }
     
     fetchClubDetails();
   }, [id]);
 
-  // Clean loading state while checking the vault
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -43,7 +42,6 @@ export default function ClubLayout({
     );
   }
 
-  // If the club truly doesn't exist, show our custom error instead of a system crash
   if (!club) {
     return (
       <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center text-center p-6">
@@ -56,41 +54,49 @@ export default function ClubLayout({
     );
   }
 
-  // Replace this later with your actual book cover fetch logic
-  const cinematicBackgroundUrl = `https://your-image-source.com/${club.current_book_isbn}.jpg`;
+  // Helper function to dynamically check if a tab is currently active
+  const isActive = (path: string) => pathname === path;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white relative overflow-hidden">
       
-      {/* The Cinematic Blurred Background */}
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center opacity-30 blur-2xl"
-        style={{ backgroundImage: `url('${cinematicBackgroundUrl}')`, backgroundColor: '#1f2937' }}
+        style={{ backgroundColor: '#1f2937' }}
       />
       
-      {/* The Main Content Wrapper */}
       <div className="relative z-10 max-w-5xl mx-auto p-6 mt-8">
-        <header className="mb-8 border-b border-gray-700 pb-4">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">{club.name}</h1>
+        <header className="mb-8 border-b border-gray-700">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">{club.name}</h1>
           
-          {/* The Internal Tab Navigation */}
-          <nav className="flex space-x-6 text-sm font-medium">
-            <Link href={`/club/${id}`} className="text-blue-400 hover:text-blue-300">
+          <nav className="flex space-x-6 text-sm">
+            <Link 
+              href={`/club/${id}`} 
+              className={`pb-4 transition-colors font-bold ${isActive(`/club/${id}`) ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-white'}`}
+            >
               Dashboard
             </Link>
-            <Link href={`/club/${id}/discussion`} className="text-gray-400 hover:text-white transition">
+            <Link 
+              href={`/club/${id}/discussion`} 
+              className={`pb-4 transition-colors font-bold ${isActive(`/club/${id}/discussion`) ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-white'}`}
+            >
               Discussion
             </Link>
-            <Link href={`/club/${id}/quotes`} className="text-gray-400 hover:text-white transition">
+            <Link 
+              href={`/club/${id}/quotes`} 
+              className={`pb-4 transition-colors font-bold ${isActive(`/club/${id}/quotes`) ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-white'}`}
+            >
               Quote Board
             </Link>
-            <Link href={`/club/${id}/settings`} className="text-gray-400 hover:text-white transition">
+            <Link 
+              href={`/club/${id}/settings`} 
+              className={`pb-4 transition-colors font-bold ${isActive(`/club/${id}/settings`) ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-white'}`}
+            >
               Settings
             </Link>
           </nav>
         </header>
 
-        {/* The specific tabs (Dashboard, Quotes, etc) will render exactly here */}
         <main>
           {children}
         </main>

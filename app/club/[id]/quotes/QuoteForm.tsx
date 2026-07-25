@@ -1,55 +1,56 @@
 'use client';
 
-import { useState } from 'react';
-import { addQuote } from '../../../actions/quoteActions';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../../../lib/supabase';
+import { useRouter } from 'next/navigation';
 
 export default function QuoteForm({ clubId }: { clubId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) setUser(session.user);
+    });
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!user) return alert('You must be signed in to post.');
+    setIsSubmitting(true);
+
+    const formData = new FormData(e.currentTarget);
+    const quote = formData.get('quote') as string;
+
+    const { error } = await supabase
+      .from('club_quotes')
+      .insert({
+        club_id: clubId,
+        user_id: user.id,
+        quote_text: quote,
+      });
+
+    if (error) {
+      console.error("🔥 SUPABASE REJECTION:", error);
+      alert('Database blocked your submission. Check console for details.');
+    } else {
+      e.currentTarget.reset();
+      router.refresh();
+    }
+    setIsSubmitting(false);
+  }
 
   return (
-    <div className="bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-xl border border-gray-700 mb-8">
-      <h2 className="text-2xl font-bold mb-4 text-white">Pin a Quote</h2>
-      
-      <form 
-        id="quote-form"
-        action={async (formData) => {
-          setIsSubmitting(true);
-          await addQuote(formData);
-          setIsSubmitting(false);
-          (document.getElementById('quote-form') as HTMLFormElement).reset();
-        }} 
-        className="space-y-4"
-      >
-        <input type="hidden" name="clubId" value={clubId} />
-
-        <div className="flex gap-4">
-          <div className="flex-none w-32">
-            <label className="block text-xs text-gray-400 uppercase font-bold mb-1">Chapter</label>
-            <input type="number" name="chapter" min="1" required className="w-full bg-gray-900 border border-gray-600 text-white rounded-md p-2 focus:ring-blue-500 outline-none" />
-          </div>
-          <div className="flex-1">
-            <label className="block text-xs text-gray-400 uppercase font-bold mb-1">Who said it? (Optional)</label>
-            <input type="text" name="attribution" placeholder="e.g. Gandalf" className="w-full bg-gray-900 border border-gray-600 text-white rounded-md p-2 focus:ring-blue-500 outline-none" />
-          </div>
-        </div>
-
+    <div className="bg-gray-800/60 p-6 rounded-2xl border border-gray-700 shadow-lg backdrop-blur-md mb-8">
+      <h2 className="text-xl font-bold text-white mb-4">Pin a Quote</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs text-gray-400 uppercase font-bold mb-1">The Quote</label>
-          <textarea 
-            name="quoteText" 
-            required 
-            rows={3}
-            placeholder="Type the exact quote here..." 
-            className="w-full bg-gray-900 border border-gray-600 text-white rounded-md p-2 focus:ring-blue-500 outline-none resize-none"
-          ></textarea>
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Quote</label>
+          <textarea name="quote" required rows={3} placeholder="The exact words..." className="w-full bg-gray-900 border border-gray-600 rounded-md p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition resize-none"></textarea>
         </div>
-
-        <button 
-          type="submit" 
-          disabled={isSubmitting}
-          className="bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-bold py-2 px-6 rounded-md transition disabled:opacity-50"
-        >
-          {isSubmitting ? 'Pinning...' : 'Pin to Board'}
+        <button type="submit" disabled={isSubmitting} className={`bg-blue-600 text-white font-bold py-2 px-6 rounded-md transition ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-500'}`}>
+          {isSubmitting ? 'Pinning...' : 'Pin Quote'}
         </button>
       </form>
     </div>
