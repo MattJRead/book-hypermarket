@@ -82,18 +82,30 @@ export default function PollsPage() {
     if (!pollEndDate) return alert("You must set an end date and time.");
     
     setIsCreating(true);
-    await supabase.from('polls').insert({
+
+    const payload = {
       club_id: id,
       creator_id: user.id,
       question: question,
       options: optionsList,
       ends_at: new Date(pollEndDate).toISOString()
-    });
+    };
 
+    const { data, error } = await supabase.from('polls').insert(payload).select();
+
+    setIsCreating(false);
+
+    // THE NET: If the database rejects it, halt the process and report the exact reason.
+    if (error) {
+      console.error("Poll Creation Vault Rejection:", error);
+      alert(`The vault rejected the poll: ${error.message}`);
+      return; // Stops the code from clearing your typed text
+    }
+
+    // Only clear the form if the deployment was 100% successful
     setQuestion('');
     setOptionsList([]);
     setPollEndDate('');
-    setIsCreating(false);
     fetchPollData();
   };
 
