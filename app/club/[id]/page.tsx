@@ -52,16 +52,27 @@ export default function ClubDashboard() {
 
   async function fetchBookData(isbn: string) {
     try {
-      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${isbn}`);
+      // First, query your robust internal search engine to perfectly match the creation form
+      const res = await fetch(`/api/live-search?q=${encodeURIComponent(isbn)}`);
       const data = await res.json();
-      if (data.items && data.items.length > 0) {
-        setBookTitle(data.items[0].volumeInfo.title);
-        // Extract the cover image safely
-        if (data.items[0].volumeInfo.imageLinks?.thumbnail) {
-          setBookCover(data.items[0].volumeInfo.imageLinks.thumbnail.replace('http:', 'https:'));
+      
+      if (data.success && data.books && data.books.length > 0) {
+        setBookTitle(data.books[0].title);
+        if (data.books[0].cover_image_url && data.books[0].cover_image_url !== 'UNAVAILABLE') {
+          setBookCover(data.books[0].cover_image_url.replace('http:', 'https:'));
         }
       } else {
-        setBookTitle('Unknown Title (Check ISBN)');
+        // Fallback to Google Books directly as a safety net
+        const gbRes = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${isbn}`);
+        const gbData = await gbRes.json();
+        if (gbData.items && gbData.items.length > 0) {
+          setBookTitle(gbData.items[0].volumeInfo.title);
+          if (gbData.items[0].volumeInfo.imageLinks?.thumbnail) {
+            setBookCover(gbData.items[0].volumeInfo.imageLinks.thumbnail.replace('http:', 'https:'));
+          }
+        } else {
+          setBookTitle('Unknown Title (Check ISBN)');
+        }
       }
     } catch (error) {
       setBookTitle('Failed to load title from global network');
