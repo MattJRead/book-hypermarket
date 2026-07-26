@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 
 type Book = { 
   id: string; 
@@ -37,7 +36,7 @@ export default function CreateClubPage() {
     });
   }, []);
 
-  // The Live Search Engine (Mirrors your Main Storefront)
+  // The Live Search Engine
   useEffect(() => {
     const searchBooks = async () => {
       if (searchQuery.trim().length < 3) {
@@ -49,7 +48,6 @@ export default function CreateClubPage() {
         const res = await fetch(`/api/live-search?q=${encodeURIComponent(searchQuery)}`);
         const data = await res.json();
         if (data.success && data.books) {
-          // Filter out books without ISBNs to ensure database stability
           setSearchResults(data.books.filter((b: Book) => b.isbn13).slice(0, 6));
         }
       } catch (e) {
@@ -69,10 +67,10 @@ export default function CreateClubPage() {
     
     setIsSubmitting(true);
 
+    // EXACT MATCH PAYLOAD
     const payload: any = {
       name: clubName,
-      // THE FIX: Change this key to perfectly match your database column (e.g., user_id, created_by, or admin_id)
-      user_id: user.id, 
+      creator_id: user.id, // Strictly uses creator_id to match your database
       current_book_isbn: selectedBook.isbn13
     };
 
