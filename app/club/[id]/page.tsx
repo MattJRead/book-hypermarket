@@ -85,34 +85,35 @@ export default function ClubDashboard() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700 col-span-1 md:col-span-2 backdrop-blur-sm relative overflow-hidden flex flex-col sm:flex-row gap-6">
+        
+        {/* CENTER-STACKED CURRENT READ MODULE */}
+        <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700 col-span-1 md:col-span-2 backdrop-blur-sm relative overflow-hidden flex flex-col items-center text-center">
           <div className="absolute bottom-0 left-0 h-1 bg-blue-500 w-full opacity-50"></div>
           
-          {/* NEW: Display the fetched cover image */}
-          <div className="shrink-0">
+          <div className="w-full flex justify-between items-end border-b border-gray-700 pb-2 mb-8">
+            <h2 className="text-xl font-bold text-white">Current Read</h2>
+            <span className="text-sm text-sky-400 font-mono bg-sky-900/30 px-2 py-1 rounded shadow-inner">{countdown}</span>
+          </div>
+
+          <div className="flex flex-col items-center justify-center flex-1 w-full">
             {bookCover ? (
-              <img src={bookCover} alt="Cover" className="w-32 md:w-40 h-auto rounded shadow-[0_0_15px_rgba(0,0,0,0.5)] border border-gray-600 object-cover" />
+              <img src={bookCover} alt="Cover" className="w-32 md:w-48 h-auto rounded shadow-[0_0_20px_rgba(0,0,0,0.6)] border border-gray-600 object-cover mb-6 hover:scale-105 transition-transform" />
             ) : (
-              <div className="w-32 md:w-40 h-48 md:h-60 bg-gray-900 rounded border border-gray-700 flex items-center justify-center shadow-lg">
+              <div className="w-32 md:w-48 h-48 md:h-72 bg-gray-900 rounded border border-gray-700 flex items-center justify-center shadow-lg mb-6">
                 <span className="text-gray-600 font-bold text-xs uppercase text-center px-2">Cover Unavailable</span>
               </div>
             )}
+            
+            <h3 className="text-2xl md:text-3xl font-black text-white mb-3 leading-tight max-w-md">{bookTitle}</h3>
+            <p className="text-gray-400 text-sm font-mono bg-gray-900/50 px-4 py-1.5 rounded-full border border-gray-700 shadow-inner mb-6">
+              ISBN: {club.current_book_isbn || 'Not Set'}
+            </p>
           </div>
-
-          <div className="flex-1 flex flex-col">
-            <h2 className="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2 flex justify-between items-end">
-              Current Read
-              <span className="text-sm text-sky-400 font-mono bg-sky-900/30 px-2 py-1 rounded shadow-inner">{countdown}</span>
-            </h2>
-            
-            <h3 className="text-2xl md:text-3xl font-black text-white mb-1 leading-tight">{bookTitle}</h3>
-            <p className="text-gray-400 text-sm font-mono mb-4 mt-2">ISBN: {club.current_book_isbn || 'Not Set'}</p>
-            
-            <div className="mt-auto">
-              <p className="text-gray-300 text-sm bg-gray-900/50 inline-block px-3 py-2 rounded border border-gray-700">
-                <strong className="text-white">{dateLabel}:</strong> {club.target_finish_date || club.start_date ? new Date(club.target_finish_date || club.start_date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Flexible'}
-              </p>
-            </div>
+          
+          <div className="mt-4 w-full pt-4 border-t border-gray-700/50">
+            <p className="text-gray-300 text-sm">
+              <strong className="text-white">{dateLabel}:</strong> {club.target_finish_date || club.start_date ? new Date(club.target_finish_date || club.start_date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Flexible Timeline'}
+            </p>
           </div>
         </div>
         

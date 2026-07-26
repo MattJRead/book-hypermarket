@@ -131,22 +131,21 @@ export default function CreateClubPage() {
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Starting Book</label>
               
               {selectedBook ? (
-                <div className="bg-[#0f172a] border border-emerald-500/50 rounded-lg p-3 flex items-center justify-between shadow-[inset_0_0_20px_rgba(16,185,129,0.05)] relative overflow-hidden">
-                  <div className="flex items-center gap-4 z-10">
-                    <div className="w-12 h-16 relative rounded overflow-hidden shadow-md shrink-0 border border-gray-700">
-                      <img 
-                        src={(selectedBook.cover_image_url && selectedBook.cover_image_url !== 'UNAVAILABLE') ? selectedBook.cover_image_url.replace('http:', 'https:') : '/fox-placeholder.png'} 
-                        alt="Cover" 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-white leading-tight line-clamp-1">{selectedBook.title}</h3>
-                      <p className="text-xs text-gray-400 line-clamp-1">{selectedBook.author}</p>
-                      <p className="text-xs text-emerald-400 font-mono mt-1">ISBN: {selectedBook.isbn13}</p>
-                    </div>
+                <div className="bg-[#0f172a] border border-emerald-500/50 rounded-lg p-6 flex flex-col items-center justify-center text-center shadow-[inset_0_0_20px_rgba(16,185,129,0.05)] relative overflow-hidden">
+                  <div className="w-24 md:w-32 h-auto relative rounded overflow-hidden shadow-lg border border-gray-700 mb-4">
+                    <img 
+                      src={(selectedBook.cover_image_url && selectedBook.cover_image_url !== 'UNAVAILABLE') ? selectedBook.cover_image_url.replace('http:', 'https:') : '/fox-placeholder.png'} 
+                      alt="Cover" 
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  <button type="button" onClick={() => setSelectedBook(null)} className="text-gray-400 hover:text-red-400 font-bold text-sm px-3 py-2 z-10 transition-colors">✕</button>
+                  <h3 className="font-bold text-xl text-white leading-tight mb-1 max-w-sm">{selectedBook.title}</h3>
+                  <p className="text-sm text-gray-400 mb-3">{selectedBook.author}</p>
+                  <p className="text-xs text-emerald-400 font-mono mb-6 bg-emerald-900/20 px-3 py-1 rounded-full border border-emerald-800/50">ISBN: {selectedBook.isbn13}</p>
+                  
+                  <button type="button" onClick={() => setSelectedBook(null)} className="text-gray-300 hover:text-white font-bold text-sm px-6 py-2 bg-gray-800 rounded-full transition-colors hover:bg-red-600 shadow-md">
+                    Change Book
+                  </button>
                 </div>
               ) : (
                 <div className="relative">

@@ -27,13 +27,12 @@ export default function QuotesPage() {
   }, []);
 
   const fetchQuotes = async () => {
-    // 2. Identify the club admin (Safely checks common column names)
+    // Check the creator_id column to grant admin rights
     const { data: club } = await supabase.from('clubs').select('*').eq('id', id).single();
     if (club) {
-      setClubAdminId(club.owner_id || club.created_by || club.admin_id || club.user_id);
+      setClubAdminId(club.creator_id); // <-- Aligned with your database
     }
 
-    // 3. Fetch the sticky notes
     const { data } = await supabase
       .from('club_quotes')
       .select('*')
