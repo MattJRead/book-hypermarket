@@ -132,7 +132,7 @@ export default function ProfilePage() {
       updated_at: new Date().toISOString()
     });
     setIsSaving(false);
-    alert("Profile secured in the vault, My Lord.");
+    alert("Profile Successfully secured in the vault.");
   };
 
   if (isLoading) return <div className="min-h-screen bg-[#0f172a] flex justify-center items-center"><div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
