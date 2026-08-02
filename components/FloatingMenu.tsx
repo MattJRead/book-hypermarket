@@ -1,13 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '../lib/supabase';
+import { useTheme } from 'next-themes';
 
 export default function FloatingMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(true);
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  
+  const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -62,7 +70,7 @@ export default function FloatingMenu() {
                     </li>
                     <li>
                       <Link href="/profile" onClick={() => setIsOpen(false)} className="block w-full text-center bg-gray-800 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full transition-colors border border-gray-700 hover:border-blue-500 shadow-sm">
-                        Profile 👤
+                        Profile
                       </Link>
                     </li>
                     <li>
@@ -100,31 +108,48 @@ export default function FloatingMenu() {
               </li>
 
               {/* 3. APPEARANCE SECTION */}
-              <li className="w-full mt-2">
+              <li className="w-full mt-2 border-t border-gray-700/50 pt-4">
                 <button 
                   onClick={() => setIsAppearanceOpen(!isAppearanceOpen)}
-                  className="w-full flex justify-between items-center text-gray-300 font-bold px-2 py-2 hover:text-white transition-colors border-b border-gray-700/50"
+                  className="w-full flex justify-between items-center text-gray-300 font-bold px-2 py-2 hover:text-white transition-colors"
                 >
                   <span className="text-xs uppercase tracking-widest">Appearance</span>
                   <svg className={`w-4 h-4 transition-transform ${isAppearanceOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
 
                 {/* NESTED UNORDERED LIST FOR APPEARANCE */}
-                {isAppearanceOpen && (
-                  <ul className="w-full flex flex-col gap-3 mt-4 px-2">
+                {isAppearanceOpen && mounted && (
+                  <ul className="w-full flex flex-col gap-3 mt-4 px-2 pb-2">
                     <li>
-                      <button className="w-full flex items-center justify-center gap-2 text-center bg-gray-800 hover:bg-yellow-600 text-yellow-400 hover:text-white font-bold py-3 px-6 rounded-full transition-colors border border-gray-700 hover:border-yellow-500 shadow-sm">
-                        ☀️ Light Mode
+                      <button 
+                        onClick={() => setTheme('light')} 
+                        className={`w-full text-center font-bold py-3 px-6 rounded-full transition-colors border shadow-sm ${theme === 'light' ? 'bg-yellow-600 text-white border-yellow-500' : 'bg-gray-800 hover:bg-yellow-600 text-yellow-400 hover:text-white border-gray-700 hover:border-yellow-500'}`}
+                      >
+                        Bright Light
                       </button>
                     </li>
                     <li>
-                      <button className="w-full flex items-center justify-center gap-2 text-center bg-gray-800 hover:bg-indigo-600 text-indigo-400 hover:text-white font-bold py-3 px-6 rounded-full transition-colors border border-gray-700 hover:border-indigo-500 shadow-sm">
-                        🌙 Dark Mode
+                      <button 
+                        onClick={() => setTheme('cream')} 
+                        className={`w-full text-center font-bold py-3 px-6 rounded-full transition-colors border shadow-sm ${theme === 'cream' ? 'bg-orange-600 text-white border-orange-500' : 'bg-gray-800 hover:bg-orange-600 text-orange-400 hover:text-white border-gray-700 hover:border-orange-500'}`}
+                      >
+                        Cream Light
                       </button>
                     </li>
                     <li>
-                      <button className="w-full flex items-center justify-center gap-2 text-center bg-gray-800 hover:bg-gray-600 text-gray-300 hover:text-white font-bold py-3 px-6 rounded-full transition-colors border border-gray-700 hover:border-gray-500 shadow-sm">
-                        ⚙️ System Default
+                      <button 
+                        onClick={() => setTheme('dark')} 
+                        className={`w-full text-center font-bold py-3 px-6 rounded-full transition-colors border shadow-sm ${theme === 'dark' ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-gray-800 hover:bg-indigo-600 text-indigo-400 hover:text-white border-gray-700 hover:border-indigo-500'}`}
+                      >
+                        Dark Mode
+                      </button>
+                    </li>
+                    <li>
+                      <button 
+                        onClick={() => setTheme('true-dark')} 
+                        className={`w-full text-center font-bold py-3 px-6 rounded-full transition-colors border shadow-sm ${theme === 'true-dark' ? 'bg-black text-white border-gray-600' : 'bg-gray-800 hover:bg-gray-900 text-gray-400 hover:text-white border-gray-700 hover:border-gray-600'}`}
+                      >
+                        True Dark
                       </button>
                     </li>
                   </ul>
