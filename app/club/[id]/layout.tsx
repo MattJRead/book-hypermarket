@@ -123,7 +123,6 @@ export default function ClubLayout({
         </main>
       </div>
 
-      {/* Global Navigation - Rendered correctly at the root of the layout */}
       <FloatingMenu />
       
     </div>

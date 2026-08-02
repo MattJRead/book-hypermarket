@@ -5,7 +5,14 @@ import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
 import FloatingMenu from '../../components/FloatingMenu';
 
-const PRESET_AVATARS = ['📚', '🧙‍♂️', '🐉', '☕', '🕯️', '🦉', '⚔️', '🌌'];
+const PRESET_AVATARS = [
+  '📚','📖','📜','🖋️','🔮','🕯️','🗝️','🚪',
+  '🧙‍♂️','🧙‍♀️','🧝‍♂️','🧝‍♀️','🧚','🧛','🧜‍♀️','🧞‍♂️',
+  '🐉','🐲','🦖','🦄','🦅','🦉','🐺','🐍',
+  '⚔️','🛡️','🏹','🏰','🌋','🌌','🌙','⭐',
+  '☕','🍵','🍷','🍎','🌿','🔥','💧','💎',
+  '🔴','🔵','🟢','⚫','⚪','❤️','💙','💚'
+];
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
@@ -121,7 +128,7 @@ export default function ProfilePage() {
 
   const saveProfile = async () => {
     setIsSaving(true);
-    await supabase.from('profiles').upsert({
+    const { error } = await supabase.from('profiles').upsert({
       id: user.id,
       display_name: displayName,
       pronouns: pronouns,
@@ -132,7 +139,13 @@ export default function ProfilePage() {
       updated_at: new Date().toISOString()
     });
     setIsSaving(false);
-    alert("Profile Successfully secured in the vault.");
+
+    if (error) {
+      console.error("Profile Save Error:", error);
+      alert(`Failed to save profile: ${error.message}`);
+    } else {
+      alert("Profile successfully updated."); // Completely sanitized alert
+    }
   };
 
   if (isLoading) return <div className="min-h-screen bg-[#0f172a] flex justify-center items-center"><div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
@@ -185,12 +198,12 @@ export default function ProfilePage() {
 
             <div className="bg-gray-800/50 p-6 rounded-3xl border border-gray-700/60 backdrop-blur-sm">
               <h2 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">Choose Avatar</h2>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-5 md:grid-cols-8 gap-2 max-h-56 overflow-y-auto p-2 bg-gray-900/50 rounded-2xl border border-gray-700/50 shadow-inner">
                 {PRESET_AVATARS.map(avatar => (
                   <button 
                     key={avatar} 
                     onClick={() => setAvatarUrl(avatar)}
-                    className={`text-3xl p-3 rounded-xl transition-all ${avatarUrl === avatar ? 'bg-blue-600/30 border-2 border-blue-500 scale-110' : 'bg-gray-900 border-2 border-transparent hover:bg-gray-700'}`}
+                    className={`text-2xl p-2 rounded-xl transition-all flex justify-center items-center ${avatarUrl === avatar ? 'bg-blue-600/40 border-2 border-blue-500 scale-110 shadow-lg' : 'bg-transparent border-2 border-transparent hover:bg-gray-700/50 hover:scale-105'}`}
                   >
                     {avatar}
                   </button>
