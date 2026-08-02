@@ -18,7 +18,7 @@ const [copiedId, setCopiedId] = useState<string | null>(null);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
-
+  
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
@@ -110,9 +110,17 @@ const [copiedId, setCopiedId] = useState<string | null>(null);
                 <h3 className="text-2xl font-black text-white mb-4 group-hover:text-blue-400 transition-colors leading-tight">{club.name}</h3>
                 
                 <div className="mt-auto space-y-4">
-                  <div className="bg-gray-900/80 p-3 rounded-xl border border-gray-700">
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">Invite ID</p>
-                    <p className="text-sm text-blue-400 font-mono">{club.id.substring(0,12)}...</p>
+                  <div className="bg-gray-900/80 p-3 rounded-xl border border-gray-700 flex justify-between items-center group/copy">
+                    <div>
+                      <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">Invite ID</p>
+                      <p className="text-sm text-blue-400 font-mono">{club.id.substring(0,12)}...</p>
+                    </div>
+                    <button 
+                      onClick={(e) => handleCopy(e, club.id)}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${copiedId === club.id ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400 group-hover/copy:bg-blue-600 group-hover/copy:text-white'}`}
+                    >
+                      {copiedId === club.id ? 'Copied!' : 'Copy'}
+                    </button>
                   </div>
                   
                   <div className="flex items-center gap-2 text-sm text-gray-400">
