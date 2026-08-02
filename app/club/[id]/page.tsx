@@ -77,32 +77,67 @@ export default function ClubDashboard() {
   }
 
   async function fetchBookData(isbn: string) {
+    let titleSet = false;
+
+    // 1. First Attempt: Your Internal Live Search Engine
     try {
-      // 1. Try your internal API first
       const res = await fetch(`/api/live-search?q=${encodeURIComponent(isbn)}`);
-      const data = await res.json();
-      
-      if (data.success && data.books && data.books.length > 0) {
-        setBookTitle(data.books[0].title);
-        if (data.books[0].cover_image_url && data.books[0].cover_image_url !== 'UNAVAILABLE') {
-          setBookCover(data.books[0].cover_image_url.replace('http:', 'https:'));
-        }
-      } else {
-        // 2. The Fallback: Query Google Books directly using the ISBN
-        const gbRes = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
-        const gbData = await gbRes.json();
-        
-        if (gbData.items && gbData.items.length > 0) {
-          setBookTitle(gbData.items[0].volumeInfo.title);
-          if (gbData.items[0].volumeInfo.imageLinks?.thumbnail) {
-            setBookCover(gbData.items[0].volumeInfo.imageLinks.thumbnail.replace('http:', 'https:'));
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.books && data.books.length > 0) {
+          setBookTitle(data.books[0].title);
+          if (data.books[0].cover_image_url && data.books[0].cover_image_url !== 'UNAVAILABLE') {
+            setBookCover(data.books[0].cover_image_url.replace('http:', 'https:'));
           }
-        } else {
-          setBookTitle('Unknown Title (Check ISBN)');
+          titleSet = true;
         }
       }
-    } catch (error) { 
-      setBookTitle('Title Unavailable'); 
+    } catch (e) {
+      console.warn("Internal API skipped. Moving to global networks.");
+    }
+
+    // 2. Second Attempt: Broad Google Books Fallback (Dropping the strict 'isbn:' prefix)
+    if (!titleSet) {
+      try {
+        const gbRes = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${isbn}`);
+        if (gbRes.ok) {
+          const gbData = await gbRes.json();
+          if (gbData.items && gbData.items.length > 0) {
+            setBookTitle(gbData.items[0].volumeInfo.title);
+            if (gbData.items[0].volumeInfo.imageLinks?.thumbnail) {
+              setBookCover(gbData.items[0].volumeInfo.imageLinks.thumbnail.replace('http:', 'https:'));
+            }
+            titleSet = true;
+          }
+        }
+      } catch (e) {
+         console.warn("Google Books API failed.");
+      }
+    }
+    
+    // 3. The Final Net: OpenLibrary (The most reliable raw-ISBN resolver)
+    if (!titleSet) {
+      try {
+        const olRes = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
+        if (olRes.ok) {
+          const olData = await olRes.json();
+          const bookData = olData[`ISBN:${isbn}`];
+          if (bookData && bookData.title) {
+            setBookTitle(bookData.title);
+            if (bookData.cover?.medium) {
+              setBookCover(bookData.cover.medium);
+            }
+            titleSet = true;
+          }
+        }
+      } catch (e) {
+         console.warn("OpenLibrary API failed.");
+      }
+    }
+
+    // If all three global networks fail to find it
+    if (!titleSet) {
+      setBookTitle('Unknown Title (Check ISBN)');
     }
   }
 
