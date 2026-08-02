@@ -23,6 +23,11 @@ export default function ClubDashboard() {
   const [newDateType, setNewDateType] = useState<'none'|'start'|'finish'>('none');
   const [newDateValue, setNewDateValue] = useState('');
 
+  // Progress Update States
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [myFormat, setMyFormat] = useState('Physical Book');
+  const [myProgress, setMyProgress] = useState(0);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) setCurrentUser(session.user);
@@ -31,7 +36,6 @@ export default function ClubDashboard() {
 
   useEffect(() => {
     async function fetchDashboardData() {
-      // 1. Fetch Club Details
       const { data: clubData } = await supabase.from('clubs').select('*').eq('id', id).single();
       if (clubData) {
         setClub(clubData);
@@ -39,14 +43,22 @@ export default function ClubDashboard() {
         if (clubData.current_book_isbn) fetchBookData(clubData.current_book_isbn);
       }
 
-      // 2. Fetch Roster
       const { data: memberData } = await supabase.from('club_members').select('*').eq('club_id', id);
-      if (memberData) setMembers(memberData);
-      
+      if (memberData) {
+        setMembers(memberData);
+        // Pre-fill my progress if I'm already in the roster
+        if (currentUser) {
+          const myData = memberData.find(m => m.user_id === currentUser.id);
+          if (myData) {
+            setMyFormat(myData.reading_format || 'Physical Book');
+            setMyProgress(myData.progress_percentage || 0);
+          }
+        }
+      }
       setIsLoading(false);
     }
-    if (id) fetchDashboardData();
-  }, [id]);
+    if (id && currentUser !== undefined) fetchDashboardData();
+  }, [id, currentUser]);
 
   function calculateTimeLogic(clubData: any) {
     const today = new Date().getTime();
@@ -99,21 +111,41 @@ export default function ClubDashboard() {
     setMembers(members.filter(m => m.user_id !== userId));
   };
 
+  const handleSaveProgress = async () => {
+    if (!currentUser) return;
+    
+    // UPSERT seamlessly updates existing members, or forces missing creators onto the roster
+    await supabase.from('club_members').upsert({
+      club_id: id,
+      user_id: currentUser.id,
+      role: currentUser.id === club.creator_id ? 'owner' : 'member',
+      reading_format: myFormat,
+      progress_percentage: myProgress
+    }, { onConflict: 'club_id, user_id' });
+
+    // Update local state instantly
+    const existingMember = members.find(m => m.user_id === currentUser.id);
+    if (existingMember) {
+      setMembers(members.map(m => m.user_id === currentUser.id ? { ...m, reading_format: myFormat, progress_percentage: myProgress } : m));
+    } else {
+      setMembers([...members, { user_id: currentUser.id, role: 'owner', reading_format: myFormat, progress_percentage: myProgress }]);
+    }
+    setShowProgressModal(false);
+  };
+
   if (isLoading || !club) return null; 
 
   const isOwner = currentUser?.id === club.creator_id;
   const isMod = isOwner || members.find(m => m.user_id === currentUser?.id)?.role === 'mod';
 
-  // Affiliate Links Generation
   const encodedTitle = encodeURIComponent(bookTitle);
   const waterstonesLink = `https://www.awin1.com/cread.php?awinmid=3787&awinaffid=2934999&p=${encodeURIComponent('https://www.waterstones.com/books/search/term/' + encodedTitle)}`;
   const amazonLink = `https://www.amazon.co.uk/s?k=${encodedTitle}&tag=bookhypermarket-21`;
   const bookshopLink = `https://www.awin1.com/cread.php?awinmid=62675&awinaffid=2934999&p=${encodeURIComponent('https://uk.bookshop.org/search?keywords=' + (club.current_book_isbn || encodedTitle))}`;
 
-  // Ensure creator is always visible in the UI roster even if the DB missed them
   const displayMembers = [...members];
   if (!displayMembers.find(m => m.user_id === club.creator_id)) {
-    displayMembers.unshift({ user_id: club.creator_id, role: 'owner', isFaux: true });
+    displayMembers.unshift({ user_id: club.creator_id, role: 'owner', isFaux: true, reading_format: 'Physical Book', progress_percentage: 0 });
   }
 
   return (
@@ -130,8 +162,6 @@ export default function ClubDashboard() {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* CURRENT READ & AFFILIATE ENGINE */}
         <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700 col-span-1 lg:col-span-2 backdrop-blur-sm relative flex flex-col items-center text-center">
           <div className="absolute bottom-0 left-0 h-1 bg-blue-500 w-full opacity-50"></div>
           
@@ -151,7 +181,6 @@ export default function ClubDashboard() {
           <h3 className="text-2xl md:text-3xl font-black text-white mb-3 leading-tight max-w-md">{bookTitle}</h3>
           <p className="text-gray-400 text-sm font-mono bg-gray-900/50 px-4 py-1.5 rounded-full border border-gray-700 mb-8">ISBN: {club.current_book_isbn}</p>
           
-          {/* SECURE THE BAG: Affiliate Purchase Buttons */}
           <div className="w-full max-w-md space-y-3 mb-8">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest text-left">Secure a Copy</p>
             <div className="grid grid-cols-3 gap-2">
@@ -161,7 +190,6 @@ export default function ClubDashboard() {
             </div>
           </div>
           
-          {/* EDITABLE TIMELINE */}
           <div className="mt-auto w-full pt-4 border-t border-gray-700/50 flex flex-col items-center">
             {isEditingDate ? (
               <div className="bg-gray-900 p-4 rounded-xl border border-gray-600 w-full max-w-md">
@@ -191,52 +219,104 @@ export default function ClubDashboard() {
           </div>
         </div>
         
-        {/* ROSTER & ROLE MANAGEMENT */}
         <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700 col-span-1 backdrop-blur-sm flex flex-col">
           <h2 className="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2">Network Roster</h2>
           
-          <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+          <div className="flex-1 overflow-y-auto space-y-3 pr-2">
             {displayMembers.map((member, idx) => {
               const isThisUserOwner = member.user_id === club.creator_id || member.role === 'owner';
               const isMe = member.user_id === currentUser?.id;
+              const formatIcon = member.reading_format === 'Audiobook' ? '🎧' : member.reading_format === 'E-Book' ? '📱' : '📖';
               
               return (
-                <div key={idx} className="bg-gray-900/50 p-3 rounded-lg border border-gray-700 flex items-center justify-between group">
-                  <div>
-                    <p className="text-sm font-bold text-white line-clamp-1">
-                      {isMe ? 'You' : `Reader ${member.user_id.substring(0,5)}`}
-                    </p>
-                    <p className={`text-xs font-mono mt-0.5 ${isThisUserOwner ? 'text-yellow-500' : member.role === 'mod' ? 'text-blue-400' : 'text-gray-500'}`}>
-                      {isThisUserOwner ? 'Owner' : member.role === 'mod' ? 'Moderator' : 'Member'}
-                    </p>
-                  </div>
-                  
-                  {/* MOD CONTROLS (Only visible to Owner/Mods, cannot modify the Owner) */}
-                  {isMod && !isThisUserOwner && (
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity relative dropdown-container">
-                      <select 
-                        onChange={(e) => {
-                          if (e.target.value === 'kick') removeMember(member.user_id);
-                          else if (e.target.value !== '') updateRole(member.user_id, e.target.value);
-                          e.target.value = ''; // reset dropdown
-                        }}
-                        className="appearance-none bg-gray-800 text-gray-400 hover:text-white text-xs font-bold py-1 pl-2 pr-6 rounded border border-gray-600 outline-none cursor-pointer"
-                      >
-                        <option value="">⚙️ Manage</option>
-                        {member.role === 'member' && <option value="mod">Promote to Mod</option>}
-                        {member.role === 'mod' && <option value="member">Demote to Member</option>}
-                        <option value="kick">Remove from Club</option>
-                      </select>
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 text-[10px]">▼</div>
+                <div key={idx} className="bg-gray-900/50 p-4 rounded-lg border border-gray-700 flex flex-col group">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-sm font-bold text-white line-clamp-1">
+                        {isMe ? 'You' : `Reader ${member.user_id.substring(0,5)}`}
+                      </p>
+                      <p className={`text-[10px] uppercase tracking-widest font-bold mt-0.5 ${isThisUserOwner ? 'text-yellow-500' : member.role === 'mod' ? 'text-blue-400' : 'text-gray-500'}`}>
+                        {isThisUserOwner ? 'Owner' : member.role === 'mod' ? 'Moderator' : 'Member'}
+                      </p>
                     </div>
-                  )}
+                    
+                    <div className="flex items-center gap-2">
+                      {isMe && (
+                        <button onClick={() => setShowProgressModal(true)} className="text-[10px] bg-blue-900/40 text-blue-400 hover:text-white px-2 py-1 rounded font-bold uppercase tracking-wide border border-blue-800/50 transition">
+                          Update
+                        </button>
+                      )}
+                      {isMod && !isThisUserOwner && (
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity relative dropdown-container">
+                          <select 
+                            onChange={(e) => {
+                              if (e.target.value === 'kick') removeMember(member.user_id);
+                              else if (e.target.value !== '') updateRole(member.user_id, e.target.value);
+                              e.target.value = '';
+                            }}
+                            className="appearance-none bg-gray-800 text-gray-400 hover:text-white text-xs font-bold py-1 pl-2 pr-6 rounded border border-gray-600 outline-none cursor-pointer"
+                          >
+                            <option value="">⚙️ Manage</option>
+                            {member.role === 'member' && <option value="mod">Promote to Mod</option>}
+                            {member.role === 'mod' && <option value="member">Demote to Member</option>}
+                            <option value="kick">Remove</option>
+                          </select>
+                          <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 text-[10px]">▼</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-gray-400 font-mono mb-1.5">
+                    <span title={member.reading_format} className="flex items-center gap-1.5">
+                      <span className="text-base">{formatIcon}</span> {member.reading_format}
+                    </span>
+                    <span>{member.progress_percentage || 0}%</span>
+                  </div>
+                  <div className="w-full bg-gray-800 rounded-full h-2 shadow-inner overflow-hidden border border-gray-700/50">
+                    <div className="bg-blue-500 h-2 rounded-full transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(59,130,246,0.8)]" style={{ width: `${member.progress_percentage || 0}%` }}></div>
+                  </div>
                 </div>
               );
             })}
           </div>
         </div>
-
       </div>
+
+      {/* PROGRESS UPDATE MODAL */}
+      {showProgressModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-gray-800 border border-gray-600 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-4">Log Your Progress</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Reading Format</label>
+                <select value={myFormat} onChange={(e) => setMyFormat(e.target.value)} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white outline-none">
+                  <option value="Physical Book">📖 Physical Book</option>
+                  <option value="E-Book">📱 E-Book</option>
+                  <option value="Audiobook">🎧 Audiobook</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Percentage Complete: {myProgress}%</label>
+                <input 
+                  type="range" min="0" max="100" 
+                  value={myProgress} onChange={(e) => setMyProgress(parseInt(e.target.value))}
+                  className="w-full accent-blue-500"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-gray-700">
+                <button onClick={() => setShowProgressModal(false)} className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-lg transition">Cancel</button>
+                <button onClick={handleSaveProgress} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg shadow-lg transition">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

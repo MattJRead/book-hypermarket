@@ -67,29 +67,39 @@ export default function CreateClubPage() {
     
     setIsSubmitting(true);
 
-    // EXACT MATCH PAYLOAD
     const payload: any = {
       name: clubName,
-      creator_id: user.id, // Strictly uses creator_id to match your database
+      creator_id: user.id, 
       current_book_isbn: selectedBook.isbn13
     };
 
     if (dateType === 'start') payload.start_date = selectedDate;
     if (dateType === 'finish') payload.target_finish_date = selectedDate;
 
-    const { data, error } = await supabase
+    // 1. Create the Club
+    const { data: clubData, error: clubError } = await supabase
       .from('clubs')
       .insert(payload)
       .select()
       .single();
 
-    if (error) {
-      console.error("Vault Rejection:", error);
+    if (clubError) {
+      console.error("Vault Rejection:", clubError);
       alert('The database blocked the creation. Please check the console for column errors.');
       setIsSubmitting(false);
-    } else {
-      router.push(`/club/${data.id}`);
+      return;
     }
+
+    // 2. INSTANTLY add the Creator to the Roster
+    await supabase.from('club_members').insert({
+      club_id: clubData.id,
+      user_id: user.id,
+      role: 'owner',
+      reading_format: 'Physical Book',
+      progress_percentage: 0
+    });
+
+    router.push(`/club/${clubData.id}`);
   };
 
   return (
