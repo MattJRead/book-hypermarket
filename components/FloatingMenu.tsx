@@ -10,8 +10,20 @@ export default function FloatingMenu() {
   const [isAccountOpen, setIsAccountOpen] = useState(true);
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  
-  const { theme, setTheme } = useTheme();
+
+  // THE FAILSAFE: Prevents build crashes if Next.js caches an old layout or renders a raw page
+  let safeTheme = 'dark';
+  let safeSetTheme = (t: string) => {};
+  try {
+    const themeContext = useTheme();
+    safeTheme = themeContext.theme || 'dark';
+    safeSetTheme = themeContext.setTheme;
+  } catch (error) {
+    console.warn("FloatingMenu: ThemeProvider is missing on this specific page.");
+  }
+
+  const theme = safeTheme;
+  const setTheme = safeSetTheme;
 
   useEffect(() => {
     setMounted(true);
@@ -39,7 +51,6 @@ export default function FloatingMenu() {
         {isOpen && (
           <div className="mb-6 bg-gray-900/95 border border-gray-700 p-5 md:p-6 rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.8)] flex flex-col w-[320px] max-h-[75vh] overflow-y-auto">
             
-            {/* ROOT UNORDERED LIST */}
             <ul className="w-full flex flex-col gap-4">
               
               {/* 1. MY ACCOUNT SECTION */}
@@ -55,7 +66,6 @@ export default function FloatingMenu() {
                   <svg className={`w-4 h-4 transition-transform ${isAccountOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
 
-                {/* NESTED UNORDERED LIST FOR ACCOUNT */}
                 {isAccountOpen && (
                   <ul className="w-full flex flex-col gap-3 mt-4 px-2">
                     <li>
@@ -117,7 +127,6 @@ export default function FloatingMenu() {
                   <svg className={`w-4 h-4 transition-transform ${isAppearanceOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
 
-                {/* NESTED UNORDERED LIST FOR APPEARANCE */}
                 {isAppearanceOpen && mounted && (
                   <ul className="w-full flex flex-col gap-3 mt-4 px-2 pb-2">
                     <li>
