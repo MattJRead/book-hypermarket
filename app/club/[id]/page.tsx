@@ -78,15 +78,32 @@ export default function ClubDashboard() {
 
   async function fetchBookData(isbn: string) {
     try {
+      // 1. Try your internal API first
       const res = await fetch(`/api/live-search?q=${encodeURIComponent(isbn)}`);
       const data = await res.json();
+      
       if (data.success && data.books && data.books.length > 0) {
         setBookTitle(data.books[0].title);
         if (data.books[0].cover_image_url && data.books[0].cover_image_url !== 'UNAVAILABLE') {
           setBookCover(data.books[0].cover_image_url.replace('http:', 'https:'));
         }
+      } else {
+        // 2. The Fallback: Query Google Books directly using the ISBN
+        const gbRes = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+        const gbData = await gbRes.json();
+        
+        if (gbData.items && gbData.items.length > 0) {
+          setBookTitle(gbData.items[0].volumeInfo.title);
+          if (gbData.items[0].volumeInfo.imageLinks?.thumbnail) {
+            setBookCover(gbData.items[0].volumeInfo.imageLinks.thumbnail.replace('http:', 'https:'));
+          }
+        } else {
+          setBookTitle('Unknown Title (Check ISBN)');
+        }
       }
-    } catch (error) { setBookTitle('Title Unavailable'); }
+    } catch (error) { 
+      setBookTitle('Title Unavailable'); 
+    }
   }
 
   const handleUpdateTimeline = async () => {
