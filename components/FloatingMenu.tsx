@@ -51,6 +51,10 @@ export default function FloatingMenu() {
                   My Book Clubs
                 </Link>
 
+                <Link href="/profile" className="p-3 bg-gray-800 text-white rounded-full hover:bg-blue-600 transition shadow-lg border border-gray-700">
+        👤
+      </Link>
+
                 <Link href="/wishlist" className={`block px-6 py-3 font-bold text-sm text-center border-b transition-colors ${isDarkUI ? 'border-gray-800 text-emerald-400 hover:bg-gray-800' : 'border-gray-100 text-emerald-600 hover:bg-gray-50'}`}>
                   My Wishlist
                 </Link>

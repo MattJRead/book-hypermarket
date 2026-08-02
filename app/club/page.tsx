@@ -10,6 +10,15 @@ export default function BookClubHub() {
   const [myClubs, setMyClubs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopy = (e: React.MouseEvent, id: string) => {
+    e.preventDefault(); // Prevents the link from triggering
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
