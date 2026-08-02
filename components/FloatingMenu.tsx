@@ -3,19 +3,32 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '../lib/supabase';
-import { useTheme } from 'next-themes';
 
 export default function FloatingMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(true);
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  
-  const { theme, setTheme } = useTheme();
+  const [theme, setTheme] = useState<'light' | 'cream' | 'dark' | 'true-dark'>('dark');
 
   useEffect(() => {
+    const savedTheme = typeof window !== 'undefined' ? window.localStorage.getItem('theme') : null;
+
+    if (savedTheme === 'light' || savedTheme === 'cream' || savedTheme === 'dark' || savedTheme === 'true-dark') {
+      setTheme(savedTheme);
+    }
+
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('theme', theme);
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }, [theme, mounted]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
