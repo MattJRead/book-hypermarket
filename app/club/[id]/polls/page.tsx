@@ -118,6 +118,12 @@ export default function PollsPage() {
     fetchPollData();
   };
 
+  const handleDeletePoll = async (pollId: string) => {
+    if (!confirm("Are you sure you want to permanently delete this poll, My Lord?")) return;
+    await supabase.from('polls').delete().eq('id', pollId);
+    fetchPollData();
+  };
+
   const formatCountdown = (endTime: string) => {
     const total = Date.parse(endTime) - currentTime;
     if (total <= 0) return 'Poll Closed';
@@ -236,6 +242,17 @@ export default function PollsPage() {
                     </span>
                   </div>
                 </div>
+
+                {/* ADMIN POLL DELETION */}
+                  {user?.id === clubAdminId && (
+                    <button 
+                      onClick={() => handleDeletePoll(poll.id)} 
+                      className="absolute top-4 right-4 md:-right-2 md:-top-2 w-8 h-8 bg-red-900/80 hover:bg-red-600 text-white rounded-full flex items-center justify-center border border-red-500/50 shadow-lg transition-transform hover:scale-110 z-20"
+                      title="Delete Poll"
+                    >
+                      ✕
+                    </button>
+                  )}
 
                 <div className="space-y-3">
                   {poll.options.map((option: string, idx: number) => {

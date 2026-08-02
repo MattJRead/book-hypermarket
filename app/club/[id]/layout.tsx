@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
+import FloatingMenu from '../../../components/FloatingMenu';
 
 export default function ClubLayout({
   children
@@ -11,17 +12,15 @@ export default function ClubLayout({
   children: React.ReactNode;
 }) {
   const params = useParams();
-  const id = params?.id as string; // Safely extracts the ID from the URL directly
+  const id = params?.id as string;
   const pathname = usePathname(); 
   
   const [club, setClub] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // NEW: State to track if there are active polls
   const [hasActivePoll, setHasActivePoll] = useState(false);
 
   useEffect(() => {
-    if (!id) return; // Prevents the vault query from firing before the URL is read
+    if (!id) return;
 
     async function fetchClubDetails() {
       const { data } = await supabase
@@ -34,7 +33,6 @@ export default function ClubLayout({
       setIsLoading(false);
     }
 
-    // NEW: Function to check for active polls in the database
     async function checkPollStatus() {
       const { count } = await supabase
         .from('polls') 
@@ -69,7 +67,6 @@ export default function ClubLayout({
     );
   }
 
-  // Helper function to dynamically check if a tab is currently active
   const isActive = (path: string) => pathname === path;
 
   return (
@@ -103,8 +100,6 @@ export default function ClubLayout({
             >
               Quote Board
             </Link>
-            
-            {/* THE NEW POLLS TAB WITH NOTIFICATION DOT */}
             <Link 
               href={`/club/${id}/polls`} 
               className={`relative pb-4 transition-colors font-bold ${isActive(`/club/${id}/polls`) ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-white'}`}
@@ -114,7 +109,6 @@ export default function ClubLayout({
                 <span className="absolute top-0 -right-3 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
               )}
             </Link>
-
             <Link 
               href={`/club/${id}/settings`} 
               className={`pb-4 transition-colors font-bold ${isActive(`/club/${id}/settings`) ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-white'}`}
@@ -128,6 +122,10 @@ export default function ClubLayout({
           {children}
         </main>
       </div>
+
+      {/* Global Navigation - Rendered correctly at the root of the layout */}
+      <FloatingMenu />
+      
     </div>
   );
 }
