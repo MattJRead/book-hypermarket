@@ -684,7 +684,7 @@ export default function Home() {
               Hyper
               <span className={`absolute left-0 right-0 h-[4px] top-[54%] -translate-y-1/2 ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}></span>
             </span>
-            <span className="text-4xl lowercase">-market</span>
+            <span className="text-4xl lowercase">market</span>
           </h1>
         </button>
       </header>
