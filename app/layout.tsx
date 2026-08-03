@@ -1,5 +1,4 @@
-import './globals.css'; 
-import { Providers } from './providers';
+import './globals.css';
 
 export const metadata = {
   title: 'Book Hypermarket',
@@ -12,11 +11,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body>
-        <Providers>
-          {children}
-        </Providers>
+        {children}
       </body>
     </html>
   );
