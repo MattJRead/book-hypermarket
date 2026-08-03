@@ -3,31 +3,27 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '../lib/supabase';
-import { useTheme } from 'next-themes';
 
 export default function FloatingMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(true);
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
+  const [theme, setThemeState] = useState('dark');
   const [mounted, setMounted] = useState(false);
 
-  // THE FAILSAFE: Prevents build crashes if Next.js caches an old layout or renders a raw page
-  let safeTheme = 'dark';
-  let safeSetTheme = (t: string) => {};
-  try {
-    const themeContext = useTheme();
-    safeTheme = themeContext.theme || 'dark';
-    safeSetTheme = themeContext.setTheme;
-  } catch (error) {
-    console.warn("FloatingMenu: ThemeProvider is missing on this specific page.");
-  }
-
-  const theme = safeTheme;
-  const setTheme = safeSetTheme;
-
+  // NATIVE THEME ENGINE: Never crashes the build, requires no external providers
   useEffect(() => {
     setMounted(true);
+    const savedTheme = localStorage.getItem('network-theme') || 'dark';
+    setThemeState(savedTheme);
+    document.documentElement.setAttribute('data-theme', savedTheme);
   }, []);
+
+  const setTheme = (newTheme: string) => {
+    setThemeState(newTheme);
+    localStorage.setItem('network-theme', newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
