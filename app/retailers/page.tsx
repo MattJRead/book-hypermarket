@@ -1,17 +1,20 @@
 'use client';
 
 import FloatingMenu from '../../components/FloatingMenu';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-// Note: Depending on where your lib folder is, you may need to add an extra '../' to this path
 import { supabase } from '../../lib/supabase'; 
-import { SpeedInsights } from "@vercel/speed-insights/next"
-import { useTheme } from '@/components/ThemeProvider';   
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export default function RetailersPage() {
-  // 1. Activate the theme brain
-  const { theme } = useTheme();
-  const isDarkUI = theme === 'dark' || theme === 'true-dark';
+  // 1. Native Theme Engine replaces useTheme to prevent build crashes
+  const [isDarkUI, setIsDarkUI] = useState(true);
+
+  useEffect(() => {
+    // 2. Safely check the local storage on the client side
+    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('network-theme') || 'dark' : 'dark';
+    setIsDarkUI(savedTheme === 'dark' || savedTheme === 'true-dark');
+  }, []);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -49,8 +52,8 @@ export default function RetailersPage() {
   };
 
   return (
-     // Added items-center to horizontally center the entire page content
-     <main className="min-h-screen flex flex-col items-center py-12 relative overflow-hidden">
+     // Added items-center to horizontally center the entire page content and wired the dynamic background
+     <main className={`min-h-screen flex flex-col items-center py-12 relative overflow-hidden transition-colors ${isDarkUI ? 'bg-gray-950 text-white' : 'bg-gray-50 text-gray-900'}`}>
       
       {/* Constrained back button to align perfectly with the form below it */}
       <div className="w-full max-w-2xl px-6 z-10 mb-8 self-center">

@@ -7,7 +7,6 @@ import FloatingMenu from '../components/FloatingMenu';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import NotificationBell from '../components/NotificationBell';
 import BarcodeScanner from '../components/BarcodeScanner';
-import { useTheme } from '@/components/ThemeProvider';
 
 type Book = { id: string; title: string; author: string; isbn13: string; category: string; cover_image_url?: string; format?: string; };
 type Banner = { id: string; title: string; subtitle: string; background_image_url: string; text_color: string; landing_page_text: string; target_isbns: string[]; slot_position: number; };
@@ -488,16 +487,25 @@ function CategoryVault({ title, books, isDarkMode, colorClass, onViewAll, userId
 // 3. THE MAIN PAGE (Storefront HQ)
 // ==========================================
 export default function Home() {
-  const { theme } = useTheme();
-  
-  const isDarkMode = theme === 'dark' || theme === 'true-dark';
+  // 1. Native Theme Engine replacing useTheme
+  const [theme, setTheme] = useState('dark');
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
-  const themeStyles = {
+  useEffect(() => {
+    // 2. Safely fetch theme from local storage 
+    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('network-theme') || 'dark' : 'dark';
+    setTheme(savedTheme);
+    setIsDarkMode(savedTheme === 'dark' || savedTheme === 'true-dark');
+  }, []);
+
+  const themeStyles: Record<string, string> = {
     'light': 'bg-orange-50 text-stone-900',
     'true-light': 'bg-white text-black',
     'dark': 'bg-gray-950 text-white',
     'true-dark': 'bg-black text-gray-300'
-  }[theme];
+  };
+
+  const currentThemeStyle = themeStyles[theme] || themeStyles['dark'];
 
   const [books, setBooks] = useState<Book[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -674,7 +682,7 @@ export default function Home() {
   };
   
   return (
-    <main className={`min-h-screen flex flex-col py-12 transition-colors duration-500 overflow-x-hidden ${themeStyles}`}>      
+    <main className={`min-h-screen flex flex-col py-12 transition-colors duration-500 overflow-x-hidden ${currentThemeStyle}`}>      
       <NotificationBell userId={userId} isDarkMode={isDarkMode} />
       <header className="flex justify-center items-center mb-12 w-full relative">
         <button onClick={handleClearViews} className="hover:opacity-80 transition-opacity">

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
-import { useTheme } from '@/components/ThemeProvider';
 
 type Book = { id: string; title: string; author: string; category: string; cover_image_url?: string; isbn13: string };
 type UserAccount = { id: string; email: string; created_at: string; last_sign_in: string };
@@ -42,10 +41,15 @@ export default function AdminDashboard() {
   const [analyticsData, setAnalyticsData] = useState<any[]>([]);
   const [analyticsStatus, setAnalyticsStatus] = useState('Enter Global Admin Secret to sync data.');
 
-  const { theme } = useTheme();
-  const isDarkUI = theme === 'dark' || theme === 'true-dark';
+  // NATIVE THEME ENGINE LOGIC - Replaces useTheme completely
+  const [isDarkUI, setIsDarkUI] = useState(true);
 
   useEffect(() => {
+    // 1. Check local storage for the theme set by the Floating Menu
+    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('network-theme') || 'dark' : 'dark';
+    setIsDarkUI(savedTheme === 'dark' || savedTheme === 'true-dark');
+
+    // 2. Load Vault Data
     async function loadVaultData() {
       const { data: bookData } = await supabase.from('books').select('id, title, author, category, cover_image_url, isbn13').order('title');
       if (bookData) setBooks(bookData);
@@ -119,7 +123,7 @@ export default function AdminDashboard() {
       
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Vault rejected update.");
-      if (!data.banner) throw new Error("API succeeded but returned no banner data. Check backend logs."); // Prevents the crash
+      if (!data.banner) throw new Error("API succeeded but returned no banner data. Check backend logs."); 
 
       if (editingBanner.id) {
         setBanners(banners.map(b => b.id === data.banner.id ? data.banner : b)); 
@@ -234,7 +238,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // 🔽 THE CRASH FIX: Bulletproofed rendering filters. These will no longer crash if 'title' or 'author' is missing in the database.
   const filteredBooks = books.filter(b => 
     (b.title || '').toLowerCase().includes((searchQuery || '').toLowerCase()) || 
     (b.author || '').toLowerCase().includes((searchQuery || '').toLowerCase())

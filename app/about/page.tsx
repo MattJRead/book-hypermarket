@@ -1,16 +1,19 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import FloatingMenu from '../../components/FloatingMenu';
-import { SpeedInsights } from "@vercel/speed-insights/next"
-import { useTheme } from '@/components/ThemeProvider';
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export default function AboutPage() {
-  // 1. Call the brain to check the current theme
-  const { theme } = useTheme();
-  
-  // 2. Create the boolean that tells the text which color to be
-  const isDarkUI = theme === 'dark' || theme === 'true-dark';
+  // 1. Native Theme Engine replaces useTheme to prevent build crashes
+  const [isDarkUI, setIsDarkUI] = useState(true);
+
+  useEffect(() => {
+    // 2. Safely check the local storage on the client side
+    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('network-theme') || 'dark' : 'dark';
+    setIsDarkUI(savedTheme === 'dark' || savedTheme === 'true-dark');
+  }, []);
 
   return (
     // Added 'items-center' to perfectly center your content block

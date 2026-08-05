@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import FloatingMenu from '@/components/FloatingMenu';
-import { useTheme } from '@/components/ThemeProvider'; // Added the import
 
 const partners = [
   {
@@ -174,22 +173,29 @@ function PartnerRow({ partner, isDarkUI }: { partner: typeof partners[0], isDark
 
 export default function PartnersPage() {
   
-  // The hook MUST go here, inside the main page function!
-  const { theme } = useTheme();
-  
-  // High-level check for the components
-  const isDarkUI = theme === 'dark' || theme === 'true-dark';
+  // 1. Native Theme Engine replaces useTheme to prevent build crashes
+  const [theme, setTheme] = useState('dark');
+  const [isDarkUI, setIsDarkUI] = useState(true);
+
+  useEffect(() => {
+    // 2. Safely check the local storage on the client side
+    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('network-theme') || 'dark' : 'dark';
+    setTheme(savedTheme);
+    setIsDarkUI(savedTheme === 'dark' || savedTheme === 'true-dark');
+  }, []);
 
   // The 4-tier theme system, complete with the warm Cream for Soft Light
-  const themeStyles = {
+  const themeStyles: Record<string, string> = {
     'light': 'bg-orange-50 text-stone-900', // Beautiful Reader's Cream
     'true-light': 'bg-white text-black',
     'dark': 'bg-gray-950 text-white',
     'true-dark': 'bg-black text-gray-300'
-  }[theme];
+  };
+
+  const currentThemeStyle = themeStyles[theme] || themeStyles['dark'];
 
   return (
-     <main className="min-h-screen flex flex-col py-12">
+     <main className={`min-h-screen flex flex-col py-12 transition-colors ${currentThemeStyle}`}>
         <div className="max-w-[1000px] mx-auto w-full px-4">
         <Link href="/" className={`inline-flex items-center px-6 py-2 rounded-xl text-sm font-bold border transition-all mb-12 group ${isDarkUI ? 'bg-gray-900 border-gray-800 hover:border-gray-600 text-white' : 'bg-white border-gray-300 hover:bg-gray-100 text-gray-900'}`}>
           <svg className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> Back to Storefront

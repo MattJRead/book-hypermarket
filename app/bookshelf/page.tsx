@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
 import FloatingMenu from '../../components/FloatingMenu';
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { useTheme } from '../../components/ThemeProvider';
 
 type Book = {
   id: string;
@@ -21,8 +20,14 @@ export default function PrivateCatalogue() {
   const [libraryBooks, setLibraryBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  const { theme } = useTheme();
-  const isDarkMode = theme === 'dark';
+  // 1. Native Theme Engine replaces useTheme
+  const [isDarkUI, setIsDarkUI] = useState(true);
+
+  useEffect(() => {
+    // 2. Safely check the local storage on the client side
+    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('network-theme') || 'dark' : 'dark';
+    setIsDarkUI(savedTheme === 'dark' || savedTheme === 'true-dark');
+  }, []);
 
   useEffect(() => {
     async function fetchLibrary() {
@@ -63,14 +68,14 @@ export default function PrivateCatalogue() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col pb-24">  
+    <main className={`min-h-screen flex flex-col pb-24 transition-colors ${isDarkUI ? 'bg-gray-900' : 'bg-gray-50'}`}>  
       
       {/* Top Header & Navigation Section */}
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pt-8">
         
         {/* Back Button - Now correctly positioned on the top left */}
         <div className="flex justify-start mb-10">
-          <Link href="/" className="group flex items-center space-x-2 text-gray-400 hover:text-emerald-400 transition-colors bg-gray-800/40 hover:bg-gray-800/80 px-5 py-2.5 rounded-xl backdrop-blur-md border border-white/5 shadow-sm">
+          <Link href="/" className={`group flex items-center space-x-2 transition-colors px-5 py-2.5 rounded-xl backdrop-blur-md shadow-sm ${isDarkUI ? 'text-gray-400 hover:text-emerald-400 bg-gray-800/40 hover:bg-gray-800/80 border border-white/5' : 'text-gray-500 hover:text-emerald-600 bg-white border border-gray-200'}`}>
             <svg className="w-5 h-5 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -88,7 +93,7 @@ export default function PrivateCatalogue() {
               My Private Catalogue
             </h1>
           </div>
-          <p className="text-gray-400 text-lg font-medium max-w-2xl">
+          <p className={`text-lg font-medium max-w-2xl ${isDarkUI ? 'text-gray-400' : 'text-gray-600'}`}>
             Books securely locked in your vault.
           </p>
         </header>
@@ -104,17 +109,17 @@ export default function PrivateCatalogue() {
               <span className="font-mono text-sm uppercase tracking-widest">Decrypting Vault...</span>
             </div>
           ) : libraryBooks.length === 0 ? (
-            <div className="flex flex-col items-center text-center py-24 border border-dashed border-gray-700 rounded-3xl bg-gray-900/20 backdrop-blur-sm">
-              <svg className="w-16 h-16 text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className={`flex flex-col items-center text-center py-24 border border-dashed rounded-3xl backdrop-blur-sm ${isDarkUI ? 'border-gray-700 bg-gray-900/20' : 'border-gray-300 bg-white/50'}`}>
+              <svg className={`w-16 h-16 mb-4 ${isDarkUI ? 'text-gray-600' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
-              <h3 className="text-2xl font-bold text-gray-400 mb-2">Your vault is empty</h3>
-              <p className="text-gray-500">Return to the storefront to start securing titles.</p>
+              <h3 className={`text-2xl font-bold mb-2 ${isDarkUI ? 'text-gray-400' : 'text-gray-700'}`}>Your vault is empty</h3>
+              <p className={isDarkUI ? 'text-gray-500' : 'text-gray-500'}>Return to the storefront to start securing titles.</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
               {libraryBooks.map(book => (
-                <div key={book.id} className="group relative flex flex-col bg-gray-900/60 backdrop-blur-md rounded-2xl border border-gray-700/50 hover:border-emerald-500/50 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-emerald-500/10">
+                <div key={book.id} className={`group relative flex flex-col backdrop-blur-md rounded-2xl border transition-all duration-300 overflow-hidden shadow-lg hover:shadow-emerald-500/10 ${isDarkUI ? 'bg-gray-900/60 border-gray-700/50 hover:border-emerald-500/50' : 'bg-white border-gray-200 hover:border-emerald-500/50'}`}>
                   
                   {/* Subtle Top Badge */}
                   <div className="absolute top-3 right-3 z-20 pointer-events-none">
@@ -147,15 +152,15 @@ export default function PrivateCatalogue() {
                   
                   {/* Text Content */}
                   <div className="flex flex-col flex-grow p-4 relative z-10 -mt-8">
-                    <h3 className="font-bold text-gray-100 text-sm sm:text-base leading-tight line-clamp-2 mb-1 drop-shadow-md">
+                    <h3 className={`font-bold text-sm sm:text-base leading-tight line-clamp-2 mb-1 drop-shadow-md ${isDarkUI ? 'text-gray-100' : 'text-white'}`}>
                       {book.title}
                     </h3>
-                    <p className="text-xs text-gray-400 line-clamp-1 mb-4">
+                    <p className="text-xs text-gray-300 line-clamp-1 mb-4">
                       {book.author}
                     </p>
                     
                     {/* Modern Action Button */}
-                    <div className="mt-auto pt-4 border-t border-gray-700/50">
+                    <div className={`mt-auto pt-4 border-t ${isDarkUI ? 'border-gray-700/50' : 'border-gray-200/50'}`}>
                       <button 
                         onClick={() => removeFromVault(book.id)}
                         className="w-full py-2.5 text-xs font-bold tracking-wider text-red-400/80 hover:text-red-400 bg-red-400/5 hover:bg-red-500/10 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2"
