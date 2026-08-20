@@ -3,36 +3,34 @@
 @tailwind utilities;
 
 /* =========================================
-   THEME COLOR MAPPINGS
+   FLAT PREMIUM THEME ENGINE
    ========================================= */
 
-/* 1. TRUE DARK MODE */
-[data-theme='true-dark'] body, 
-[data-theme='true-dark'] .bg-\[\#0f172a\] { background-color: #000000 !important; }
-[data-theme='true-dark'] .bg-gray-900 { background-color: #0a0a0a !important; }
-[data-theme='true-dark'] .bg-gray-800 { background-color: #121212 !important; border-color: #262626 !important; }
+/* 1. BLACK THEME */
+[data-theme='black'] body { background-color: #000000; color: #f3f4f6; }
+[data-theme='black'] .theme-element { background-color: #111827; border-color: #374151; color: #f3f4f6; }
+[data-theme='black'] .theme-element:hover { background-color: #1f2937; }
 
-/* 2. BRIGHT LIGHT MODE */
-[data-theme='light'] body, 
-[data-theme='light'] .bg-\[\#0f172a\], 
-[data-theme='light'] .bg-gray-900 { background-color: #f9fafb !important; color: #111827 !important; }
-[data-theme='light'] .text-white { color: #111827 !important; }
-[data-theme='light'] .bg-gray-800 { background-color: #ffffff !important; border-color: #e5e7eb !important; color: #111827 !important; }
-[data-theme='light'] .text-gray-400, 
-[data-theme='light'] .text-gray-300 { color: #4b5563 !important; }
-[data-theme='light'] .border-gray-700 { border-color: #d1d5db !important; }
+/* 2. DARK GREY THEME */
+[data-theme='dark-grey'] body { background-color: #1f2937; color: #f9fafb; }
+[data-theme='dark-grey'] .theme-element { background-color: #374151; border-color: #4b5563; color: #f9fafb; }
+[data-theme='dark-grey'] .theme-element:hover { background-color: #4b5563; }
 
-/* 3. CREAM LIGHT MODE */
-[data-theme='cream'] body, 
-[data-theme='cream'] .bg-\[\#0f172a\], 
-[data-theme='cream'] .bg-gray-900 { background-color: #fdfbf7 !important; color: #2c2724 !important; }
-[data-theme='cream'] .text-white { color: #2c2724 !important; }
-[data-theme='cream'] .bg-gray-800 { background-color: #f5f0e6 !important; border-color: #e8dfd1 !important; color: #2c2724 !important; }
-[data-theme='cream'] .text-gray-400, 
-[data-theme='cream'] .text-gray-300 { color: #5c554d !important; }
-[data-theme='cream'] .border-gray-700 { border-color: #d6cfc4 !important; }
+/* 3. LIGHT GREY THEME */
+[data-theme='light-grey'] body { background-color: #f3f4f6; color: #111827; }
+[data-theme='light-grey'] .theme-element { background-color: #e5e7eb; border-color: #d1d5db; color: #111827; }
+[data-theme='light-grey'] .theme-element:hover { background-color: #d1d5db; }
 
-/* Global Smooth Transitions */
-body, div, span, button, a {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+/* 4. WHITE THEME */
+[data-theme='white'] body { background-color: #ffffff; color: #000000; }
+[data-theme='white'] .theme-element { background-color: #f9fafb; border-color: #e5e7eb; color: #000000; }
+[data-theme='white'] .theme-element:hover { background-color: #f3f4f6; }
+
+/* Global overrides for a strictly flat design */
+* {
+  box-shadow: none !important;
+}
+
+body, div, span, button, a, nav {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
