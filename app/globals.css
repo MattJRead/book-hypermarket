@@ -5,23 +5,20 @@
    FLAT PREMIUM THEME ENGINE
    ========================================= */
 
-/* 1. BLACK THEME */
-[data-theme='black'] body { background-color: #000000; color: #f3f4f6; }
+/* Force main containers to obey the theme, overriding any old hardcoded classes */
+[data-theme='black'] body, [data-theme='black'] main { background-color: #000000 !important; color: #f3f4f6; }
 [data-theme='black'] .theme-element { background-color: #111827; border-color: #374151; color: #f3f4f6; }
 [data-theme='black'] .theme-element:hover { background-color: #1f2937; }
 
-/* 2. DARK GREY THEME */
-[data-theme='dark-grey'] body { background-color: #1f2937; color: #f9fafb; }
+[data-theme='dark-grey'] body, [data-theme='dark-grey'] main { background-color: #1f2937 !important; color: #f9fafb; }
 [data-theme='dark-grey'] .theme-element { background-color: #374151; border-color: #4b5563; color: #f9fafb; }
 [data-theme='dark-grey'] .theme-element:hover { background-color: #4b5563; }
 
-/* 3. LIGHT GREY THEME */
-[data-theme='light-grey'] body { background-color: #f3f4f6; color: #111827; }
+[data-theme='light-grey'] body, [data-theme='light-grey'] main { background-color: #f3f4f6 !important; color: #111827; }
 [data-theme='light-grey'] .theme-element { background-color: #e5e7eb; border-color: #d1d5db; color: #111827; }
 [data-theme='light-grey'] .theme-element:hover { background-color: #d1d5db; }
 
-/* 4. WHITE THEME */
-[data-theme='white'] body { background-color: #ffffff; color: #000000; }
+[data-theme='white'] body, [data-theme='white'] main { background-color: #ffffff !important; color: #000000; }
 [data-theme='white'] .theme-element { background-color: #f9fafb; border-color: #e5e7eb; color: #000000; }
 [data-theme='white'] .theme-element:hover { background-color: #f3f4f6; }
 
@@ -30,6 +27,6 @@
   box-shadow: none !important;
 }
 
-body, div, span, button, a, nav {
+body, div, span, button, a, nav, main {
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }

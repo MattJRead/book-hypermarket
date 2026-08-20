@@ -39,9 +39,9 @@ const amazonSpotlight = [
   { id: 'a-2', title: 'Amazon New Releases', description: 'The hottest new books on Amazon, updated hourly.', link: 'https://amzn.to/3SAPtzg', color: 'bg-orange-700' },
   { id: 'a-3', title: 'Business, Finance and Law', description: 'The latest and greatest in business, finance and law.', link: 'https://amzn.to/4oQS5VV', color: 'bg-orange-700' },
   { id: 'a-4', title: 'Crime, Thrillers & Mystery', description: 'The latest and greatest in crime, thrillers and mystery.', link: 'https://amzn.to/4f7fIpJ', color: 'bg-orange-700' },
-  { id: 'a-5', title: 'LGBTQ+', description: 'The latest and greatest in LGBTQ+ literature.', link: 'https://amzn.to/4oOyKo8', color: 'bg-linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet)-700' },
+  { id: 'a-5', title: 'LGBTQ+', description: 'The latest and greatest in LGBTQ+ literature.', link: 'https://amzn.to/4oOyKo8', color: 'bg-green-700' },
   { id: 'a-6', title: 'Biography and Autobiography Books', description: 'The latest and greatest in biography and autobiography books.', link: 'https://amzn.to/4wijp1S', color: 'bg-orange-700' },
-  { id: 'a-7', title: 'Audible', description: 'The latest and greatest in audiobooks, podcasts, and Audible exclusive content.', link: 'https://amzn.to/4eOYZ9w', color: 'bg-darkorange-700' },
+  { id: 'a-7', title: 'Audible', description: 'The latest and greatest in audiobooks, podcasts, and Audible exclusive content.', link: 'https://amzn.to/4eOYZ9w', color: 'bg-orange-700' },
   { id: 'a-8', title: 'Kindle Unlimited', description: 'Explore millions of books, thousands of audiobooks and selected magazines on any device.', link: 'https://amzn.to/4oQW8kG', color: 'bg-orange-700' }
 ];
 
@@ -81,7 +81,7 @@ function PartnerCarousel({ title, subtitle, badge, badgeColor, items, isDarkMode
             <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-lg shadow-lg ${badgeColor}`}>{badge}</span>
             {title}
           </h2>
-          <p className={`mt-1 font-medium ${!isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+          <p className={`mt-1 font-medium ${!isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
             {subtitle}
           </p>
         </div>
@@ -98,7 +98,7 @@ function PartnerCarousel({ title, subtitle, badge, badgeColor, items, isDarkMode
               href={item.link} 
               target="_blank" 
               rel="noopener noreferrer" 
-              className={`snap-start shrink-0 w-[260px] md:w-[280px] rounded-2xl p-6 flex flex-col relative overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-xl border group ${!isDarkMode ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-900 border-gray-800'}`}
+              className={`snap-start shrink-0 w-[260px] md:w-[280px] rounded-2xl p-6 flex flex-col relative overflow-hidden transition-all duration-300 hover:-translate-y-2 border group ${!isDarkMode ? 'bg-white border-gray-200 shadow-sm hover:shadow-xl' : 'bg-gray-900 border-gray-800 hover:border-gray-700'}`}
             >
               <div className={`absolute top-0 left-0 w-full h-1 ${item.color}`} />
               
@@ -109,7 +109,7 @@ function PartnerCarousel({ title, subtitle, badge, badgeColor, items, isDarkMode
                 {item.description}
               </p>
               
-              <div className={`mt-6 text-sm font-bold flex items-center transition-colors ${!isDarkMode ? 'text-gray-400 group-hover:text-gray-900' : 'text-gray-400 group-hover:text-white'}`}>
+              <div className={`mt-6 text-sm font-bold flex items-center transition-colors ${!isDarkMode ? 'text-gray-400 group-hover:text-gray-900' : 'text-gray-500 group-hover:text-white'}`}>
                 Shop Now <svg className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
               </div>
             </a>
@@ -250,11 +250,9 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     }
 
     if (dbError) {
-      console.error("[Vault Rejection - Library]:", dbError);
       setIsOwned(!newStatus);
-      alert("Error saving to your bookshelf. I'm Deeply Sorry.");
+      alert("Error saving to your bookshelf.");
     }
-    
     setIsUpdating(false);
   };
 
@@ -276,11 +274,9 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     }
 
     if (dbError) {
-      console.error("[Vault Rejection - Wishlist]:", dbError);
       setIsWishlisted(!newStatus);
-      alert("Error saving to your wishlist. I'm Deeply Sorry.");
+      alert("Error saving to your wishlist.");
     }
-
     setIsWishlistUpdating(false);
   };
 
@@ -288,72 +284,56 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
     "@context": "https://schema.org",
     "@type": "Book",
     "name": book.title,
-    "author": {
-      "@type": "Person",
-      "name": book.author
-    },
+    "author": { "@type": "Person", "name": book.author },
     "isbn": book.isbn13
   };
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(bookJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(bookJsonLd) }} />
 
-      <div className={`p-6 rounded-2xl border flex flex-col items-center text-center transition-all hover:scale-[1.02] shadow-sm h-full relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} ${isOwned ? 'ring-2 ring-emerald-500' : ''}`}>
+      <div className={`p-6 rounded-2xl border flex flex-col items-center text-center transition-all h-full relative overflow-hidden ${!isDarkMode ? 'bg-white border-gray-200' : 'bg-gray-900 border-gray-800'} ${isOwned ? 'ring-2 ring-emerald-500' : ''}`}>
         {isOwned && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none"></div>}
 
-        <div onClick={() => setIsCoverModalOpen(true)} className={`w-32 h-48 shrink-0 rounded-md mb-4 shadow-lg flex flex-col items-center justify-center z-10 overflow-hidden relative border cursor-pointer transition-all hover:ring-2 hover:ring-sky-500 group ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-100'}`} title="Click to expand cover">
+        <div onClick={() => setIsCoverModalOpen(true)} className={`w-32 h-48 shrink-0 rounded-md mb-4 flex flex-col items-center justify-center z-10 overflow-hidden relative border cursor-pointer transition-all hover:ring-2 hover:ring-sky-500 group ${!isDarkMode ? 'border-gray-300 bg-gray-100' : 'border-gray-700 bg-gray-800'}`} title="Click to expand cover">
           {userId && (
             <button onClick={toggleWishlist} disabled={isWishlistUpdating} className="absolute top-2 right-2 z-30 p-1.5 rounded-full bg-black/40 backdrop-blur-sm shadow-md transition-transform hover:scale-110 border border-white/10" title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}>
-              <svg className={`w-5 h-5 ${isWishlisted ? 'text-yellow-400 fill-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]' : 'text-white fill-transparent hover:text-yellow-200'}`} stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+              <svg className={`w-5 h-5 ${isWishlisted ? 'text-yellow-400 fill-yellow-400' : 'text-white fill-transparent hover:text-yellow-200'}`} stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
             </button>
           )}
 
-          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center justify-center"><svg className="w-8 h-8 text-white drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg></div>
-          
+          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center justify-center"><svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg></div>
           <img src="/fox-placeholder.png" alt="Loading placeholder" className={`absolute w-16 h-auto object-contain z-10 transition-opacity duration-300 ${imageStatus === 'loaded' ? 'opacity-0' : 'opacity-100'}`} />
-          
           {book.cover_image_url && book.cover_image_url !== 'UNAVAILABLE' && (
-            <img 
-              src={book.cover_image_url.replace('http:', 'https:')} 
-              alt={`Cover of ${book.title}`} 
-              className={`absolute w-full h-full object-cover z-20 transition-opacity duration-500 ${imageStatus === 'loaded' ? 'opacity-100' : 'opacity-0'}`} 
-              onLoad={() => setImageStatus('loaded')} 
-              onError={() => setImageStatus('error')} 
-            />
+            <img src={book.cover_image_url.replace('http:', 'https:')} alt={`Cover of ${book.title}`} className={`absolute w-full h-full object-cover z-20 transition-opacity duration-500 ${imageStatus === 'loaded' ? 'opacity-100' : 'opacity-0'}`} onLoad={() => setImageStatus('loaded')} onError={() => setImageStatus('error')} />
           )}
         </div>
         
         <h3 className="font-bold text-lg mb-1 leading-tight line-clamp-2 break-words w-full z-10" title={book.title}>{book.title}</h3>
+        <button onClick={(e) => { e.stopPropagation(); if (onAuthorClick) onAuthorClick(book.author); }} className={`text-sm mb-2 line-clamp-1 break-words w-full z-10 hover:underline hover:text-sky-500 transition-colors cursor-pointer ${!isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} title={`Search for more books by ${book.author}`}>{book.author}</button>
+        <div className="flex flex-col items-center gap-1 mb-4 w-full z-10"><span className={`text-xs font-mono px-2 py-0.5 rounded-md ${!isDarkMode ? 'bg-gray-100 text-gray-500' : 'bg-gray-800 text-gray-400'}`}>ISBN: {book.isbn13}</span></div>
         
-        <button onClick={(e) => { e.stopPropagation(); if (onAuthorClick) onAuthorClick(book.author); }} className={`text-sm mb-2 line-clamp-1 break-words w-full z-10 hover:underline hover:text-sky-500 transition-colors cursor-pointer ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} title={`Search for more books by ${book.author}`}>{book.author}</button>
-
-        <div className="flex flex-col items-center gap-1 mb-4 w-full z-10"><span className={`text-xs font-mono px-2 py-0.5 rounded-md ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>ISBN: {book.isbn13}</span></div>
-        
-        <div className="mt-auto w-full pt-4 border-t border-gray-800/30 z-10 flex flex-col gap-3">
+        <div className="mt-auto w-full pt-4 border-t border-gray-500/20 z-10 flex flex-col gap-3">
           {userId && (
-            <button onClick={toggleLibrary} disabled={isUpdating} className={`w-full py-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center ${isOwned ? 'bg-emerald-900/40 text-emerald-400 hover:bg-emerald-900/60 border border-emerald-800/50' : 'bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'}`}>
+            <button onClick={toggleLibrary} disabled={isUpdating} className={`w-full py-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center ${isOwned ? 'bg-emerald-900/40 text-emerald-500 hover:bg-emerald-900/60 border border-emerald-800/50' : (!isDarkMode ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white')}`}>
               {isOwned ? (<><svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg> ON YOUR BOOKSHELF</>) : (<><svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg> Add to Bookshelf</>)}
             </button>
           )}
 
           {isOwned ? (
-            <div className="text-xs font-mono text-emerald-500/70 mt-1">Purchase options hidden.</div>
+            <div className="text-xs font-mono text-emerald-600 mt-1">Purchase options hidden.</div>
           ) : isLoadingPrice ? (
             <div className="text-xs font-mono text-gray-500 animate-pulse py-2">Scanning vaults...</div>
           ) : (
             <div className="flex w-full gap-2 mt-1">
-              <div className={`relative flex-grow rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-50'}`}>
+              <div className={`relative flex-grow rounded-lg border ${!isDarkMode ? 'border-gray-300 bg-gray-50 text-gray-900' : 'border-gray-700 bg-gray-800 text-white'}`}>
                 <select value={selectedShopId} onChange={(e) => setSelectedShopId(e.target.value)} className="w-full h-full appearance-none bg-transparent pl-3 pr-8 py-2 text-xs font-bold focus:outline-none cursor-pointer">
-                  {shops.map(shop => ( <option key={shop.id} value={shop.id} className={isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}>{shop.name} - {shop.displayPrice}</option> ))}
+                  {shops.map(shop => ( <option key={shop.id} value={shop.id} className={!isDarkMode ? 'bg-white text-gray-900' : 'bg-gray-900 text-white'}>{shop.name} - {shop.displayPrice}</option> ))}
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg></div>
               </div>
               
-              <a href={currentShop.url} target="_blank" rel="noopener noreferrer" onClick={() => { ensureBookInDatabase(); fetch('/api/track', { method: 'POST', body: JSON.stringify({ event_type: 'affiliate_click', details: { shop: currentShop.id, book_title: book.title, target_url: currentShop.url } }) }); }} className={`flex items-center justify-center shrink-0 p-2.5 rounded-lg transition-colors shadow-md w-10 h-10 text-white ${currentShop.id === 'scholastic' ? 'bg-red-600 hover:bg-red-500' : 'bg-sky-600 hover:bg-sky-500'}`} title="Go to Store">
+              <a href={currentShop.url} target="_blank" rel="noopener noreferrer" onClick={() => { ensureBookInDatabase(); fetch('/api/track', { method: 'POST', body: JSON.stringify({ event_type: 'affiliate_click', details: { shop: currentShop.id, book_title: book.title, target_url: currentShop.url } }) }); }} className={`flex items-center justify-center shrink-0 p-2.5 rounded-lg transition-colors w-10 h-10 text-white ${currentShop.id === 'scholastic' ? 'bg-red-600 hover:bg-red-500' : 'bg-sky-600 hover:bg-sky-500'}`} title="Go to Store">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
               </a>
             </div>
@@ -363,28 +343,18 @@ function BookCard({ book, isDarkMode, userId, initiallyOwned, initiallyWishliste
 
       {isCoverModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={(e) => { if (e.target === e.currentTarget) setIsCoverModalOpen(false); }}>
-          <div className={`relative w-full max-w-sm rounded-3xl p-8 shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200 ${isDarkMode ? 'bg-gray-900 border border-gray-800 text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
+          <div className={`relative w-full max-w-sm rounded-3xl p-8 flex flex-col items-center animate-in zoom-in-95 duration-200 ${!isDarkMode ? 'bg-white border border-gray-200 text-gray-900' : 'bg-gray-900 border border-gray-800 text-white'}`}>
             <button onClick={() => setIsCoverModalOpen(false)} className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-red-500/80 text-white transition-colors z-30" title="Close Modal"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"/></svg></button>
-            <div className={`relative w-48 h-72 md:w-56 md:h-80 rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] mb-6 border ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-100'}`}>
+            <div className={`relative w-48 h-72 md:w-56 md:h-80 rounded-xl overflow-hidden mb-6 border ${!isDarkMode ? 'border-gray-300 bg-gray-100' : 'border-gray-700 bg-gray-800'}`}>
               {book.cover_image_url && book.cover_image_url !== 'UNAVAILABLE' ? (
                 <img src={book.cover_image_url.replace('http:', 'https:')} alt={`Cover of ${book.title}`} className="absolute w-full h-full object-cover" />
               ) : (
                 <img src="/fox-placeholder.png" alt="Placeholder" className="absolute inset-0 w-full h-full object-contain p-8" />
               )}
             </div>
-            <h2 className="text-2xl font-black text-center mb-2 leading-tight drop-shadow-md">{book.title}</h2>
-             <button 
-               onClick={(e) => { 
-                 e.stopPropagation(); 
-                  setIsCoverModalOpen(false); 
-                  if (onAuthorClick) onAuthorClick(book.author); 
-                 }} 
-                   className={`text-lg text-center mb-6 font-medium hover:underline transition-colors cursor-pointer w-full z-20 ${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-600 hover:text-sky-500'}`}
-                   title={`Search for more books by ${book.author}`}
-                    >
-                  {book.author}
-               </button>         
-         <div className={`px-4 py-2 rounded-lg font-mono text-sm tracking-widest ${isDarkMode ? 'bg-gray-950 text-gray-400' : 'bg-gray-100 text-gray-600'}`}>ISBN: <span className="font-bold text-white">{book.isbn13}</span></div>
+            <h2 className="text-2xl font-black text-center mb-2 leading-tight">{book.title}</h2>
+             <button onClick={(e) => { e.stopPropagation(); setIsCoverModalOpen(false); if (onAuthorClick) onAuthorClick(book.author); }} className={`text-lg text-center mb-6 font-medium hover:underline transition-colors cursor-pointer w-full z-20 ${!isDarkMode ? 'text-sky-600 hover:text-sky-500' : 'text-sky-400 hover:text-sky-300'}`} title={`Search for more books by ${book.author}`}>{book.author}</button>         
+         <div className={`px-4 py-2 rounded-lg font-mono text-sm tracking-widest ${!isDarkMode ? 'bg-gray-100 text-gray-600' : 'bg-gray-950 text-gray-400'}`}>ISBN: <span className="font-bold text-inherit">{book.isbn13}</span></div>
           </div>
         </div>
       )}
@@ -410,31 +380,23 @@ function FeaturedBannerCarousel({ banners, onSelectBanner, isDarkMode }: { banne
   return (
     <div className="mb-14 w-full relative group">
       <div className="relative w-full max-w-[1400px] mx-auto">
-        <button onClick={() => scroll('left')} className={`absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-600' : 'bg-white text-gray-900 hover:bg-gray-100'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg></button>
-        <button onClick={() => scroll('right')} className={`absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-600' : 'bg-white text-gray-900 hover:bg-gray-100'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg></button>
+        <button onClick={() => scroll('left')} className={`absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 ${!isDarkMode ? 'bg-white text-gray-900 hover:bg-gray-100 border border-gray-200' : 'bg-gray-800 text-white hover:bg-gray-600'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg></button>
+        <button onClick={() => scroll('right')} className={`absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 ${!isDarkMode ? 'bg-white text-gray-900 hover:bg-gray-100 border border-gray-200' : 'bg-gray-800 text-white hover:bg-gray-600'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg></button>
         
         <div ref={scrollContainerRef} className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory px-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {banners.map(banner => (
             <div 
               key={banner.id} 
               onClick={() => onSelectBanner(banner)}
-              className="snap-start shrink-0 w-[85vw] max-w-[400px] h-48 rounded-3xl p-6 md:p-8 flex items-center justify-between cursor-pointer transition-transform hover:scale-[1.02] hover:shadow-2xl shadow-lg relative overflow-hidden group bg-gradient-to-br from-gray-800 to-gray-950"
+              className="snap-start shrink-0 w-[85vw] max-w-[400px] h-48 rounded-3xl p-6 md:p-8 flex items-center justify-between cursor-pointer transition-transform hover:scale-[1.02] relative overflow-hidden group bg-gradient-to-br from-gray-800 to-gray-950"
             >
               {banner.background_image_url && (
-                <div 
-                  className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" 
-                  style={{ backgroundImage: `url(${banner.background_image_url})` }}
-                ></div>
+                <div className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: `url(${banner.background_image_url})` }}></div>
               )}
-              
-             <div 
-                className={`relative z-10 w-full p-5 rounded-2xl bg-black/50 backdrop-blur-md border border-white/10 drop-shadow-md ${!banner.text_color?.startsWith('#') ? (banner.text_color || 'text-white') : ''}`}
-                style={banner.text_color?.startsWith('#') ? { color: banner.text_color } : undefined}
-              >
-                <h3 className="text-2xl md:text-3xl font-black mb-2 leading-tight drop-shadow-xl">{banner.title}</h3>
-                <p className="text-sm font-medium leading-snug opacity-90 drop-shadow-lg">{banner.subtitle}</p>
+             <div className={`relative z-10 w-full p-5 rounded-2xl bg-black/50 backdrop-blur-md border border-white/10 ${!banner.text_color?.startsWith('#') ? (banner.text_color || 'text-white') : ''}`} style={banner.text_color?.startsWith('#') ? { color: banner.text_color } : undefined}>
+                <h3 className="text-2xl md:text-3xl font-black mb-2 leading-tight">{banner.title}</h3>
+                <p className="text-sm font-medium leading-snug opacity-90">{banner.subtitle}</p>
               </div>
-
             </div>
           ))}
         </div>
@@ -460,16 +422,14 @@ function CategoryVault({ title, books, isDarkMode, colorClass, onViewAll, userId
     <div className="mb-14 w-full relative group">
       <div className="flex justify-between items-end mb-6 px-8 max-w-7xl mx-auto">
         <h2 className={`text-2xl font-extrabold italic border-l-4 ${colorClass} pl-3 tracking-tight`}>{title}</h2>
-        <button onClick={onViewAll} className={`text-sm font-bold flex items-center transition-all hover:translate-x-1 ${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-600 hover:text-sky-500'}`}>
+        <button onClick={onViewAll} className={`text-sm font-bold flex items-center transition-all hover:translate-x-1 ${!isDarkMode ? 'text-sky-600 hover:text-sky-500' : 'text-sky-400 hover:text-sky-300'}`}>
           View All <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
         </button>
       </div>
 
       <div className="relative w-full max-w-[1400px] mx-auto">
-        <button onClick={() => scroll('left')} className={`absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-600' : 'bg-white text-gray-900 hover:bg-gray-100'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg></button>
-        <button onClick={() => scroll('right')} className={`absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-600' : 'bg-white text-gray-900 hover:bg-gray-100'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg></button>
-        <div className={`absolute right-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-l ${isDarkMode ? 'from-gray-950 to-transparent' : 'from-white to-transparent'} pointer-events-none`}></div>
-        <div className={`absolute left-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-r ${isDarkMode ? 'from-gray-950 to-transparent' : 'from-white to-transparent'} pointer-events-none`}></div>
+        <button onClick={() => scroll('left')} className={`absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 ${!isDarkMode ? 'bg-white text-gray-900 hover:bg-gray-100 border border-gray-200' : 'bg-gray-800 text-white hover:bg-gray-600'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg></button>
+        <button onClick={() => scroll('right')} className={`absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 ${!isDarkMode ? 'bg-white text-gray-900 hover:bg-gray-100 border border-gray-200' : 'bg-gray-800 text-white hover:bg-gray-600'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg></button>
         
         <div ref={scrollContainerRef} className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory px-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {books.map(book => (
@@ -487,25 +447,20 @@ function CategoryVault({ title, books, isDarkMode, colorClass, onViewAll, userId
 // 3. THE MAIN PAGE (Storefront HQ)
 // ==========================================
 export default function Home() {
-  // 1. Native Theme Engine replacing useTheme
-  const [theme, setTheme] = useState('dark');
   const [isDarkMode, setIsDarkMode] = useState(true);
 
   useEffect(() => {
-    // 2. Safely fetch theme from local storage 
-    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('network-theme') || 'dark' : 'dark';
-    setTheme(savedTheme);
-    setIsDarkMode(savedTheme === 'dark' || savedTheme === 'true-dark');
+    // 1. Initial Check
+    const updateTheme = () => {
+      const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('network-theme') || 'black' : 'black';
+      setIsDarkMode(savedTheme === 'black' || savedTheme === 'dark-grey');
+    };
+    updateTheme();
+
+    // 2. 🔴 MAGIC FIX: Listen for the broadcast from the menu
+    window.addEventListener('theme-changed', updateTheme);
+    return () => window.removeEventListener('theme-changed', updateTheme);
   }, []);
-
-  const themeStyles: Record<string, string> = {
-    'light': 'bg-orange-50 text-stone-900',
-    'true-light': 'bg-white text-black',
-    'dark': 'bg-gray-950 text-white',
-    'true-dark': 'bg-black text-gray-300'
-  };
-
-  const currentThemeStyle = themeStyles[theme] || themeStyles['dark'];
 
   const [books, setBooks] = useState<Book[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -558,7 +513,6 @@ export default function Home() {
           executeSearch(searchQuery);
         }
       }, 500); 
-      
       return () => clearTimeout(timeoutId);
     }, [searchQuery, hasPressedEnter]);
 
@@ -598,11 +552,7 @@ export default function Home() {
 
         brandNewBooks.forEach(book => {
           if (book.id.startsWith('ext_')) {
-            fetch('/api/save-book', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(book)
-            }).catch(err => console.error("[Permanent Vaulting Error]:", err));
+            fetch('/api/save-book', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(book) }).catch(() => {});
           }
         });
       } else { setApiSearchResults([]); }
@@ -624,16 +574,6 @@ export default function Home() {
         const newBatch = data.books as Book[];
         setBooks(prevBooks => { const combined = [...prevBooks, ...newBatch]; return Array.from(new Map(combined.map(b => [b.isbn13, b])).values()); });
         setApiSearchResults(prev => { const combined = [...prev, ...newBatch]; return Array.from(new Map(combined.map(b => [b.isbn13, b])).values()); });
-        
-        newBatch.forEach(book => {
-          if (book.id.startsWith('ext_')) {
-            fetch('/api/save-book', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(book)
-            }).catch(() => {});
-          }
-        });
       } else { setHasMoreResults(false); }
     } catch (error) { console.error("DEBUG: Frontend error:", error); }
     setIsFetchingMore(false);
@@ -652,37 +592,23 @@ export default function Home() {
   const loadBannerBooks = async (isbns: string[]) => {
     const cleanIsbns = isbns.map(i => i.replace(/[- ]/g, ''));
     const missingIsbns = cleanIsbns.filter(isbn => !books.some(b => (b.isbn13 || '').replace(/[- ]/g, '') === isbn));
-    
     if (missingIsbns.length === 0) return; 
-    
     setIsLoading(true);
     try {
       const fetchPromises = missingIsbns.map(isbn => fetch(`/api/live-search?q=${encodeURIComponent(isbn)}`).then(res => res.json()));
       const resultsArray = await Promise.all(fetchPromises);
       let newBooks: Book[] = [];
       resultsArray.forEach(data => { if (data.success && data.books && data.books.length > 0) newBooks.push(data.books[0]); });
-      
       if (newBooks.length > 0) {
         setBooks(prevBooks => [...newBooks, ...prevBooks]);
-
-        newBooks.forEach(book => {
-          if (book.id.startsWith('ext_')) {
-            fetch('/api/save-book', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(book)
-            }).catch(err => console.error("[Banner Permanent Vaulting Error]:", err));
-          }
-        });
       }
-    } catch (error) {
-      console.error("Failed to fetch missing banner books", error);
-    }
+    } catch (error) { console.error("Failed to fetch missing banner books", error); }
     setIsLoading(false);
   };
   
   return (
-    <main className={`min-h-screen flex flex-col py-12 transition-colors duration-500 overflow-x-hidden ${currentThemeStyle}`}>      
+    // 🔴 MAGIC FIX: The background color is explicitly set to transparent so the global CSS dictates the flat color
+    <main className="min-h-screen flex flex-col py-12 transition-colors duration-500 overflow-x-hidden bg-transparent">      
       <NotificationBell userId={userId} isDarkMode={isDarkMode} />
       <header className="flex justify-center items-center mb-12 w-full relative">
         <button onClick={handleClearViews} className="hover:opacity-80 transition-opacity">
@@ -690,7 +616,7 @@ export default function Home() {
             <span className="text-4xl lowercase">book</span>
             <span className="relative mx-1 text-5xl text-sky-400 italic inline-block px-1">
               Hyper
-              <span className={`absolute left-0 right-0 h-[4px] top-[54%] -translate-y-1/2 ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}></span>
+              <span className={`absolute left-0 right-0 h-[4px] top-[54%] -translate-y-1/2 ${!isDarkMode ? 'bg-white' : 'bg-[#000000]'}`}></span>
             </span>
             <span className="text-4xl lowercase">market</span>
           </h1>
@@ -701,12 +627,12 @@ export default function Home() {
       {activeBannerView ? (
         <div className="w-full relative z-10 max-w-7xl mx-auto px-6 animate-in fade-in duration-500">
           <div className="flex flex-col mb-12">
-            <button onClick={() => setActiveBannerView(null)} className={`self-start mb-6 px-4 py-2 rounded-full font-bold text-sm flex items-center transition-all hover:-translate-x-1 ${isDarkMode ? 'bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200'}`}>
+            <button onClick={() => setActiveBannerView(null)} className={`self-start mb-6 px-4 py-2 rounded-full font-bold text-sm flex items-center transition-all hover:-translate-x-1 ${!isDarkMode ? 'bg-gray-100 text-gray-900 hover:bg-gray-200' : 'bg-gray-800 text-white hover:bg-gray-700'}`}>
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> Back
             </button>
             <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-4 text-sky-400">{activeBannerView.title}</h2>
             {activeBannerView.landing_page_text && (
-              <p className={`text-xl max-w-3xl leading-relaxed ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              <p className={`text-xl max-w-3xl leading-relaxed ${!isDarkMode ? 'text-gray-700' : 'text-gray-300'}`}>
                 {activeBannerView.landing_page_text}
               </p>
             )}
@@ -728,9 +654,9 @@ export default function Home() {
       ) : activeCategoryView ? (
         /* VIEW: CATEGORY EXPANDED */
         <div className="w-full relative z-10 max-w-7xl mx-auto px-6 animate-in fade-in duration-300">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b pb-4 border-gray-800">
+          <div className={`flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b pb-4 ${!isDarkMode ? 'border-gray-200' : 'border-gray-800'}`}>
             <h2 className="text-4xl font-extrabold tracking-tight mb-4 md:mb-0">{activeCategoryView.name}</h2>
-            <button onClick={() => setActiveCategoryView(null)} className={`px-6 py-2 rounded-full font-bold flex items-center transition-all hover:-translate-x-1 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}>
+            <button onClick={() => setActiveCategoryView(null)} className={`px-6 py-2 rounded-full font-bold flex items-center transition-all hover:-translate-x-1 ${!isDarkMode ? 'bg-gray-100 text-gray-900 hover:bg-gray-200' : 'bg-gray-800 text-white hover:bg-gray-700'}`}>
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> Back to Storefront
             </button>
           </div>
@@ -743,8 +669,8 @@ export default function Home() {
         <>
           <div className="w-full mb-12 flex flex-col items-center gap-6 px-4">
             <div className="w-full max-w-2xl relative z-20">
-              <input type="text" placeholder="Search entire vault... (Press Enter to scour global databases)" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setHasPressedEnter(false); }} onKeyDown={handleLiveSearch} className={`w-full p-4 pr-16 rounded-xl border text-lg focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-xl ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
-              <button onClick={() => setIsScanning(true)} className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors ${isDarkMode ? 'text-gray-400 hover:text-sky-400 hover:bg-gray-800' : 'text-gray-500 hover:text-sky-600 hover:bg-gray-200'}`} title="Scan Barcode"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H5v3a1 1 0 01-2 0V4zm14-1a1 1 0 011 1v3a1 1 0 01-2 0V5h-3a1 1 0 010-2h4zM3 20a1 1 0 001 1h4a1 1 0 000-2H5v-3a1 1 0 00-2 0v4zm14 1a1 1 0 001-1v-3a1 1 0 00-2 0v3h-3a1 1 0 000 2h4z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h8v4H8z" /></svg></button>
+              <input type="text" placeholder="Search entire vault... (Press Enter to scour global databases)" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setHasPressedEnter(false); }} onKeyDown={handleLiveSearch} className={`w-full p-4 pr-16 rounded-xl border text-lg focus:outline-none focus:ring-2 focus:ring-sky-500 ${!isDarkMode ? 'bg-white border-gray-300 text-gray-900' : 'bg-[#111827] border-gray-700 text-white'}`} />
+              <button onClick={() => setIsScanning(true)} className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors ${!isDarkMode ? 'text-gray-500 hover:text-sky-600 hover:bg-gray-200' : 'text-gray-400 hover:text-sky-400 hover:bg-gray-800'}`} title="Scan Barcode"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H5v3a1 1 0 01-2 0V4zm14-1a1 1 0 011 1v3a1 1 0 01-2 0V5h-3a1 1 0 010-2h4zM3 20a1 1 0 001 1h4a1 1 0 000-2H5v-3a1 1 0 00-2 0v4zm14 1a1 1 0 001-1v-3a1 1 0 00-2 0v3h-3a1 1 0 000 2h4z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h8v4H8z" /></svg></button>
             </div>
             {isScanning && ( <BarcodeScanner onClose={() => setIsScanning(false)} onScanSuccess={(isbn) => { setIsScanning(false); executeSearch(isbn); }} /> )}
           </div>
@@ -774,11 +700,11 @@ export default function Home() {
                 {displayResults.length > 0 && hasPressedEnter && (
                   <div className="mt-12">
                     {hasMoreResults ? (
-                      <button onClick={handleLoadMore} disabled={isFetchingMore} className={`px-8 py-3 rounded-full font-bold transition-all flex items-center shadow-lg ${isDarkMode ? 'bg-sky-600 hover:bg-sky-500 text-white' : 'bg-sky-500 hover:bg-sky-400 text-white'} ${isFetchingMore ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-1'}`}>
+                      <button onClick={handleLoadMore} disabled={isFetchingMore} className={`px-8 py-3 rounded-full font-bold transition-all flex items-center ${!isDarkMode ? 'bg-sky-500 hover:bg-sky-400 text-white' : 'bg-sky-600 hover:bg-sky-500 text-white'} ${isFetchingMore ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-1'}`}>
                         {isFetchingMore ? '[ EXCAVATING VAULT... ]' : 'Load More Results'}
                       </button>
                     ) : (
-                      <div className={`px-8 py-3 rounded-full font-mono text-sm border ${isDarkMode ? 'border-gray-800 text-gray-500 bg-gray-900/50' : 'border-gray-300 text-gray-500 bg-gray-100/50'}`}>[ ALL ENTRIES LOADED ]</div>
+                      <div className={`px-8 py-3 rounded-full font-mono text-sm border ${!isDarkMode ? 'border-gray-300 text-gray-500 bg-gray-100/50' : 'border-gray-800 text-gray-500 bg-gray-900/50'}`}>[ ALL ENTRIES LOADED ]</div>
                     )}
                   </div>
                 )}
@@ -795,10 +721,7 @@ export default function Home() {
                   isDarkMode={isDarkMode} 
                 />
 
-                {/* NEW SLOT: WATERSTONES SPOTLIGHT CAROUSEL */}
                 <PartnerCarousel title="Waterstones Spotlight" subtitle="The UK's leading high street bookseller." badge="W" badgeColor="bg-cyan-800" items={waterstonesSpotlight} isDarkMode={isDarkMode} />
-
-                {/* SLOT 1: SCHOLASTIC SPOTLIGHT CAROUSEL */}
                 <PartnerCarousel title="Scholastic Spotlight" subtitle="The global leader in children's publishing." badge="S" badgeColor="bg-red-600" items={scholasticSpotlight} isDarkMode={isDarkMode} />
 
                 {dynamicCategories.map((cat, index) => {
@@ -807,31 +730,12 @@ export default function Home() {
                     <div key={cat.name}>
                       <CategoryVault title={cat.name} books={catBooks} isDarkMode={isDarkMode} colorClass={cat.color} onViewAll={() => setActiveCategoryView({ name: cat.name, books: catBooks })} userId={userId} userLibrary={userLibrary} userWishlist={userWishlist} onAuthorClick={handleAuthorClick} />
                       
-                      {/* SLOT 2: BOOKSHOP.ORG CAROUSEL (After 1st category) */}
-                      {index === 0 && (
-                        <PartnerCarousel title="Bookshop.org Picks" subtitle="Supporting local independent bookshops directly." badge="B" badgeColor="bg-teal-600" items={bookshopSpotlight} isDarkMode={isDarkMode} />
-                      )}
-
-                      {index === 1 && (
-                        <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 2)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />
-                      )}
-
-                      {/* SLOT 3: EBAY RARE FINDS CAROUSEL (After 3rd category) */}
-                      {index === 2 && (
-                        <PartnerCarousel title="eBay Rare Finds" subtitle="Explore marketplace treasures, collectibles, and box sets." badge="E" badgeColor="bg-blue-600" items={ebaySpotlight} isDarkMode={isDarkMode} />
-                      )}
-
-                      {index === 3 && (
-                        <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 3)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />
-                      )}
-
-                      {index === 4 && (
-                        <PartnerCarousel title="Hot Picks from Amazon" subtitle="From Romance to Business, Finance and Law, LGBTQ+ Authors, New Releases, and Great Deals on e-books and audiobooks with Kindle and Audible" badge="A" badgeColor="bg-orange-700" items={amazonSpotlight} isDarkMode={isDarkMode} />
-                      )}
-
-                      {index === 5 && (
-                        <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 4)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />
-                      )}
+                      {index === 0 && <PartnerCarousel title="Bookshop.org Picks" subtitle="Supporting local independent bookshops directly." badge="B" badgeColor="bg-teal-600" items={bookshopSpotlight} isDarkMode={isDarkMode} />}
+                      {index === 1 && <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 2)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />}
+                      {index === 2 && <PartnerCarousel title="eBay Rare Finds" subtitle="Explore marketplace treasures, collectibles, and box sets." badge="E" badgeColor="bg-blue-600" items={ebaySpotlight} isDarkMode={isDarkMode} />}
+                      {index === 3 && <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 3)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />}
+                      {index === 4 && <PartnerCarousel title="Hot Picks from Amazon" subtitle="From Romance to Business, Finance and Law, LGBTQ+ Authors, New Releases, and Great Deals on e-books and audiobooks with Kindle and Audible" badge="A" badgeColor="bg-orange-700" items={amazonSpotlight} isDarkMode={isDarkMode} />}
+                      {index === 5 && <FeaturedBannerCarousel banners={banners.filter(b => b.slot_position === 4)} onSelectBanner={(banner) => { setActiveBannerView(banner); window.scrollTo({ top: 0, behavior: 'smooth' }); loadBannerBooks(banner.target_isbns); }} isDarkMode={isDarkMode} />}
                     </div>
                   )
                 })}
