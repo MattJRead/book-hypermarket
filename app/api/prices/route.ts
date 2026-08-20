@@ -1,108 +1,96 @@
 import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 
-const fetchOptions = {
-  headers: {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-    'Accept-Language': 'en-GB,en;q=0.5',
-  },
-  next: { revalidate: 3600 } 
-};
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const isbn = searchParams.get('isbn');
-  const title = searchParams.get('title'); // 🎯 Accept the title for the fallback
+  const title = searchParams.get('title');
 
-  // 🔽 THE GRACEFUL FALLBACK
-  // If there is no ISBN, safely return "Check Site" text to avoid frontend crashes
-  if (!isbn || isbn === 'null' || isbn === 'undefined') {
-    return NextResponse.json({
-      waterstones: 'Check Site',
-      blackwells: 'Check Site',
-      amazon: 'Check Site',
-      ebay: 'Check Site',
-      wob: 'Check Site'
-    });
+  if (!isbn && !title) {
+    return NextResponse.json({ error: 'Missing ISBN or Title' }, { status: 400 });
   }
 
-  const encodedTitle = title ? encodeURIComponent(title) : '';
+  // Use ISBN for maximum accuracy if available, fallback to title
+  const searchQuery = isbn && isbn !== 'undefined' ? isbn : title;
 
-  console.log(`[Price Radar] Deploying bots for: ${isbn} / ${title}`);
-
- // --- THE INDIVIDUAL SHOP BOTS (Defaulting to Check Site on errors) ---
-
-  const scrapeBlackwells = async (query: string) => {
-    try {
-      const res = await fetch(`https://blackwells.co.uk/bookshop/search/?keyword=${query}`, fetchOptions);
-      if (!res.ok) throw new Error('Blocked');
-      const html = await res.text();
-      const $ = cheerio.load(html);
-      const priceText = $('.product-price').first().text().trim() || $('.price').first().text().trim();
-      const match = priceText.match(/[£$€][\d.]+/);
-      return match ? match[0] : 'Check Site';
-    } catch (e) { return 'Check Site'; }
+  // The default payload required by your frontend BookCard
+  const prices = {
+    waterstones: 'Check Site',
+    blackwells: 'Check Site',
+    amazon: 'Check Site',
+    ebay: 'Check Site',
+    bookshop: 'Check Site'
   };
 
-  const scrapeWaterstones = async (query: string) => {
-    try {
-      const res = await fetch(`https://www.waterstones.com/books/search/term/${query}`, fetchOptions);
-      if (!res.ok) throw new Error('Cloudflare Blocked');
-      const html = await res.text();
-      const $ = cheerio.load(html);
-      const priceText = $('.price').first().text().trim();
-      const match = priceText.match(/[£$€][\d.]+/);
-      return match ? match[0] : 'Check Site';
-    } catch (e) { return 'Check Site'; }
-  };
+  try {
+    // Fire the scanners simultaneously so the user doesn't wait
+    const [blackwellsPrice, bookshopPrice] = await Promise.allSettled([
+      fetchBlackwellsPrice(searchQuery as string),
+      fetchBookshopPrice(searchQuery as string)
+    ]);
 
-  const scrapeEbay = async (query: string) => {
-    try {
-      const res = await fetch(`https://www.ebay.co.uk/sch/i.html?_nkw=${query}`, fetchOptions);
-      if (!res.ok) throw new Error('Blocked');
-      const html = await res.text();
-      const $ = cheerio.load(html);
-      const priceText = $('.s-item__price').first().text().trim();
-      const match = priceText.match(/[£$€][\d.]+/);
-      return match ? match[0] : 'Check Site';
-    } catch (e) { return 'Check Site'; }
-  };
-
-  const scrapeWob = async (query: string) => {
-    try {
-      const res = await fetch(`https://www.wob.com/en-gb/category/all?search=${query}`, fetchOptions);
-      if (!res.ok) throw new Error('Blocked');
-      const html = await res.text();
-      const $ = cheerio.load(html);
-      const priceText = $('.price').first().text().trim() || $('.item-price').first().text().trim();
-      const match = priceText.match(/[£$€][\d.]+/);
-      return match ? match[0] : 'Check Site';
-    } catch (e) { return 'Check Site'; }
-  };
-
-  // --- 🌊 THE FALLBACK COMMANDER ---
-  const tryScrape = async (scrapeFn: (q: string) => Promise<string>, primary: string, fallback: string) => {
-    let result = await scrapeFn(primary);
-    if ((result === 'Out of Stock' || result === 'Check Site') && fallback) {
-      console.log(`[Price Radar] ISBN failed. Falling back to title search...`);
-      result = await scrapeFn(fallback);
+    // If the vaults return a hit, update the payload
+    if (blackwellsPrice.status === 'fulfilled' && blackwellsPrice.value) {
+      prices.blackwells = blackwellsPrice.value;
     }
-    return result;
-  };
+    if (bookshopPrice.status === 'fulfilled' && bookshopPrice.value) {
+      prices.bookshop = bookshopPrice.value;
+    }
 
-  const [blackwells, waterstones, ebay, wob] = await Promise.allSettled([
-    tryScrape(scrapeBlackwells, isbn, encodedTitle),
-    tryScrape(scrapeWaterstones, isbn, encodedTitle),
-    tryScrape(scrapeEbay, isbn, encodedTitle),
-    tryScrape(scrapeWob, isbn, encodedTitle)
-  ]);
+  } catch (error) {
+    console.error('Radar Jammed:', error);
+  }
 
-  return NextResponse.json({
-    blackwells: blackwells.status === 'fulfilled' ? blackwells.value : 'Out of Stock',
-    waterstones: waterstones.status === 'fulfilled' ? waterstones.value : 'Out of Stock',
-    ebay: ebay.status === 'fulfilled' ? ebay.value : 'Check Site',
-    wob: wob.status === 'fulfilled' ? wob.value : 'Check Site',
-    amazon: 'Check Site' 
-  });
+  return NextResponse.json(prices);
+}
+
+// ==========================================
+// INDIVIDUAL STORE SCANNERS
+// ==========================================
+
+async function fetchBlackwellsPrice(query: string) {
+  try {
+    const res = await fetch(`https://blackwells.co.uk/bookshop/search/?keyword=${encodeURIComponent(query)}`, {
+      headers: { 
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+      },
+      next: { revalidate: 3600 } // Cache results for 1 hour to prevent IP bans
+    });
+    
+    if (!res.ok) return null;
+    const html = await res.text();
+    const $ = cheerio.load(html);
+    
+    // Target the specific CSS class where Blackwells holds their price
+    const priceText = $('.product-price').first().text().trim();
+    const match = priceText.match(/£\d+\.\d{2}/);
+    
+    return match ? match[0] : null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchBookshopPrice(query: string) {
+  try {
+    const res = await fetch(`https://uk.bookshop.org/search?keywords=${encodeURIComponent(query)}`, {
+      headers: { 
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      next: { revalidate: 3600 }
+    });
+    
+    if (!res.ok) return null;
+    const html = await res.text();
+    const $ = cheerio.load(html);
+    
+    // Target the UK Bookshop.org price element
+    const priceText = $('div.text-xl.font-bold').first().text().trim() || $('.price').first().text().trim();
+    const match = priceText.match(/£\d+\.\d{2}/);
+    
+    return match ? match[0] : null;
+  } catch {
+    return null;
+  }
 }
